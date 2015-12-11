@@ -1,52 +1,75 @@
-This is the code of the four-column Simulated Moving Bed (SMB) chromatography for separating two components mixture. And it has also extended to the situation of eight-column. Although it is self-explanatory, here still comes a simple introduction.
+The fourth version of the SMB
 
-In the CADET, the general rate model (GRM) is adopted, while in this case, GRM is simplified into the equilibrium dispersive model. In other words, the beads are treated as solid and no porous diffusion, and film diffusion are taken into consideration (please see the parameter configuration in getParameter.m). Additionally, the simplest Linear adsorption isotherm is implemented in this case. 
+In this version, the four_column case and eight_column case were integrated into one code. So it is general. In comparison to the regular SMB (which was presented in the master branch of the Github), a novel single-column setup for experimentally reproducing the steady periodic behaviour of simulated countercurrent multicolumn chromatography was presented in this branch.
 
-In each connectiong nodes between two columns, the mass conservation is used to calculated the inlet concentration of next column (see massConservation.m).
+The data of case I is from the paper, Numerical Method for Accelaration Calculation of Cyclic Steady State of ModiCon-SMB-Processes. It involves both four_column case and eight_column case.
 
-secColumn.m is the subroutine used for calculation of single column.
+k_a & k_d : [5.72 7.7]  (Linear isotherm);
+d_{col}   : 0.02 m;
+L         : 0.25 m;
+porosity  : 0.83;
+d_{par}   : not given, in my case, 0.0005 m;
+Switching time        : 180 s
+concentration of feed : 0.55 g/l
+Recycle flow rate     : 9.62e-7 m^3/s
+Feed flow rate        : 0.98e-7 m^3/s
+Desorbent flow rate   : 1.96e-7 m^3/s
+Extract flow rate     : 1.54e-7 m^3/s
+Raffinate flow rate   : 1.40e-7 m^3/s
 
-simulatedMovingBed is the main funciton. 
+While the data of case II is from the paper, Model-based Control of a Simulated Moving Bed Chromatographic Process for the Separation of Fructose and Glucose. It is merely a eight_column case.
 
-This code is based on CADET, and the code for simulated moving bed is put in the file "simulatedMovingBed". The binary file is for ubuntu 14.04. If you are using other OS, you need to build the binary file from the source file (http://github.com/modsim/CADET.git) yourself; if you are using Windows, you can download the file directly from https://github.com/modsim/cadet/releases. 
+k_a & k_d : [0.54 0.28]  (Linear isotherm);
+d_{col}   : 2.6cm;
+L         : 53.6cm;
+porosity  : 0.38;
+d_{par}   : 0.325cm;
+Switching time        : 1552 s
+concentration of feed : 0.5 g/cm^3
+Recycle flow rate     : 0.1395 cm^3/s
+Feed flow rate        : 0.02 cm^3/s
+Desorbent flow rate   : 0.0414 cm^3/s
+Extract flow rate     : 0.0348 cm^3/s
+Raffinate flow rate   : 0.0266 cm^3/s
 
--------------------------------------------------------------------------------------------
+The developed code replicated both cases successfully. In regard to the simulation time (under the tolerance 1e-4), 
 
-SECOND VERSION
-Since there is not so many cases of four-column SMB (at lease I did not find
-so many), I did not try so many cases. 
+	- four_column case:
+		Time: 96 sec
+		Round: 56
+		Switch: 224
 
-The parameters for the numerical test for the second version is withdrawn from
-the paper Numerical Method for Accelerated Calculation of Cyclic Steady State
-of ModiCon-SMB-Processes. It seems that the paper, On Simplified Modeling Approaches
-to SMB Process, use the same data for test. However, in both cases, the
-parameter PARTICLE_RADIUS can not be found.
+	- eight_column case
+		Time: 105 sec
+		Round: 34
+		Switch: 272
 
-As for the bug, T_{column} less than the switch time T_{s}. It was alleviated
-by a trick (assuming the tubes are employed between the adjacent columns).
+As seen from above data, the simulation time does't increase exponentially according to the number of the column. And we also acquired the same cyclic steady state with regular SMB. This is the advantage.
 
-And the another trick is that the injection from the FEED inlet were adopted
-periodicly (four switches one injection). In regard to the reason, just for
-implementation. Lastly, the so-called CSS was reached after approximately one
-hour simulation. 
+------------------------------------------------------------------------------------------------
+The third version of the eight_column SMB.
 
------------------------------------------------------------------------------
+All the bugs mentioned aboved were all fixed in the third version. The reproduced data were from the paper Model-based Control of a Simulated Moving Bed Chromatographic Process for the Separation of Fructose and Glucose.
 
-The third version 
+k_a & k_d : [0.54 0.28]  (Linear isotherm);
+d_{col}   : 2.6cm;
+L         : 53.6cm;
+porosity  : 0.38;
+d_{par}   : 0.325cm;
+Switching time        : 1552 s
+concentration of feed : 0.5 g/cm^3
+Recycle flow rate     : 0.1395 cm^3/s
+Feed flow rate        : 0.02 cm^3/s
+Desorbent flow rate   : 0.0414 cm^3/s
+Extract flow rate     : 0.0348 cm^3/s
+Raffinate flow rate   : 0.0266 cm^3/s
 
-All the bugs mentioned above were all fixed in the third version. The reproduced data were from the paper Numerical Method for Accelaration Calculation of Cyclic Steady State of ModiCon-SMB-Processes.
+The convergence to the Cyclic Steady State was achieved after 104 switching. This resulted in approx. 296 second on my desktop under the relative tolerence 1e-4.
+--------------------------------------------------------------------------------------------------
+I extended the four-column Simulated Moving Bed (SMB) chromatography to eight-column situation.
 
-k_a & k_d    : [5.72 7.7];
-d_{col}      : 0.02 m;
-L            : 0.25 m;
-Porosity     : 0.83;
-d_{par}      : not given, in my case, 0.0005 m;
-Switching time          : 180 s;
-concentration of feed   : 0.55 g/l;
-Recycle flow rate       : 9.62e-7;
-Feed flow rate          : 0.98e-7;
-Desorbent flow rate     : 1.96e-7;
-Extract flow rate       : 1.54e-7;
-Raffinate flow rate     : 1.40e-7;
+Two bugs remained in the version of four-column were fixed. 1) the constraint of Length/interstitial_velocity is larger than switch time, as the other papers adopted. 2) All the parameter data are from the paper "Model-based control of a simulated moving bed chromatographic process for the separation of fructose and glucose", rather than artificial as in the four-column case. 
 
-The convergence to the Cyclic Steady State was achieved after 68 switching. This resulted in approx. 99 second on my desktop under the relative tolerence 1e-4. 
+
+The bug left now is the initial setup of feed concentration and the injection during the process. Also the code is not compatible with the four-column situation. This will be improved in the later version.
+  
