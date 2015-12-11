@@ -25,7 +25,7 @@ function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
         end
     end
     
-%   Get parameters
+%    Get parameters
     [opt, ~, ~] = getParameters();
     
     model = ModelGRM();
@@ -83,7 +83,7 @@ function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
     sim.solverOptions.WRITE_SENS_LAST       = false;
     sim.solverOptions.WRITE_SOLUTION_COLUMN_OUTLET = true;
     sim.solverOptions.WRITE_SOLUTION_COLUMN_INLET  = true;
- 
+   
     
 %   Run the simulation
     result = sim.simulate();

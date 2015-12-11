@@ -55,7 +55,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'a' 
 
                 column.params = params{sequence.a};
-                column.initialState = currentData{sequence.a}.lastState;
+%                 column.initialState = currentData{sequence.a}.lastState;
 
                 %   C_a^in = Q_d * C_d^out / Q_a
                 concentration = zeros(length(Feed.time), 2);
@@ -69,7 +69,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'b'
 
                 column.params = params{sequence.b};
-                column.initialState = currentData{sequence.b}.lastState;
+%                 column.initialState = currentData{sequence.b}.lastState;
 
                 %   C_b^in = C_a^out
                 column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
@@ -79,7 +79,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
 %           node FEED (index c)
             case 'c' 
                 column.params = params{sequence.c};
-                column.initialState = currentData{sequence.c}.lastState;
+%                 column.initialState = currentData{sequence.c}.lastState;
 
                 %   C_c^in = (Q_b*C_b^out + Q_F * C_F) / Q_c
                 column.inlet.concentration = (currentData{sequence.b}.outlet.concentration .* ...
@@ -92,7 +92,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'd' 
 
                 column.params = params{sequence.d};
-                column.initialState = currentData{sequence.d}.lastState;
+%                 column.initialState = currentData{sequence.d}.lastState;
                 
                 %   C_d^in = C_c^out
                 column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
@@ -109,7 +109,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'a'  
                 
                 column.params = params{sequence.a};
-                column.initialState = currentData{sequence.a}.lastState;
+%                 column.initialState = currentData{sequence.a}.lastState;
                 
                 %   C_a^in = Q_d * C_d^out / Q_a
                 column.inlet.concentration = currentData{sequence.h}.outlet.concentration .* params{sequence.h}.interstitialVelocity...
@@ -120,7 +120,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'b'  
                 
                 column.params = params{sequence.b};
-                column.initialState = currentData{sequence.b}.lastState;
+%                 column.initialState = currentData{sequence.b}.lastState;
                 
                 %   C_b^in = C_a^out
                 column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
@@ -131,7 +131,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'c'  
                 
                 column.params = params{sequence.c};
-                column.initialState = currentData{sequence.c}.lastState;
+%                 column.initialState = currentData{sequence.c}.lastState;
                
                 %   C_c^in = C_b^out
                 column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
@@ -141,7 +141,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'd'  
                 
                 column.params = params{sequence.d};
-                column.initialState = currentData{sequence.d}.lastState;
+%                 column.initialState = currentData{sequence.d}.lastState;
                 
                 %   C_d^in = C_c^out
                 column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
@@ -152,7 +152,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'e' 
                 
                 column.params = params{sequence.e};
-                column.initialState = currentData{sequence.e}.lastState;
+%                 column.initialState = currentData{sequence.e}.lastState;
                 
                 %   C_e^in = (Q_d*C_d^out + Q_F * C_F) / Q_e
                 column.inlet.concentration = (currentData{sequence.d}.outlet.concentration .* ...
@@ -164,7 +164,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'f' 
                 
                 column.params = params{sequence.f};
-                column.initialState = currentData{sequence.f}.lastState;
+%                 column.initialState = currentData{sequence.f}.lastState;
                 
                 %   C_f^in = C_e
                 column.inlet.concentration = currentData{sequence.e}.outlet.concentration;
@@ -175,7 +175,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'g'  
                 
                 column.params = params{sequence.g};
-                column.initialState = currentData{sequence.g}.lastState;
+%                 column.initialState = currentData{sequence.g}.lastState;
                 
                 %   C_g^in = C_f^out
                 column.inlet.concentration = currentData{sequence.f}.outlet.concentration;
@@ -185,7 +185,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
             case 'h' 
                 
                 column.params = params{sequence.h};
-                column.initialState = currentData{sequence.h}.lastState;
+%                 column.initialState = currentData{sequence.h}.lastState;
                 
                 %   C_h^in = C_g^out
                 column.inlet.concentration = currentData{sequence.g}.outlet.concentration;
