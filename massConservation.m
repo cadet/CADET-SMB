@@ -112,7 +112,9 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
                 column.initialState = currentData{sequence.a}.lastState;
                 
                 %   C_a^in = Q_d * C_d^out / Q_a
-                column.inlet.concentration = currentData{sequence.h}.outlet.concentration .* params{sequence.h}.interstitialVelocity...
+				concentration = zeros(length(Feed.time), 2);
+
+                column.inlet.concentration = concentration .* params{sequence.h}.interstitialVelocity...
                     ./ params{sequence.a}.interstitialVelocity;
 
 
