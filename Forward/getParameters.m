@@ -17,7 +17,7 @@ function [opt, interstVelocity, Feed] = getParameters()
 %   The parameter setting for simulator
     opt.tolIter         = 1e-4;
     opt.nMaxIter        = 1000;
-    opt.nThreads        = 4;
+    opt.nThreads        = 8;
     opt.nCellsColumn    = 40;
     opt.nCellsParticle  = 1;
     opt.switch          = 180;
@@ -26,8 +26,13 @@ function [opt, interstVelocity, Feed] = getParameters()
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
     
+    opt.Purity_extract_limit    = 0.99;
+    opt.Purity_raffinate_limit  = 0.99;
+    opt.Penalty_factor          = 10;
+
     opt.enableDebug = true;
-    opt.nColumn = 4; % opt.nColumn = 4;
+    opt.nColumn = 4; 
+%   opt.nColumn = 8;
 
 %   Binding: Linear Binding isotherm
     opt.nComponents = 2;

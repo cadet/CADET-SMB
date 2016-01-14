@@ -33,10 +33,10 @@ function SMBOptimization()
 
     
 %   Select one method and make it true (correspondingly the rest methods false)
-    optimization_method.Particle_Swarm_Optimization = false;
+    optimization_method.Particle_Swarm_Optimization = true;
     optimization_method.Differential_Evolution = false;
     optimization_method.Metropolis_Adjusted_Differential_Evolution = false;
-    optimization_method.Deterministic_algorithm_fmincon = true;
+    optimization_method.Deterministic_algorithm_fmincon = false;
 
 
     if isfield(optimization_method, 'Particle_Swarm_Optimization') ...
@@ -63,11 +63,13 @@ function SMBOptimization()
             && optimization_method.Deterministic_algorithm_fmincon
         
         initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
-        loBound = [0.20, 130, 9.0e-7, 0.9e-7, 1.0e-7, 1.0e-7];
-        upBound = [0.30, 230, 10e-7, 1.0e-7, 2.0e-7, 2.0e-7];
+
+        loBound = [0.20, 150, 8.0e-7, 0.9e-7, 0.7e-7, 1.0e-7];
+        upBound = [0.30, 230, 10e-7,  2.0e-7, 2.0e-7, 2.0e-7];
         
-    
-        [x, y] = fmincon( @simulatedMovingBed, initParams, [], [], [], [], loBound, upBound);
+        options = optimoptions('fmincon', 'Algorithm', 'interior-point', 'Display', 'iter');
+        
+        [x, y] = fmincon( @simulatedMovingBed, initParams, [],[],[],[], loBound, upBound, [], options);
         fprintf('Minimum: %g,   Parameters:[%g| %g| %g| %g| %g| %g] \n', y, x);
         
     else

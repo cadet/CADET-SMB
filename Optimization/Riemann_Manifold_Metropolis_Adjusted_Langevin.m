@@ -23,7 +23,7 @@ function Riemann_Manifold_Metropolis_Adjusted_Langevin(params)
 %   Pre-allocation    
     chain       = zeros(opt.Nchain, opt.nCol+1, opt.nsamples);
     Population  = cell(opt.Nchain,1);
-    sigmaChain  = zeros(opt.nsamples, opt.Nchain);
+%     sigmaChain  = zeros(opt.nsamples, opt.Nchain);
     Temperatures = zeros(opt.nsamples, opt.Nchain);  
     
     Temperatures(:, 1) = ones(opt.nsamples, 1);
@@ -32,7 +32,7 @@ function Riemann_Manifold_Metropolis_Adjusted_Langevin(params)
 %     sigmaSqu  = states(:,opt.nCol+1)/ (opt.nObserv - opt.nCol);
 %     sigmaSqu0 = sigmaSqu; n0 = 1;
 
-    sigmaSqu = 0.1;
+    sigmaSqu = 0.01;
 %-----------------------------------------------------------------------------------------
 %   The main loop     
     for i = 1:opt.nsamples
@@ -176,17 +176,17 @@ function opt = getOptions_PRML(params)
     opt.Nchain            = length(opt.temperature);
     opt.nCol              = length(fieldnames(params)); 
     opt.bounds            = log ( [0.20    0.30;
-                                   130     230;
-                                   9.0e-7  10e-7;
-                                   0.9e-7  1.0e-7;
-                                   1.0e-7  2.0e-7;
+                               	   150     230;
+                                   8.0e-7  10e-7;
+                                   0.9e-7  2.0e-7;
+                                   0.7e-7  2.0e-7;
                                    1.0e-7  2.0e-7] )';
-    opt.nsamples          = 500;
+    opt.nsamples          = 300;
   
         
 %   Check out the dimension of the set of parameters, and the boundary limitation
     [row, col] = size(opt.nCol);
-    if row > 1 || col > 1true
+    if row > 1 || col > 1
         error('The initialized dimension of the set of parameters might be wrong');
     end
     
@@ -200,7 +200,7 @@ function opt = getOptions_PRML(params)
     opt.burnin            = 500;
     opt.printint          = 100;
     opt.Swapint           = 100;
-    opt.iterMax           = 1000000;
+    opt.iterMax           = 10000;
     opt.nObserv           = 1000;
     
 
@@ -243,9 +243,10 @@ function [initChain, MetricTensor] = initChains(beta, opt)
     initChain = rand(opt.Nchain, opt.nCol+1);
     MetricTensor = cell(1, opt.Nchain);
     
-    for k = 1: opt.nCol
-        initChain(:,k) = opt.bounds(1,k) + initChain(:,k) .* (opt.bounds(2,k) - opt.bounds(1,k));
-    end
+%   Use vectorization to speed up, it's actually equivalent to the for-loop 
+    initChain(:,1:opt.nCol) = repmat(opt.bounds(1,:),opt.Nchain,1) + ...
+        initChain(:,1:opt.nCol) .* repmat( (opt.bounds(2,:) - opt.bounds(1,:)),opt.Nchain,1 );    
+  
  
     
     for j = 1: opt.Nchain

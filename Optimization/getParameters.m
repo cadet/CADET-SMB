@@ -18,14 +18,14 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
         'feed',ParSwarm(4), 'desorbent',ParSwarm(5), 'extract',ParSwarm(6));
     
 %   The parameter setting for simulator
-    opt.tolIter         = 1e-4;
+    opt.tolIter         = 1e-3;
     opt.nMaxIter        = 1000;
-    opt.nThreads        = 4;
-    opt.nCellsColumn    = 40;
+    opt.nThreads        = 8;
+    opt.nCellsColumn    = 30;
     opt.nCellsParticle  = 1;
     opt.switch          = valueAssign.switch;
     opt.timePoints      = 1000;
-    opt.ABSTOL          = 1e-10;
+    opt.ABSTOL          = 1e-9;
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
     

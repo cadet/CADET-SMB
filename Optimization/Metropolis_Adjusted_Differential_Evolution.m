@@ -54,7 +54,7 @@ function Metropolis_Adjusted_Differential_Evolution(params)
             
             R = GelmanR_statistic(i, chain(:,:,1:i), opt);
             
-            if all(R < 1.2) || i == opt.nsamples
+            if all(R < 1.01) || i == opt.nsamples
                 indx = i;
                 break
             end
@@ -77,11 +77,11 @@ function Metropolis_Adjusted_Differential_Evolution(params)
 %----------------------------------------------------------------------------------------- 
   
 
-%   Discard the former 70%, retain only the last 30 percentage of the chains.
+%   Discard the former 50%, retain only the last 50 percentage of the chains.
     if indx < opt.nsamples
-        id = floor(0.3*indx);
+        id = floor(0.5*indx);
     else
-        id = floor(0.3*opt.nsamples);
+        id = floor(0.5*opt.nsamples);
     end
     
     samplers = zeros(id * opt.Nchain, opt.dimension+1);
@@ -126,30 +126,34 @@ function Metropolis_Adjusted_Differential_Evolution(params)
 %   Figures plotting
     figure(1);clf
     for i = 1: opt.dimension
-        subplot(opt.dimension,1,i,'Parent', figure(1), 'FontName', 'Times New Roman', 'FontSize', 12);
-        y = exp(result.Population(:,i));
-        histfit(y, 50, 'kernel');
         
-        xStr = sprintf('Value of the estimated parameter x%d', i);
+        subplot(opt.dimension,1,i,'Parent', figure(1));
+        
+        histfit(exp(result.Population(:,i)), 50, 'kernel');
+        
+        xStr = sprintf('Parameter x%d', i);
         yStr = sprintf('Frequency');
-            
-        xlabel(xStr, 'FontName', 'Times New Roman', 'FontSize', 12);
-        ylabel(yStr, 'FontName', 'Times New Roman', 'FontSize', 12);
+        
+        xlabel(xStr, 'FontSize', 10);
+        ylabel(yStr, 'FontSize', 10);
+        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+        
     end
 
     figure(2);clf
     for i = 1: opt.dimension
         for j = i: opt.dimension
             
-            subplot(opt.dimension, opt.dimension, j+(i-1)*opt.dimension,...
-                'Parent', figure(2), 'FontName', 'Times New Roman', 'FontSize', 12);
+            subplot(opt.dimension, opt.dimension, j+(i-1)*opt.dimension, 'Parent', figure(2));
+            
             scatter(exp(result.Population(:,j)), exp(result.Population(:,i)));
             
             xStr = sprintf('Parameter x%d', j);
             yStr = sprintf('Parameter x%d', i);
             
-            xlabel(xStr, 'FontName', 'Times New Roman', 'FontSize', 12);
-            ylabel(yStr, 'FontName', 'Times New Roman', 'FontSize', 12);
+            xlabel(xStr, 'FontName', 'Times New Roman', 'FontSize', 10);
+            ylabel(yStr, 'FontName', 'Times New Roman', 'FontSize', 10);
+            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
         end
     end
     
@@ -181,13 +185,13 @@ function opt = getOptions_MADE(params)
 
     opt = [];
  
-    opt.Nchain        = 30;
+    opt.Nchain        = 20;
     opt.dimension     = length(fieldnames(params));
     opt.bounds        = log ( [0.20    0.30;
-                               130     230;
-                               9.0e-7  10e-7;
-                               0.9e-7  1.0e-7;
-                               1.0e-7  2.0e-7;
+                               150     230;
+                               8.0e-7  10e-7;
+                               0.9e-7  2.0e-7;
+                               0.7e-7  2.0e-7;
                                1.0e-7  2.0e-7] )';
     opt.nsamples      = 300; 
  
@@ -204,12 +208,12 @@ function opt = getOptions_MADE(params)
     end
 
 %   Those are the specific parameters for the Markov Chain Simulation
-    opt.thinint       = 5;
+    opt.thinint       = 2;
     opt.convergint    = 50;
     opt.burnin        = 300;
     opt.printint      = 10;
     opt.DR            = 1;
-    opt.iterMax       = 1000000;
+    opt.iterMax       = 10000;
     opt.nr            = 1000;
     
 %   Those are the specific parameters for the DE algorithm
@@ -250,9 +254,10 @@ function initChain = initChains(opt)
 %   Initilization of the chains   
     initChain = rand(opt.Nchain, opt.dimension+1);
 
-    for k = 1: opt.dimension
-        initChain(:,k) = opt.bounds(1,k) + initChain(:,k) .* (opt.bounds(2,k) - opt.bounds(1,k));
-    end
+%   Use vectorization to speed up, it's actually equivalent to the for-loop 
+    initChain(:,1:opt.dimension) = repmat(opt.bounds(1,:),opt.Nchain,1) + ...
+        initChain(:,1:opt.dimension) .* repmat( (opt.bounds(2,:) - opt.bounds(1,:)),opt.Nchain,1 );    
+  
     
 %   Simulation of the sampled points, using subroutine simulatedMovingBed    
     initChain(:,opt.dimension+1) = arrayfun( @(idx) feval( @simulatedMovingBed, ...
@@ -327,9 +332,9 @@ function [tempPop, OptPopul] = DE_Evolution(Population, opt)
     
     OptPopul = zeros(R+1, C+1);
     OptPopul(R+1, C+1) = minValue;
-    for i = 1:R
-        OptPopul(i, 1:C) = Population(row, 1:opt.dimension);
-    end
+    
+    OptPopul(1:R, 1:C) = repmat( Population(row, 1:C), R, 1 );
+    clear row;
     
     indexArray = (0:1:R-1);
     index = randperm(4);
@@ -399,17 +404,16 @@ function [tempPop, OptPopul] = DE_Evolution(Population, opt)
             tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
     end
   
-    %   Check the boundary limitation
-    for j = 1:C
-        for i = 1:R
-            if tempPop(i, j) > opt.bounds(2, j)
-                tempPop(i, j) = opt.bounds(2, j);
-            end
-            if tempPop(i, j) < opt.bounds(1, j)
-                tempPop(i, j) = opt.bounds(1, j);
-            end
-        end
-    end
+
+%   Check the boundary limitation
+    loBound = repmat(opt.bounds(1,:), R, 1);
+    [row, col] = find( (tempPop(1:R, 1:C) - loBound) < 0 );
+    tempPop((col-1).*R + row) = loBound((col-1).*R + row);
+    
+    upBound = repmat(opt.bounds(2,:), R, 1);
+    [row, col] = find( (tempPop(1:R, 1:C) - upBound) > 0 );
+    tempPop((col-1).*R + row) = upBound((col-1).*R + row);
+    clear row col;
     
     
 end  

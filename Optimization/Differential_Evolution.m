@@ -97,14 +97,14 @@ function opt = getOptions_DE(params)
 
     opt = [];
     
-    opt.PopulSize      = 30;
+    opt.PopulSize      = 20;
     opt.IndivSize      = length(fieldnames(params));
     opt.IndivScope     = log ( [0.20    0.30;
-                                130     230;
-                                9.0e-7  10e-7;
-                                0.9e-7  1.0e-7;
-                                1.0e-7  2.0e-7;
-                                1.0e-7  2.0e-7] );
+                               	150     230;
+                               	8.0e-7  10e-7;
+                               	0.9e-7  2.0e-7;
+                               	0.7e-7  2.0e-7;
+                               	1.0e-7  2.0e-7] );
     opt.loopCount      = 300;
     
 %   Check out the dimension of the set of parameters, and the boundary limiatation
@@ -154,10 +154,12 @@ function [Population, OptPopul] = InitPopulation(opt)
    
 %   Initialization of the parameters
     Population = rand(opt.PopulSize, opt.IndivSize+1);
-    for k = 1: opt.IndivSize
-        Population(:, k) = opt.IndivScope(k, 1) + Population(:, k) * (opt.IndivScope(k, 2) - opt.IndivScope(k, 1));
-    end
     
+%   Use vectorization to speed up, it's actually equivalent to the for-loop  
+    Population(:,1:opt.IndivSize) = repmat(opt.IndivScope(:,1)',opt.PopulSize,1) + ...
+        Population(:,1:opt.IndivSize) .* repmat( (opt.IndivScope(:,2) - opt.IndivScope(:,1))',opt.PopulSize,1 );
+    
+
 %   Simulation of the sampled points, using subroutine simulatedMovingBed
     Population(:, opt.IndivSize+1) = arrayfun( @(idx) feval(@simulatedMovingBed, ...
         exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize );    
@@ -168,9 +170,8 @@ function [Population, OptPopul] = InitPopulation(opt)
     [minValue, row] = min(Population(:, opt.IndivSize+1));
     
     OptPopul(opt.PopulSize+1, opt.IndivSize+1) = minValue;
-    for k = 1: opt.PopulSize
-        OptPopul(k, 1:opt.IndivSize) = Population(row, 1:opt.IndivSize);
-    end
+    OptPopul(1:opt.PopulSize, 1:opt.IndivSize) = repmat( Population(row, 1:opt.IndivSize),opt.PopulSize,1);
+    
     
 end
 
@@ -259,34 +260,32 @@ function [Population, OptPopul] = DE_Evolution(Population, OptPopul, opt)
     end
     
 %   Check the boundary limitation
-    for j = 1:C
-        for i = 1:R
-            if tempPop(i, j) > opt.IndivScope(j, 2)
-                tempPop(i, j) = opt.IndivScope(j, 2);
-            end
-            if tempPop(i, j) < opt.IndivScope(j, 1)
-                tempPop(i, j) = opt.IndivScope(j, 1);
-            end
-        end
-    end
+    loBound = repmat(opt.IndivScope(:,1)', R, 1);
+    [row, col] = find( (tempPop(1:R, 1:C) - loBound) < 0 );
+    tempPop((col-1).*R + row) = loBound((col-1).*R + row);
     
-    for k = 1: R
-                
-        tempValue = feval( @simulatedMovingBed, exp(tempPop(k, 1:C)) );
+    upBound = repmat(opt.IndivScope(:,2)', R, 1);
+    [row, col] = find( (tempPop(1:R, 1:C) - upBound) > 0 );
+    tempPop((col-1).*R + row) = upBound((col-1).*R + row);
+    clear row col;
+ 
+    
+%   Simulate the new population and compare their objective function values
+    tempValue(:, 1) = arrayfun(@(idx) feval( @simulatedMovingBed, exp(tempPop(idx, 1:C)) ), 1:R ); 
+    
+    [row, ~] = find(tempValue < Population(:,C+1));
+    
+    Population(row, 1:C) = tempPop(row, 1:C);
+    Population(row, C+1) = tempValue(row);
+    clear row col;
         
-        if tempValue < Population(k, C+1)
-            Population(k, 1:C) = tempPop(k, 1:C);
-            Population(k, C+1) = tempValue;
-        end
-    end  
-        
-        
-    [minValue, row] = min(arrayfun(@(idx) Population(idx, C+1), 1:R));
+    
+%   Rank the objective function value to find the minimum
+    [minValue, minRow] = min(arrayfun(@(idx) Population(idx, C+1), 1:R));
+    
     OptPopul(R+1, C+1) = minValue;
+    OptPopul(1:R, 1:C) = repmat( Population(minRow, 1:C), R, 1 );
     
-    for k = 1:R
-        OptPopul(k, 1:C) = Population(row, 1:C);
-    end
     
 end 
 % =============================================================================

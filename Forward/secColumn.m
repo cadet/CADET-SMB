@@ -62,7 +62,7 @@ function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
 
 %   Turn off the warnings of the interpolation
     warning('off', 'MATLAB:interp1:ppGriddedInterpolant');
-	warning('off', 'MATLAB:interp1:UsePCHIP');
+    warning('off', 'MATLAB:interp1:UsePCHIP');
 
 %   Discretization
     disc = DiscretizationGRM();

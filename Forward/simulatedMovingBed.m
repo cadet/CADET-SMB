@@ -257,350 +257,91 @@ function plotFigures(opt, plotData)
     if opt.enableDebug                        
 
         if opt.nColumn == 4
-%           column_1
-            figure(01);clf
 
-            subplot(1,opt.nColumn,1);
-            FigSet1_1 = plot(plotData{1,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet1_1, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
+            for j = 1:opt.nColumn
+                
+                figure(j);clf
 
-            subplot(1,opt.nColumn,2);
-            FigSet1_2 = plot(plotData{1,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet1_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
+                y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
+                    plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration];
 
-            subplot(1,opt.nColumn,3);
-            FigSet1_3 = plot(plotData{1,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet1_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
+                FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,2e-3])
+                ylabel('Concentration [Mol]', 'FontSize', 10);
+                legend('comp 1', 'comp 2');
 
-            subplot(1,opt.nColumn,4);
-            FigSet1_4 = plot(plotData{1,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');	   
-            set(FigSet1_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-%           ------------------------------------------------------------------------------
-%           column_2
-            figure(02);clf
-
-            subplot(1,opt.nColumn,1);
-            FigSet2_1 = plot(plotData{2,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet2_1, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,2);
-            FigSet2_2 = plot(plotData{2,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            set(FigSet2_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,3);
-            FigSet2_3 = plot(plotData{2,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet2_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,4);
-            FigSet2_4 = plot(plotData{2,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');	   
-            set(FigSet2_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-%           ------------------------------------------------------------------------------
-%           column_3
-            figure(03);clf
-
-            subplot(1,opt.nColumn,1);
-            FigSet3_1 = plot(plotData{3,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet3_1, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,2);
-            FigSet3_2 = plot(plotData{3,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet3_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,3);
-            FigSet3_3 = plot(plotData{3,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            set(FigSet3_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,4);
-            FigSet3_4 = plot(plotData{3,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');	   
-            set(FigSet3_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-%           ------------------------------------------------------------------------------
-%           column_4
-            figure(04);clf
-
-            subplot(1,opt.nColumn,1);
-            FigSet4_1 = plot(plotData{4,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet4_1, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,2);
-            FigSet4_2 = plot(plotData{4,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet4_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,3);
-            FigSet4_3 = plot(plotData{4,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet4_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,4);
-            FigSet4_4 = plot(plotData{4,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');	   
-            set(FigSet4_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
+                set(FigSet, 'LineWidth', 2);
+                set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                set(gca, 'XTick', opt.timePoints/2:opt.timePoints:(opt.nColumn-0.5)*opt.timePoints);
+                
+                switch j
+                    case 1
+                        set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                    case 2
+                        set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                    case 3
+                        set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                    case 4
+                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                end
+                
+                for i = 1: (opt.nColumn-1)
+                    line([i*opt.timePoints,i*opt.timePoints], [0, 2e-3], 'color', 'k', 'LineStyle', ':');
+                end
+                
+            end
+         
         elseif opt.nColumn == 8
-            
-%           column_1
-            figure(01);clf
+   
+            for j = 1:opt.nColumn
+                
+                figure(j);clf
 
-            subplot(1,opt.nColumn,1);
-            FigSet1_1 = plot(plotData{1,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet1_1, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
+                y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
+                    plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
+                    plotData{j,5}.outlet.concentration; plotData{j,6}.outlet.concentration;...
+                    plotData{j,7}.outlet.concentration; plotData{j,8}.outlet.concentration];
 
-            subplot(1,opt.nColumn,2);
-            FigSet1_2 = plot(plotData{1,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet1_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
+                FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,2e-3])
+                ylabel('Concentration [Mol]', 'FontSize', 10);
+                legend('comp 1', 'comp 2');
 
-            subplot(1,opt.nColumn,3);
-            FigSet1_3 = plot(plotData{1,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet1_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
+                set(FigSet, 'LineWidth', 2);
+                set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                
+                switch j
+                    case 1
+                        set(gca, 'XTick', 0:2*opt.timePoints:opt.nColumn*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II','Zone I'});
+                    case 2
+                        set(gca, 'XTick', opt.timePoints:2*opt.timePoints:(opt.nColumn-1)*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                    case 3
+                        set(gca, 'XTick', 0:2*opt.timePoints:opt.nColumn*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III','Zone II'});
+                    case 4
+                        set(gca, 'XTick', opt.timePoints:2*opt.timePoints:(opt.nColumn-1)*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                    case 5
+                        set(gca, 'XTick', 0:2*opt.timePoints:opt.nColumn*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV','Zone III'});
+                    case 6
+                        set(gca, 'XTick', opt.timePoints:2*opt.timePoints:(opt.nColumn-1)*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                    case 7
+                        set(gca, 'XTick', 0:2*opt.timePoints:opt.nColumn*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone IV'});
+                    case 8
+                        set(gca, 'XTick', opt.timePoints:2*opt.timePoints:(opt.nColumn-1)*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                end
+                
+                for i = 1: (opt.nColumn-1)
+                    line([i*opt.timePoints,i*opt.timePoints], [0, 2e-3], 'color', 'k', 'LineStyle', ':');
+                end
+                
+            end
             
-            subplot(1,opt.nColumn,4);
-            FigSet1_4 = plot(plotData{1,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet1_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,5);
-            FigSet1_5 = plot(plotData{1,5}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet1_5, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,6);
-            FigSet1_6 = plot(plotData{1,6}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet1_6, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,7);
-            FigSet1_7 = plot(plotData{1,7}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet1_7, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,8);
-            FigSet1_8 = plot(plotData{1,8}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');	   
-            set(FigSet1_8, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-%           ------------------------------------------------------------------------------
-%           column_2
-            figure(02);clf
-
-            subplot(1,opt.nColumn,1);
-            FigSet2_1 = plot(plotData{2,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet2_1, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,2);
-            FigSet2_2 = plot(plotData{2,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            set(FigSet2_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,3);
-            FigSet2_3 = plot(plotData{2,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet2_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,4);
-            FigSet2_4 = plot(plotData{2,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet2_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,5);
-            FigSet2_5 = plot(plotData{2,5}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet2_5, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,6);
-            FigSet2_6 = plot(plotData{2,6}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet2_6, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,7);
-            FigSet2_7 = plot(plotData{2,7}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet2_7, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,8);
-            FigSet2_8 = plot(plotData{2,8}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet2_8, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-%           ------------------------------------------------------------------------------
-%           column_3
-            figure(03);clf
-
-            subplot(1,opt.nColumn,1);
-            FigSet3_8 = plot(plotData{3,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet3_8, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,2);
-            FigSet3_2 = plot(plotData{3,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            set(FigSet3_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,3);
-            FigSet3_3 = plot(plotData{3,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            set(FigSet3_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,4);
-            FigSet3_4 = plot(plotData{3,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet3_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,5);
-            FigSet3_5 = plot(plotData{3,5}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet3_5, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,6);
-            FigSet3_6 = plot(plotData{3,6}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet3_6, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,7);
-            FigSet3_7 = plot(plotData{3,7}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet3_7, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,8);
-            FigSet3_8 = plot(plotData{3,8}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet3_8, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            
-%           ------------------------------------------------------------------------------
-%           column_4
-            figure(04);clf
-
-            subplot(1,opt.nColumn,1);
-            FigSet4_1 = plot(plotData{4,1}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            xlabel('Time [s]', 'FontSize', 10);
-            ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
-            set(FigSet4_1, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,2);
-            FigSet4_2 = plot(plotData{4,2}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone II'), 'FontSize', 10, 'color', 'r');
-            set(FigSet4_2, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,3);
-            FigSet4_3 = plot(plotData{4,3}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            set(FigSet4_3, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,4);
-            FigSet4_4 = plot(plotData{4,4}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone I'), 'FontSize', 10, 'color', 'm');
-            set(FigSet4_4, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,5);
-            FigSet4_5 = plot(plotData{4,5}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet4_5, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-            subplot(1,opt.nColumn,6);
-            FigSet4_6 = plot(plotData{4,6}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone IV'), 'FontSize', 10, 'color', 'g');
-            set(FigSet4_6, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,7);
-            FigSet4_7 = plot(plotData{4,7}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet4_7, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-            
-            subplot(1,opt.nColumn,8);
-            FigSet4_8 = plot(plotData{4,8}.outlet.concentration); axis([0,opt.timePoints, 0,2e-3]);
-            title(sprintf('Zone III'), 'FontSize', 10, 'color', 'b');
-            set(FigSet4_8, 'LineWidth', 2);
-            set(gca, 'FontSize', 10);
-
-        end  
+        end
         
     end
 

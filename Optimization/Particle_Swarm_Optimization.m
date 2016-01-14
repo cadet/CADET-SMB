@@ -109,18 +109,18 @@ function opt = getOptions_PSO(params)
 
 
 %   The number of population of the swarm intellectual (SI)
-    opt.swarmSize      = 30;
+    opt.swarmSize      = 20;
     
 %   The dimension of the optimized parameters
     opt.particleSize   = length(fieldnames(params));
     
 %   the row represents the parameter, while the column denotes the upbound and lowerbound
-    opt.paramsRange    = log( [0.20     0.30; 
-                               130      230;
-                               9.0e-7   10e-7;
-                               0.9e-7   1.0e-7;
-                               1.0e-7   2.0e-7;
-                               1.0e-7   2.0e-7] );   
+    opt.paramsRange    = log( [0.20    0.30;
+                               150     230;
+                               8.0e-7  10e-7;
+                               0.9e-7  2.0e-7;
+                               0.7e-7  2.0e-7;
+                               1.0e-7  2.0e-7] );   
     opt.loopCount      = 300;
     
 %   check out the dimension of the set of parameters, and the boundary limitation
@@ -187,10 +187,12 @@ function [ParSwarm,OptSwarm,ToplOptSwarm] = InitSwarm(opt)
    
 %   Initilization of the parameters, velocity of parameters   
     ParSwarm = rand(opt.swarmSize, 2 * opt.particleSize + 1);
-    for k = 1:opt.particleSize
-        ParSwarm(:,k) = ParSwarm(:,k) * (opt.paramsRange(k,2) - opt.paramsRange(k,1)) + opt.paramsRange(k,1);
-    end
+    
+%   Use vectorization to speed up, it's actually equivalent to the for-loop  
+    ParSwarm(:,1:opt.particleSize) = repmat(opt.paramsRange(:,1)',opt.swarmSize,1) + ...
+        ParSwarm(:,1:opt.particleSize) .* repmat( (opt.paramsRange(:,2) - opt.paramsRange(:,1))',opt.swarmSize,1 );    
    
+
 %   Simulation of the sampled points, using subroutine simulatedMovingBed
     ParSwarm(: ,2 * opt.particleSize + 1) = arrayfun( @(idx) feval(@simulatedMovingBed,...
         exp(ParSwarm(idx, 1:opt.particleSize)) ), 1:opt.swarmSize );
@@ -278,23 +280,15 @@ function [ParSwarm,OptSwarm,ToplOptSwarm] = ParticlesEvolution(ParSwarm, OptSwar
 %       The evolution of the velocity, according to the LocalOptDiff and GlobalOptDiff   
 %       TempVelocity = weight .* ParSwarm(row,:) + c1 * unifrnd(0,1.0) .* LocalOptDiff(row,:)...
 %           + c2 * unifrnd(0,1.0) .* GlobalOptDiff;
-        TempVelocity = weight .* ParSwarm(row, ParCol+1 : 2*ParCol) +...
-            c1 *LocalOptDiff(row, :) + c2 * GlobalOptDiff;
+        TempVelocity = weight .* ParSwarm(row, ParCol+1 : 2*ParCol) + c1 *LocalOptDiff(row, :) + c2 * GlobalOptDiff;
         
         
 %       check the boundary limitation of the Velocity
-        for h = 1:ParCol
-           
-            if TempVelocity(:,h) > opt.paramsRange(h,2) - opt.paramsRange(h,1)
-                TempVelocity(:,h) = opt.paramsRange(h,2) - opt.paramsRange(h,1);
-            end
-            
-            if TempVelocity(:,h) < -(opt.paramsRange(h,2) - opt.paramsRange(h,1))
-                TempVelocity(:,h) = -(opt.paramsRange(h,2) - opt.paramsRange(h,1));
-            end
-            
-        end
-    
+        velocityBound = (opt.paramsRange(:,2)-opt.paramsRange(:,1) )';
+        
+        [~, veCol] = find( abs(TempVelocity(:, 1:ParCol)) > velocityBound  );
+        TempVelocity(veCol) = velocityBound(veCol);
+        
 %       Value Assignment: store the updated Velocity into the matrix ParSwarm
         ParSwarm(row, ParCol+1 : 2*ParCol) = TempVelocity;
 
@@ -306,15 +300,17 @@ function [ParSwarm,OptSwarm,ToplOptSwarm] = ParticlesEvolution(ParSwarm, OptSwar
 %       The evolution of the current positions, according to the Velocity and the step size
         ParSwarm(row, 1:ParCol) = ParSwarm(row, 1:ParCol) + step_size * TempVelocity;
 
-        for h = 1:ParCol
-            if ParSwarm(row,h) > opt.paramsRange(h,2)
-                ParSwarm(row,h) = opt.paramsRange(h,2);
-            end
-            if ParSwarm(row,h) < opt.paramsRange(h,1)
-                ParSwarm(row,h) = opt.paramsRange(h,1);
-            end
-        end
+
+%       Check the boundary limitation
+        loBound = repmat(opt.paramsRange(:,1)', ParRow, 1);
+        [loRow, loCol] = find( (ParSwarm(1:ParRow, 1:ParCol) - loBound) < 0 );
+        ParSwarm((loCol-1).*ParRow + loRow) = loBound((loCol-1).*ParRow + loRow);
         
+        upBound = repmat(opt.paramsRange(:,2)', ParRow, 1);
+        [upRow, upCol] = find( (ParSwarm(1:ParRow, 1:ParCol) - upBound) > 0 );
+        ParSwarm((upCol-1).*ParRow + upRow) = upBound((upCol-1).*ParRow + upRow);
+        clear loRow loCol upRow upCol veCol;
+    
         
 %       Simulation of the sampled points, using subroutine simulatedMovingBed
         ParSwarm(row, 2*ParCol+1) = feval( @simulatedMovingBed, exp(ParSwarm(row, 1:ParCol)) );
