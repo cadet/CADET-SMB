@@ -1,7 +1,7 @@
 function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
 
 % =============================================================================
-%  Simulation of the single column
+% Simulation of the single column
 
 % Parameters:
 %       - inletProfile. Inlet time and corresponding concentration
@@ -19,13 +19,11 @@ function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
         lastState = [];
     end
     
-    if isempty(params.initMobilCon) && isempty(params.initSolidCon)
-        if isempty(lastState)
-            warning('There are no inlet profile and inlet conditions for the Simulator');
-        end
+    if isempty(params.initMobilCon) && isempty(params.initSolidCon) && isempty(lastState)
+        warning('There are no Initial Conditions / Boundary Conditions for the Simulator');
     end
     
-%    Get parameters
+%   Get parameters
     [opt, ~, ~] = getParameters();
     
     model = ModelGRM();
@@ -86,7 +84,12 @@ function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
    
     
 %   Run the simulation
-    result = sim.simulate();
+    try
+        result = sim.simulate();
+    catch e
+        % Something went wrong
+        error('CADET:simulationFailed', 'Check your settings and try again.\n%s', e.message);
+    end
     
 %   Extract the outlet profile
     outletProfile.time = result.solution.time;
@@ -99,7 +102,7 @@ end
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, such as fructose and glucose.
 %  
-%  Author: QiaoLe He
+%  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      
 %  Institute: Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %  

@@ -14,7 +14,7 @@ function column = massConservation(currentData, interstVelocity, Feed, opt, sequ
 %       /                            \          |         /                          \
 % Desorbent                         Raffinate   |   Desorbent                       Raffinate
 
-% fluid goes from Zone I to Zone II to Zone III, while the switch direction
+% Fluid goes from Zone I to Zone II to Zone III, while the switch direction
 % is from Zone I to Zone IV to Zone III;
 
 % Parameters:
@@ -198,40 +198,55 @@ end
 
 function params = getParams(sequence, interstVelocity, opt)
 
-    if opt.nColumn == 4
-%       set the initial conditions to the solver, but when lastState is used, this setup will be ignored
-        params{sequence.a}.initMobilCon = [0, 0];
-        params{sequence.a}.initSolidCon = [0, 0];
-        params{sequence.d} = params{sequence.a};
-        params{sequence.c} = params{sequence.a};
-        params{sequence.b} = params{sequence.a};
+%-----------------------------------------------------------------------------------------
+% After each swtiching, the value of velocities and initial conditions are
+% changed 
+%-----------------------------------------------------------------------------------------
+	
 
-%       Interstitial velocity of each ZONE
-        params{sequence.a}.interstitialVelocity = interstVelocity.recycle;
-        params{sequence.b}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-        params{sequence.c}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-        params{sequence.d}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+	global string;
+    
+    params = cell(1, opt.nColumn);
+    for k = 1:opt.nColumn
+        params{k} = struct('initMobilCon', [], 'initSolidCon', [], 'interstitialVelocity', []);
+    end
+    
+    for j = 1:opt.nColumn
+%       set the initial conditions to the solver, but when lastState is used, this setup will be ignored        
+        params{eval(['sequence' '.' string(j)])}.initMobilCon = [0, 0];
+	    params{eval(['sequence' '.' string(j)])}.initSolidCon = [0, 0];
+    end
+    
+    if opt.nColumn == 4
+        
+        for i = 1: opt.nColumn
+%           Interstitial velocity of each ZONE
+            if strcmp('a', string(i))
+				params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
+            elseif strcmp('b', string(i))
+        		params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+            elseif strcmp('c', string(i))
+				params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+            elseif strcmp('d', string(i))
+        		params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+            end
+        end
 
     elseif opt.nColumn == 8
         
-        params{sequence.a}.initMobilCon = [0, 0];
-        params{sequence.a}.initSolidCon = [0, 0];
-        params{sequence.b} = params{sequence.a};
-        params{sequence.c} = params{sequence.a};
-        params{sequence.d} = params{sequence.a};
-        params{sequence.e} = params{sequence.a};
-        params{sequence.f} = params{sequence.a};
-        params{sequence.g} = params{sequence.a};
-        params{sequence.h} = params{sequence.a};
-
-        params{sequence.a}.interstitialVelocity = interstVelocity.recycle;
-        params{sequence.b}.interstitialVelocity = interstVelocity.recycle;
-        params{sequence.c}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-        params{sequence.d}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-        params{sequence.e}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-        params{sequence.f}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-        params{sequence.g}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-        params{sequence.h}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+        for i = 1: opt.nColumn
+%           Interstitial velocity of each ZONE
+            if strcmp('a', string(i)) || strcmp('b', string(i))
+				params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
+            elseif strcmp('c', string(i)) || strcmp('d', string(i))
+        		params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+            elseif strcmp('e', string(i)) || strcmp('f', string(i))
+				params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+            elseif strcmp('g', string(i)) || strcmp('h', string(i))
+        		params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+            end
+            
+        end
               
     end
     
@@ -240,7 +255,7 @@ end
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, such as fructose and glucose.
 %  
-%  Author: QiaoLe He
+%  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      
 %  Institute: Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %  
