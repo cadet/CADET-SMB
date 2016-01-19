@@ -67,10 +67,18 @@ function SMBOptimization()
         loBound = [0.20, 150, 8.0e-7, 0.9e-7, 0.7e-7, 1.0e-7];
         upBound = [0.30, 230, 10e-7,  2.0e-7, 2.0e-7, 2.0e-7];
         
-        options = optimoptions('fmincon', 'Algorithm', 'interior-point', 'Display', 'iter');
+        options = optimoptions('fmincon', 'Algorithm', 'interior-point', 'Display', 'iter',...
+            'TolX',1e-6,'TolCon',1e-6,'TolFun',1e-6,'MaxIter',500);
         
-        [x, y] = fmincon( @simulatedMovingBed, initParams, [],[],[],[], loBound, upBound, [], options);
-        fprintf('Minimum: %g,   Parameters:[%g| %g| %g| %g| %g| %g] \n', y, x);
+        try
+            [SMBparams, fval, exitflag, output, ~, grad] = fmincon( @simulatedMovingBed, ...
+                initParams, [],[],[],[], loBound, upBound, [], options);
+        catch exception
+            disp('Errors in the MATLAB build-in optimizer: fmincon. \n Please check your input parameters and run again. \n');
+            disp('The message from fmincon: %s \n', exception.message);
+        end
+        
+        fprintf('Minimum: %g,   Parameters:[%g| %g| %g| %g| %g| %g] \n', fval, SMBparams);
         
     else
         

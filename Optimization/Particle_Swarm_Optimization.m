@@ -51,7 +51,7 @@ function Particle_Swarm_Optimization(params)
 
             delta = std(ParSwarm(:,1:options.particleSize)) ./ mean(ParSwarm(:,1:options.particleSize));
             
-            if all(abs(delta) < 0.005) || k == options.loopCount
+            if all(abs(delta) < 0.002) || k == options.loopCount
                 break
             end
             

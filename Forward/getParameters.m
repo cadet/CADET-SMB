@@ -68,9 +68,9 @@ function [opt, interstVelocity, Feed] = getParameters()
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
    
-    concentrationFeed = 0.55;   % g/m^3
-    opt.FructoseMolMass = 262.1535; % g/mol
-    opt.GlucoseMolMass  = 262.1535; % g/mol
+    concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
+    opt.FructoseMolMass = 262.1535; 	  % g/mol
+    opt.GlucoseMolMass  = 262.1535; 	  % g/mol
     opt.flowRate_recycle = flowRate.recycle;
     
     
@@ -78,8 +78,8 @@ function [opt, interstVelocity, Feed] = getParameters()
     Feed.time = linspace(0, opt.switch, opt.timePoints);
     Feed.concentration = zeros(length(Feed.time), 2);
 
-    Feed.concentration(1:end,1) = (concentrationFeed / opt.FructoseMolMass );
-    Feed.concentration(1:end,2) = (concentrationFeed / opt.GlucoseMolMass);
+    Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass );
+    Feed.concentration(1:end,2) = (concentrationFeed(2) / opt.GlucoseMolMass);
 
 end
 % =============================================================================
