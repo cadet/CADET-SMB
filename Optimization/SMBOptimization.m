@@ -42,17 +42,17 @@ function SMBOptimization()
     if isfield(optimization_method, 'Particle_Swarm_Optimization') ...
             && optimization_method.Particle_Swarm_Optimization
         
-        Particle_Swarm_Optimization(params);
+        OptAlgorithms.Particle_Swarm_Optimization(params);
         
     elseif isfield(optimization_method, 'Differential_Evolution') ...
             && optimization_method.Differential_Evolution
         
-        Differential_Evolution(params);
+        OptAlgorithms.Differential_Evolution(params);
         
     elseif isfield(optimization_method, 'Metropolis_Adjusted_Differential_Evolution') ...
             && optimization_method.Metropolis_Adjusted_Differential_Evolution
         
-        Metropolis_Adjusted_Differential_Evolution(params);
+        OptAlgorithms.Metropolis_Adjusted_Differential_Evolution(params);
         
 %     elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
 %             && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin

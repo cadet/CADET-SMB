@@ -1,15 +1,14 @@
 function [opt, interstVelocity, Feed] = getParameters()
-
 % =============================================================================
 % This is the function to input all the necessary data for simulation
-
+%
 % Returns: 
 %       1. opt stands for options, which involves the parameter settings
 %       for the algorithm, the binding isotherm, and the model equations
-
+%
 %       2. interstVelocity is calculated from flowrate of each column and inlet. 
 %       interstitial_velocity = flow_rate / (across_area * porosity_Column)
-
+%
 %       3. Feed initializes the injection concentration
 % =============================================================================
 

@@ -2,14 +2,14 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation
-
+%
 % Returns: 
 %       1. opt stands for options, which involves the parameter settings
 %       for the algorithm, the binding isotherm, and the model equations
-
+%
 %       2. interstVelocity is calculated from flowrate of each column and inlet. 
 %       interstitial_velocity = flow_rate / (across_area * porosity_Column)
-
+%
 %       3. Feed initializes the injection concentration
 % =============================================================================
 
@@ -72,7 +72,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
    
-    concentrationFeed = 0.55;       % g/m^3
+    concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
     opt.FructoseMolMass = 262.1535; % g/mol
     opt.GlucoseMolMass  = 262.1535; % g/mol
     
@@ -81,8 +81,8 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     Feed.time = linspace(0, opt.switch, opt.timePoints);
     Feed.concentration = zeros(length(Feed.time), 2);
 
-    Feed.concentration(1:end,1) = (concentrationFeed / opt.FructoseMolMass );
-    Feed.concentration(1:end,2) = (concentrationFeed / opt.GlucoseMolMass);   
+    Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass );
+    Feed.concentration(1:end,2) = (concentrationFeed(2) / opt.GlucoseMolMass);   
 
     
 end
