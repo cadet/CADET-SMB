@@ -1084,7 +1084,11 @@ classdef SMB < handle
 
                         FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
                         ylabel('Concentration [Mol]', 'FontSize', 10);
-                        legend('comp 1', 'comp 2');
+						if opt.nComponents == 2
+                        	legend('comp 1', 'comp 2');
+						elseif opt.nComponents == 3
+							legend('comp 1', 'comp 2', 'comp 3');
+						end
 
                         set(FigSet, 'LineWidth', 2);
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
@@ -1121,7 +1125,11 @@ classdef SMB < handle
 
                         FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
                         ylabel('Concentration [Mol]', 'FontSize', 10);
-                        legend('comp 1', 'comp 2');
+						if opt.nComponents == 2
+                        	legend('comp 1', 'comp 2');
+						elseif opt.nComponents == 3
+							legend('comp 1', 'comp 2', 'comp 3');
+						end
 
                         set(FigSet, 'LineWidth', 2);
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
@@ -1175,7 +1183,11 @@ classdef SMB < handle
 
                         FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
                         ylabel('Concentration [Mol]', 'FontSize', 10);
-                        legend('comp 1', 'comp 2');
+						if opt.nComponents == 2
+                        	legend('comp 1', 'comp 2');
+						elseif opt.nComponents == 3
+							legend('comp 1', 'comp 2', 'comp 3');
+						end
 
                         set(FigSet, 'LineWidth', 2);
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
@@ -1243,7 +1255,11 @@ classdef SMB < handle
 
                         FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
                         ylabel('Concentration [Mol]', 'FontSize', 10);
-                        legend('comp 1', 'comp 2');
+						if opt.nComponents  == 2
+                        	legend('comp 1', 'comp 2');
+						elseif opt.nComponents == 3
+							legend('comp 1', 'comp 2', 'comp 3');
+						end
 
                         set(FigSet, 'LineWidth', 2);
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
