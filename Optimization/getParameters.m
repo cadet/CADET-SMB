@@ -36,6 +36,8 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     opt.enableDebug = false; % set it false if you are using the optimizer
     opt.nColumn = 4; 
 %     opt.nColumn = 8;
+%     opt.nColumn = 12;
+%     opt.nColumn = 16;
 
 %   Binding: Linear Binding isotherm
     opt.nComponents = 2;
@@ -73,15 +75,15 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
    
     concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
-    opt.FructoseMolMass = 262.1535; % g/mol
-    opt.GlucoseMolMass  = 262.1535; % g/mol
-    
+    opt.FructoseMolMass = 180.16;       % g/mol
+    opt.GlucoseMolMass  = 180.16;       % g/mol
+    opt.yLim = max(concentrationFeed ./ [opt.FructoseMolMass opt.GlucoseMolMass]);
     
 %   Feed concentration setup   
     Feed.time = linspace(0, opt.switch, opt.timePoints);
-    Feed.concentration = zeros(length(Feed.time), 2);
+    Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 
-    Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass );
+    Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass);
     Feed.concentration(1:end,2) = (concentrationFeed(2) / opt.GlucoseMolMass);   
 
     

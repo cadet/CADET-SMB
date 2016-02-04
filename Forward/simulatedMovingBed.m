@@ -1,17 +1,29 @@
 function simulatedMovingBed()
+
 % =============================================================================
 % This is the main function which is charge of switching to reach the
 % cyclic steady state. The layout of the columns and the configuration is
 % listed as follow:
 %
-%              8-column SMB                                       4-column SMB
+%              4-column SMB                                       8-column SMB
+% Extract                          Feed       |    Extract                           Feed
+%       \                          /          |         \                            /
+%        --------Zone II(b)--------           |          --------Zone II(c/d)--------
+%        |                        |           |          |                          | 
+% Zone I(a)                  Zone III(c)      |     Zone I(a/b)               Zone III(e/f)
+%        |                        |           |          |                          | 
+%        --------Zone IV(d)--------           |          --------Zone IV(h/g)--------
+%       /                          \          |         /                            \
+% Desorbent                       Raffinate   |   Desorbent                         Raffinate
+%
+%             12-column SMB                                       16-column SMB
 % Extract                            Feed       |    Extract                         Feed
 %       \                            /          |         \                          /
-%        --------Zone II(c/d)--------           |          --------Zone II(b)--------
+%        -- ----Zone II(d/e/f)-------           |          -----Zone II(e/f/g/h)-----
 %        |                          |           |          |                        | 
-% Zone I(b/a)                    Zone III(e/f)  |     Zone I(a)               Zone III(c)
+% Zone I(c/b/a)                Zone III(g/h/i)  |  Zone I(a/b/c/d)           Zone III(i/j/k/l)
 %        |                          |           |          |                        | 
-%        --------Zone IV(h/g)--------           |          --------Zone IV(d)--------
+%        -------Zone IV(l/k/j)-------           |          -----Zone IV(p/o/n/m)-----
 %       /                            \          |         /                          \
 % Desorbent                         Raffinate   |   Desorbent                       Raffinate
 %
@@ -35,7 +47,7 @@ function simulatedMovingBed()
         currentData{k}.lastState = []; 
     end
     
-%   Numbered the columns for the sake of plotting
+%   Number the columns for the sake of plotting
     if opt.nColumn == 4
         
         sequence = cell2struct( [{4} {1} {2} {3}],{'a' 'b' 'c' 'd'},2 );
@@ -48,12 +60,26 @@ function simulatedMovingBed()
         string = char('a','b','c','d','e','f','g','h');
         convergIndx = 5;
         
+    elseif opt.nColumn == 12
+        
+        sequence = cell2struct( [{12} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}],...
+            {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'},2 );
+        string = char('a','b','c','d','e','f','g','h','i','j','k','l');
+        convergIndx = 7;
+        
+    elseif opt.nColumn == 16
+        
+        sequence = cell2struct( [{16} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14} {15}],...
+            {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'},2 );
+        string = char('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p');
+        convergIndx = 9;
+        
     else
         warning('The simulation of %3g_column case is not finished so far', opt.nColumn);
         
     end
         
-%   prellocation
+%   preallocation
     plotData = cell(opt.nColumn,opt.nColumn);     
 %   convergPrevious is used for stopping criterion
     convergPrevious = currentData{convergIndx}.outlet.concentration;
@@ -64,9 +90,17 @@ function simulatedMovingBed()
     for i = 1:opt.nMaxIter 
 
         if opt.nColumn == 4
-            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), {'a' 'b' 'c' 'd'} );
+            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                {'a' 'b' 'c' 'd'} );
         elseif opt.nColumn == 8
-            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'} );
+            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'} );
+        elseif opt.nColumn == 12
+            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'} );
+        elseif opt.nColumn == 16
+            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'} );
         end
         
         
@@ -103,8 +137,8 @@ function simulatedMovingBed()
                 norm( currentData{convergIndx}.outlet.concentration(:,2));
             
             relativeDelta = diffNorm / stateNorm;
+
             fprintf('---- Round: %3d    Switch: %4d    CSS_relError: %g \n', i/opt.nColumn, i, relativeDelta);
-            
                     
 %           plot the outlet profile of each column in one round
             SMB.plotFigures(opt, plotData);

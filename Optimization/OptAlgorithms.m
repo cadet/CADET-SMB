@@ -1,5 +1,11 @@
+
 classdef OptAlgorithms < handle
- 
+ % =============================================================================
+% This is the class of the functions of optimization algorithms.
+%
+% =============================================================================   
+
+
 %   DE
     methods (Static = true, Access = 'public')
 

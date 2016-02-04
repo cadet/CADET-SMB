@@ -1,4 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters()
+
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -30,8 +31,10 @@ function [opt, interstVelocity, Feed] = getParameters()
     opt.Penalty_factor          = 10;
 
     opt.enableDebug = true;
-    opt.nColumn = 4; 
-%   opt.nColumn = 8;
+    opt.nColumn = 4;  % 4,8,12,16 -column cases are available
+%     opt.nColumn = 8;
+%     opt.nColumn = 12;
+%     opt.nColumn = 16;
 
 %   Binding: Linear Binding isotherm
     opt.nComponents = 2;
@@ -59,6 +62,7 @@ function [opt, interstVelocity, Feed] = getParameters()
     flowRate.raffinate  = 1.40e-7;      % m^3/s
     flowRate.desorbent  = 1.96e-7;      % m^3/s
     flowRate.extract    = 1.54e-7;      % m^3/s
+    opt.flowRate_recycle = flowRate.recycle;
     
 %   Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
     interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s 
@@ -68,16 +72,15 @@ function [opt, interstVelocity, Feed] = getParameters()
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
    
     concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
-    opt.FructoseMolMass = 262.1535; 	  % g/mol
-    opt.GlucoseMolMass  = 262.1535; 	  % g/mol
-    opt.flowRate_recycle = flowRate.recycle;
-    
+    opt.FructoseMolMass = 180.16; 	  % g/mol
+    opt.GlucoseMolMass  = 180.16; 	  % g/mol
+    opt.yLim = max(concentrationFeed ./ [opt.FructoseMolMass opt.GlucoseMolMass]);
     
 %   Feed concentration setup   
     Feed.time = linspace(0, opt.switch, opt.timePoints);
-    Feed.concentration = zeros(length(Feed.time), 2);
+    Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 
-    Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass );
+    Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass);
     Feed.concentration(1:end,2) = (concentrationFeed(2) / opt.GlucoseMolMass);
 
 end
