@@ -4,8 +4,8 @@ function updateAvailable = isSMBupdateAvailable
 % This is function to check if there is a new version SMB available.
 %==============================================================================
 
-    
-    fileID = fopen('/media/kim/Hub/Desktop/full_simulation/simulatedMovingBed/version.txt');
+    localPath = fileparts(mfilename('fullpath'));
+    fileID = fopen([localPath filesep 'version.txt']);
     
     currentVersion = [];    
     try
@@ -36,7 +36,7 @@ function updateAvailable = isSMBupdateAvailable
     for i = 1:min(length(stableVersion), length(currentVersion))
         if str2double(stableVersion(i)) > str2double(currentVersion(i))
             updateAvailable = true;
-            fprintf('There is new version available in the GitHub: https://github.com/modsim/CADET-SMB/releases');
+            fprintf('There is new version available in the GitHub: https://github.com/modsim/CADET-SMB/releases. \n');
             break;
         end
     end
