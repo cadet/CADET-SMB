@@ -1,5 +1,4 @@
 
-
 classdef SMB < handle
 % =============================================================================
 % This is the class of the functions of simulated moving bed.
@@ -30,12 +29,13 @@ classdef SMB < handle
             opt.nThreads        = 8;
             opt.nCellsColumn    = 40;
             opt.nCellsParticle  = 1;
-            opt.switch          = 180;
-            opt.timePoints      = 1000;
             opt.ABSTOL          = 1e-10;
             opt.INIT_STEP_SIZE  = 1e-14;
             opt.MAX_STEPS       = 5e6;
 
+%           The parameter setting for the SMB
+            opt.switch          = 180;
+            opt.timePoints      = 1000;
             opt.Purity_extract_limit    = 0.99;
             opt.Purity_raffinate_limit  = 0.99;
             opt.Penalty_factor          = 10;
@@ -48,8 +48,10 @@ classdef SMB < handle
 
 %           Binding: Linear Binding isotherm
             opt.nComponents = 2;
-            opt.KA = [5.72 7.7];
+            opt.KA = [5.72 7.7]; % [comp_A, comp_B], A for raffinate, B for extract
             opt.KD = [1, 1];
+            opt.comp_raf_ID = 1; % the target component withdrawn from the raffinate ports
+            opt.comp_ext_ID = 2; % the target component withdrawn from the extract ports
 
 %           Transport
             opt.dispersionColumn          = 3.8148e-20;     %
@@ -66,13 +68,14 @@ classdef SMB < handle
 
 %           Parameter units transformation
 %           The flow rate of Zone I was defined as the recycle flow rate
-            crossArea = pi * (opt.columnDiameter/2)^2;
+            crossArea = pi * (opt.columnDiameter/2)^2;   % m^2
             flowRate.recycle    = 9.62e-7;      % m^3/s  
             flowRate.feed       = 0.98e-7;      % m^3/s
             flowRate.raffinate  = 1.40e-7;      % m^3/s
             flowRate.desorbent  = 1.96e-7;      % m^3/s
             flowRate.extract    = 1.54e-7;      % m^3/s
-            opt.flowRate_recycle = flowRate.recycle;
+            opt.flowRate_extract = flowRate.extract;
+            opt.flowRate_raffinate = flowRate.raffinate;
             
 %           Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
             interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s 
@@ -82,16 +85,16 @@ classdef SMB < handle
             interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
             concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
-            opt.FructoseMolMass = 180.16; 	  % g/mol
-            opt.GlucoseMolMass  = 180.16; 	  % g/mol
-            opt.yLim = max(concentrationFeed ./ [opt.FructoseMolMass opt.GlucoseMolMass]);
+            opt.molMass         = [180.16, 180.16];
+            opt.yLim            = max(concentrationFeed ./ opt.molMass);
 
 %           Feed concentration setup   
             Feed.time = linspace(0, opt.switch, opt.timePoints);
             Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 
-            Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass);
-            Feed.concentration(1:end,2) = (concentrationFeed(2) / opt.GlucoseMolMass);
+            for i = 1:opt.nComponents
+                Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
+            end
 
         end
         
@@ -110,18 +113,19 @@ classdef SMB < handle
 % -----------------------------------------------------------------------------
 
 
-%           the parameter setting for simulator
+%           The parameter setting for simulator
             opt.tolIter         = 1e-4;
             opt.nMaxIter        = 1000;
             opt.nThreads        = 8;
             opt.nCellsColumn    = 40;
             opt.nCellsParticle  = 1;
-            opt.switch          = 1552;
-            opt.timePoints      = 1000;
             opt.ABSTOL          = 1e-10;
             opt.INIT_STEP_SIZE  = 1e-14;
             opt.MAX_STEPS       = 5e6;
 
+%           The parameter settting for the SMB 
+            opt.switch          = 1552;
+            opt.timePoints      = 1000;
             opt.Purity_extract_limit    = 0.99;
             opt.Purity_raffinate_limit  = 0.99;
             opt.Penalty_factor          = 10;
@@ -133,8 +137,10 @@ classdef SMB < handle
 
 %           Binding: Linear Binding isotherm
             opt.nComponents = 2;
-            opt.KA = [0.28 0.54];
+            opt.KA = [0.28 0.54]; % [comp_A, comp_B], A for raffinate, B for extract
             opt.KD = [1, 1];
+            opt.comp_raf_ID = 1;  % the target component withdrawn from the raffinate ports
+            opt.comp_ext_ID = 2;  % the target component withdrawn from the extract ports
 
 %           Transport
             opt.dispersionColumn          = 3.8148e-6;      % 
@@ -144,7 +150,7 @@ classdef SMB < handle
 
 %           Geometry
             opt.columnLength        = 53.6e-2;        % m
-            opt.columnDiameter      = 2.60e-2;        % cm
+            opt.columnDiameter      = 2.60e-2;        % m
             opt.particleRadius      = 0.325e-2 /2;    % m
             opt.porosityColumn      = 0.38;
             opt.porosityParticle    = 0.00001;        % unknown
@@ -157,7 +163,8 @@ classdef SMB < handle
             flowRate.raffinate  = 0.0266e-6;      % m^3/s
             flowRate.desorbent  = 0.0414e-6;      % m^3/s
             flowRate.extract    = 0.0348e-6;      % m^3/s
-            opt.flowRate_recycle = flowRate.recycle;
+            opt.flowRate_extract = flowRate.extract;
+            opt.flowRate_raffinate = flowRate.raffinate;
             
 %           Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
             interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s 
@@ -167,16 +174,16 @@ classdef SMB < handle
             interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
             concentrationFeed 	= [0.5, 0.5];   % g/m^3 [concentration_compA, concentration_compB]
-            opt.FructoseMolMass = 180.16; % g/mol
-            opt.GlucoseMolMass  = 180.16; % g/mol
-            opt.yLim = max(concentrationFeed ./ [opt.FructoseMolMass opt.GlucoseMolMass]);
+            opt.molMass         = [180.16, 180.16];
+            opt.yLim            = max(concentrationFeed ./ opt.molMass);
 
 %           Feed concentration setup    
             Feed.time = linspace(0, opt.switch, opt.timePoints);
             Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 
-            Feed.concentration(1:end,1) = (concentrationFeed(1) / opt.FructoseMolMass);
-            Feed.concentration(1:end,2) = (concentrationFeed(2) / opt.GlucoseMolMass);
+            for i = 1:opt.nComponents
+                Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
+            end
 
         end
         
@@ -201,12 +208,13 @@ classdef SMB < handle
             opt.nThreads        = 8;
             opt.nCellsColumn    = 40;
             opt.nCellsParticle  = 1;
-            opt.switch          = 607;
-            opt.timePoints      = 1000;
             opt.ABSTOL          = 1e-10;
             opt.INIT_STEP_SIZE  = 1e-14;
             opt.MAX_STEPS       = 5e6;
 
+%           The parameter setting for the SMB
+            opt.switch          = 607;
+            opt.timePoints      = 1000;
             opt.Purity_extract_limit    = 0.99;
             opt.Purity_raffinate_limit  = 0.99;
             opt.Penalty_factor          = 10;
@@ -219,8 +227,10 @@ classdef SMB < handle
 
 %           Binding: Linear Binding isotherm
             opt.nComponents = 3;
-            opt.KA = [0.18, 0.29, 0.336];
+            opt.KA = [0.29, 0.336, 1.2]; % [comp_A comp_B comp_C], A for raffinate, B C for extract
             opt.KD = [1, 1, 1];
+            opt.comp_raf_ID = 1; % the target component withdrawn from the raffinate ports
+            opt.comp_ext_ID = 3; % the target component withdrawn from the extract ports
 
 %           Transport
             opt.dispersionColumn          = 3.8148e-20;     %
@@ -230,10 +240,10 @@ classdef SMB < handle
 
 %           Geometry
             opt.columnLength        = 45e-2;      % m
-            opt.columnDiameter      = 1.5e-2;      % m
-            opt.particleRadius      = 320e-6;    % m % macrometer to meter
+            opt.columnDiameter      = 1.5e-2;     % m
+            opt.particleRadius      = 320e-6;     % m % macrometer to meter
             opt.porosityColumn      = 0.389;
-            opt.porosityParticle    = 0.000001;  % unknown
+            opt.porosityParticle    = 0.000001;   % unknown
 
 %           Parameter units transformation
 %           The flow rate of Zone I was defined as the recycle flow rate
@@ -243,8 +253,9 @@ classdef SMB < handle
             flowRate.raffinate  = 1.40e-8;      % m^3/s
             flowRate.desorbent  = 1.96e-8;      % m^3/s
             flowRate.extract    = 1.54e-8;      % m^3/s
-            opt.flowRate_recycle = flowRate.recycle;
-
+            opt.flowRate_extract = flowRate.extract;
+            opt.flowRate_raffinate = flowRate.raffinate;
+            
 %           Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
             interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s 
             interstVelocity.feed      = flowRate.feed / (crossArea*opt.porosityColumn);         % m/s
@@ -252,19 +263,16 @@ classdef SMB < handle
             interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
             interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-            concentrationFeed 	= [180e3 180e3 180e3];   % g/m^3 [concentration_compA, concentration_compB]
-            opt.MaltoseMolMass  = 342.30; 	  % g/mol
-            opt.FructoseMolMass = 180.16; 	  % g/mol
-            opt.GlucoseMolMass  = 180.16; 	  % g/mol
-            opt.yLim = max(concentrationFeed ./ [opt.MaltoseMolMass opt.FructoseMolMass opt.GlucoseMolMass]);
+            concentrationFeed   = [180e3, 180e3, 180e3];   % g/m^3 [concentration_compA, concentration_compB]
+            opt.molMass         = [342.30, 180.16, 180.16 ];
+            opt.yLim            = max(concentrationFeed ./ opt.molMass);
 
 %           Feed concentration setup   
             Feed.time = linspace(0, opt.switch, opt.timePoints);
             Feed.concentration = zeros(length(Feed.time), opt.nComponents);
-            MolMass = [opt.MaltoseMolMass opt.FructoseMolMass opt.GlucoseMolMass];
 
             for i = 1:opt.nComponents
-               Feed.concentration(1:end,i) = (concentrationFeed(i) / MolMass(i));
+               Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
             end
             
             
@@ -296,7 +304,7 @@ classdef SMB < handle
 
 %           Get parameters
             [opt, ~, ~] = getParameters();
-%             [opt, ~, ~] = SMB.getParameters(); % the default parameters setup
+%             [opt, ~, ~] = SMB.getParameters3(); % the default parameters setup
 
             model = ModelGRM();
             model.nComponents = opt.nComponents;
@@ -328,8 +336,13 @@ classdef SMB < handle
             model.porosityParticle    = opt.porosityParticle;
 
 %           Apply the inlet profile to the CADET model
-            Time = repmat({inletProfile.time}, 1, 2);
-            Profile = [{inletProfile.concentration(:,1)}, {inletProfile.concentration(:,2)}];
+            Time = repmat({inletProfile.time}, 1, opt.nComponents);
+            if opt.nComponents == 2
+                Profile = [{inletProfile.concentration(:,1)}, {inletProfile.concentration(:,2)}];
+            elseif opt.nComponents == 3
+                Profile = [{inletProfile.concentration(:,1)}, {inletProfile.concentration(:,2)}, {inletProfile.concentration(:,3)}];
+            end
+
             model.setInletsFromData(Time, Profile);
 
 %           Turn off the warnings of the interpolation
@@ -440,7 +453,7 @@ classdef SMB < handle
                         column.initialState = currentData{sequence.a}.lastState;
 
                         %   C_a^in = Q_d * C_d^out / Q_a
-                        concentration = zeros(length(Feed.time), 2);
+                        concentration = zeros(length(Feed.time), opt.nComponents);
 
                         column.inlet.concentration = concentration .* params{sequence.d}.interstitialVelocity...
                             ./ params{sequence.a}.interstitialVelocity; 
@@ -494,7 +507,7 @@ classdef SMB < handle
                         column.initialState = currentData{sequence.a}.lastState;
 
                         %   C_a^in = Q_h * C_h^out / Q_a
-                        concentration = zeros(length(Feed.time), 2);
+                        concentration = zeros(length(Feed.time), opt.nComponents);
 
                         column.inlet.concentration = concentration .* params{sequence.h}.interstitialVelocity...
                             ./ params{sequence.a}.interstitialVelocity;
@@ -589,7 +602,7 @@ classdef SMB < handle
                         column.initialState = currentData{sequence.a}.lastState;
 
                         %   C_a^in = Q_l * C_l^out / Q_a
-                        concentration = zeros(length(Feed.time), 2);
+                        concentration = zeros(length(Feed.time), opt.nComponents);
 
                         column.inlet.concentration = concentration .* params{sequence.l}.interstitialVelocity...
                             ./ params{sequence.a}.interstitialVelocity;
@@ -724,7 +737,7 @@ classdef SMB < handle
                         column.initialState = currentData{sequence.a}.lastState;
 
                         %   C_a^in = Q_p * C_p^out / Q_a
-                        concentration = zeros(length(Feed.time), 2);
+                        concentration = zeros(length(Feed.time), opt.nComponents);
 
                         column.inlet.concentration = concentration .* params{sequence.p}.interstitialVelocity...
                             ./ params{sequence.a}.interstitialVelocity;
@@ -995,25 +1008,39 @@ classdef SMB < handle
                 position_ext = 14; position_raf = 6;
             end
             
-%           Extract ports
-            Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,2)) /...
-                ( trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,2)) +...
-                trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,1)) );
+% 			Please be quite careful, which components is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+			if opt.nComponents == 2
+%           	Extract ports
+            	Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID)) /...
+                	( trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,2)) +...
+                	trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,1)) );
 
-%           Raffinate ports  	
-            Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) / ...
-                ( trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,2)) +...
-                trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) );	
+%           	Raffinate ports  	
+            	Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
+                	( trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,2)) +...
+                	trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) );	
 
-            
+			elseif opt.nComponents == 3
+%           	Extract ports
+            	Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID)) /...
+                	( trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,3)) +...
+                    trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,2)) +...
+                	trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,1)) );
+
+%           	Raffinate ports  	
+            	Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
+                	( trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,3)) +...
+                    trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,2)) +...
+                	trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) );	
+
+			end
+
 %           per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
-            MolMass = opt.FructoseMolMass;
-            Productivity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,2))...
-                * MolMass * opt.flowRate_recycle / Nominator;
+            Productivity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID))...
+                * opt.molMass(opt.comp_ext_ID) * opt.flowRate_extract / Nominator;			
 
-            MolMass = opt.GlucoseMolMass;
-            Productivity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1))...
-                * MolMass * opt.flowRate_recycle / Nominator;
+            Productivity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID))...
+                * opt.molMass(opt.comp_raf_ID) * opt.flowRate_raffinate / Nominator;
 
 
             if opt.enableDebug
@@ -1255,7 +1282,7 @@ classdef SMB < handle
 
                         FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
                         ylabel('Concentration [Mol]', 'FontSize', 10);
-                        if opt.nComponents  == 2
+                        if opt.nComponents == 2
                             legend('comp 1', 'comp 2');
                         elseif opt.nComponents == 3
                             legend('comp 1', 'comp 2', 'comp 3');
@@ -1317,7 +1344,7 @@ classdef SMB < handle
                         end
 
                         for i = 1: (opt.nColumn-1)
-                            line([i*opt.timePoints,i*opt.timePoints], [0, yLim], 'color', 'k', 'LineStyle', '-.');
+                            line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
                         end
 
                     end

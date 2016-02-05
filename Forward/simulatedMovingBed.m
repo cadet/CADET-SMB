@@ -37,13 +37,13 @@ function simulatedMovingBed()
     tTotal = tic;
     
     [opt, interstVelocity, Feed] = getParameters();
-%     [opt, interstVelocity, Feed] = SMB.getParameters(); % the default setup
+%     [opt, interstVelocity, Feed] = SMB.getParameters3(); % the default setup
 
 %   Initialize the starting points, currentData
     currentData = cell(1, opt.nColumn);  
     for k = 1:opt.nColumn
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
-        currentData{k}.outlet.concentration = zeros(length(Feed.time), 2); 
+        currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
         currentData{k}.lastState = []; 
     end
     
@@ -130,11 +130,22 @@ function simulatedMovingBed()
 %           ||( C(z, t) - C(z, t + 4 * t_s) ) / C(z, t)|| < tol for the column x
         if fix(i/opt.nColumn) == i/(opt.nColumn)
             
-            diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) );
+            if opt.nComponents == 2
+                diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) );
+
+                stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( currentData{convergIndx}.outlet.concentration(:,2));
+
+            elseif opt.nComponents == 3
+                diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) ) + ...
+                    norm( convergPrevious(:,3) - currentData{convergIndx}.outlet.concentration(:,3) );
             
-            stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                norm( currentData{convergIndx}.outlet.concentration(:,2));
+                stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( currentData{convergIndx}.outlet.concentration(:,2) ) + ...
+                    norm( currentData{convergIndx}.outlet.concentration(:,3) );
+            end
             
             relativeDelta = diffNorm / stateNorm;
 
