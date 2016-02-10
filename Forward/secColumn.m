@@ -2,7 +2,7 @@ function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
 
 % =============================================================================
 % Simulation of the single column
-
+%
 % Parameters:
 %       - inletProfile. Inlet time and corresponding concentration
 %       - params. Get parameters for simulation
@@ -56,8 +56,13 @@ function [outletProfile, lastState] = secColumn(inletProfile, params, lastState)
     model.porosityParticle    = opt.porosityParticle;
     
 %   Apply the inlet profile to the CADET model
-    Time = repmat({inletProfile.time}, 1, 2);
-    Profile = [{inletProfile.concentration(:,1)}, {inletProfile.concentration(:,2)}];
+    Time = repmat({inletProfile.time}, 1, opt.nComponents);
+    if opt.nComponents == 2
+        Profile = [{inletProfile.concentration(:,1)}, {inletProfile.concentration(:,2)}];
+    elseif opt.nComponents == 3
+        Profile = [{inletProfile.concentration(:,1)}, {inletProfile.concentration(:,2)}, {inletProfile.concentration(:,3)}];
+    end
+    
     model.setInletsFromData(Time, Profile);
 
 %   Turn off the warnings of the interpolation

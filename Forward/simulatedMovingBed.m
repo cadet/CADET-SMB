@@ -4,18 +4,29 @@ function simulatedMovingBed()
 %  This is the main function which is charge of switching to reach the
 %  cyclic steady state. The layout of the columns and the configuration is
 %  listed as follow:
-
-%              8-column SMB                                       4-column SMB
+%
+%              4-column SMB                                       8-column SMB
+% Extract                          Feed       |    Extract                           Feed
+%       \                          /          |         \                            /
+%        --------Zone II(b)--------           |          --------Zone II(c/d)--------
+%        |                        |           |          |                          | 
+% Zone I(a)                  Zone III(c)      |     Zone I(a/b)               Zone III(e/f)
+%        |                        |           |          |                          | 
+%        --------Zone IV(d)--------           |          --------Zone IV(h/g)--------
+%       /                          \          |         /                            \
+% Desorbent                       Raffinate   |   Desorbent                         Raffinate
+%
+%             12-column SMB                                       16-column SMB
 % Extract                            Feed       |    Extract                         Feed
 %       \                            /          |         \                          /
-%        --------Zone II(c/d)--------           |          --------Zone II(b)--------
+%        -- ----Zone II(d/e/f)-------           |          -----Zone II(e/f/g/h)-----
 %        |                          |           |          |                        | 
-% Zone I(b/a)                    Zone III(e/f)  |     Zone I(a)               Zone III(c)
+% Zone I(c/b/a)                Zone III(g/h/i)  |  Zone I(a/b/c/d)           Zone III(i/j/k/l)
 %        |                          |           |          |                        | 
-%        --------Zone IV(h/g)--------           |          --------Zone IV(d)--------
+%        -------Zone IV(l/k/j)-------           |          -----Zone IV(p/o/n/m)-----
 %       /                            \          |         /                          \
 % Desorbent                         Raffinate   |   Desorbent                       Raffinate
-
+%
 % Fluid phase goes from Zone I to Zone II to Zone III, while the ports switch direction
 % is from Zone I to Zone IV to Zone III;
 % =============================================================================
@@ -31,28 +42,40 @@ function simulatedMovingBed()
     currentData = cell(1, opt.nColumn);
     for k = 1:opt.nColumn
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
-        currentData{k}.outlet.concentration = zeros(length(Feed.time), 2);
+        currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
     end
     
 %   Numbered the columns for the sake of plotting    
     if opt.nColumn == 4
         
-        sequence.a = 1; sequence.b = 2; sequence.c = 3; sequence.d = 4;
-        
+        sequence = cell2struct( [{1} {2} {3} {4}],{'a' 'b' 'c' 'd'},2 );
         string = char('c','b','a','d');
         convergIndx = 3;
         
     elseif opt.nColumn == 8
         
-        sequence.a = 1; sequence.b = 2; sequence.c = 3; sequence.d = 4;
-        sequence.e = 5; sequence.f = 6; sequence.g = 7; sequence.h = 8;
-        
+        sequence = cell2struct( [{1} {2} {3} {4} {5} {6} {7} {8}],{'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'},2 );
         string = char('e','d','c','b','a','h','g','f');
         convergIndx = 5;
         
+    elseif opt.nColumn == 12
+        
+        sequence = cell2struct( [{1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}],...
+            {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'},2 );
+        string = char('g','f','e','d','c','b','a','l','k','j','i','h');
+        convergIndx = 7;
+        
+    elseif opt.nColumn == 16
+        
+        sequence = cell2struct( [{1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14} {15} {16}],...
+            {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'},2 );
+        string = char('i','h','g','f','e','d','c','b','a','p','o','n','m','l','k','j');
+        convergIndx = 9;
+        
     else
         warning('The simulation of %3g_column case is not finished so far', opt.nColumn);
+        
     end
      
 %   convergPrevious is used for stopping criterion
@@ -84,13 +107,25 @@ function simulatedMovingBed()
 %           ||( C(z, t) - C(z, t + 4 * t_s) ) / C(z, t)|| < tol for the column x
         if fix(i/opt.nColumn) == i/(opt.nColumn)
             
-            diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) );
+            if opt.nComponents == 2
+                diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) );
             
-            stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                norm( currentData{convergIndx}.outlet.concentration(:,2));
+                stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( currentData{convergIndx}.outlet.concentration(:,2));
+                
+            elseif opt.nComponents == 3
+                diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) ) + ...
+                    norm( convergPrevious(:,3) - currentData{convergIndx}.outlet.concentration(:,3) );
+            
+                stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
+                    norm( currentData{convergIndx}.outlet.concentration(:,2)) + ...
+                    norm( currentData{convergIndx}.outlet.concentration(:,3));
+            end
             
             relativeDelta = diffNorm / stateNorm;
+
             fprintf('---- Round: %3d    Switch: %4d    CSS_relError: %g \n', i/opt.nColumn, i, relativeDelta);
             
             
@@ -105,6 +140,7 @@ function simulatedMovingBed()
         end
     end	
 %-----------------------------------------------------------------------------------------
+
 
 %   Compute the performance index, such Purity and Productivity
     Results = Purity_Productivity(currentData, opt);
@@ -127,59 +163,60 @@ function Results = Purity_Productivity(plotData, opt)
 
 %-----------------------------------------------------------------------------------------
 % Calculation of the performance index of SMB, such Purity and Productivity
-
+%
 %
 %-----------------------------------------------------------------------------------------
 
 
-    MolMass = opt.FructoseMolMass;
     Nominator = pi * (opt.columnDiameter/2)^2 * opt.columnLength * (1-opt.porosityColumn);
 
+%   calculate the integral of purity
     if opt.nColumn == 4
-%       using column 1 to calculate the integral of purity
-%       Extract ports
-        Purity_extract = trapz(plotData{1}.outlet.time, plotData{1}.outlet.concentration(:,2)) /...
-            ( trapz(plotData{1}.outlet.time, plotData{1}.outlet.concentration(:,2)) +...
-            trapz(plotData{1}.outlet.time, plotData{1}.outlet.concentration(:,1)) );
-
-%       Raffinate ports  	
-        Purity_raffinate = trapz(plotData{3}.outlet.time, plotData{3}.outlet.concentration(:,1)) / ...
-            ( trapz(plotData{3}.outlet.time, plotData{3}.outlet.concentration(:,2)) +...
-            trapz(plotData{3}.outlet.time, plotData{3}.outlet.concentration(:,1))	);	
-
-%       per switching time, in the tank of extract port, such (unit: g/m^3) amount
-%       of target component was collected.
-        
-        Productivity_extract = trapz(plotData{1}.outlet.time, plotData{1}.outlet.concentration(:,2))...
-            * MolMass * opt.flowRate_recycle / Nominator;
-
-        Productivity_raffinate = trapz(plotData{3}.outlet.time, plotData{3}.outlet.concentration(:,1))...
-            * MolMass * opt.flowRate_recycle / Nominator;
-    
+        position_ext = 1; position_raf = 3;
     elseif opt.nColumn == 8
-        
-%       Extract ports
-        Purity_extract = trapz(plotData{2}.outlet.time, plotData{2}.outlet.concentration(:,2)) /...
-            ( trapz(plotData{2}.outlet.time, plotData{2}.outlet.concentration(:,2)) +...
-            trapz(plotData{2}.outlet.time, plotData{2}.outlet.concentration(:,1)) );   
-        
-%       Raffinate ports  	
-        Purity_raffinate = trapz(plotData{6}.outlet.time, plotData{6}.outlet.concentration(:,1)) / ...
-            ( trapz(plotData{6}.outlet.time, plotData{6}.outlet.concentration(:,2)) +...
-            trapz(plotData{6}.outlet.time, plotData{6}.outlet.concentration(:,1))	);	
-
-%       per switch time, in the tank of extract port, such (unit: g/m^3) amount
-%       of target component was collected.
-        MolMass = opt.FructoseMolMass;
-        Productivity_extract = trapz(plotData{2}.outlet.time, plotData{2}.outlet.concentration(:,2))...
-            * MolMass * opt.flowRate_recycle / Nominator;
-
-        Productivity_raffinate = trapz(plotData{6}.outlet.time, plotData{6}.outlet.concentration(:,1))...
-            * MolMass * opt.flowRate_recycle / Nominator;
-         
+        position_ext = 2; position_raf = 6;
+    elseif opt.nColumn == 12
+        position_ext = 3; position_raf = 9;
+    elseif opt.nColumn == 16
+        position_ext = 4; position_raf = 12;
     end
-    
-    
+
+%   Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+    if opt.nComponents == 2
+%       Extract ports
+        Purity_extract = trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,opt.comp_ext_ID)) /...
+            ( trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,2)) +...
+            trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,1)) );
+
+%       Raffinate ports  	
+        Purity_raffinate = trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
+            ( trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,2)) +...
+            trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,1)) );	
+        
+    elseif opt.nComponents == 3
+%       Extract ports
+        Purity_extract = trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,opt.comp_ext_ID)) /...
+            ( trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,3)) +...
+            trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,2)) +...
+            trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,1)) );
+
+%       Raffinate ports  	
+        Purity_raffinate = trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
+            ( trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,3)) +...
+            trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,2)) +...
+            trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,1)) );	
+        
+    end
+
+
+%   per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
+    Productivity_extract = trapz(plotData{position_ext}.outlet.time, plotData{position_ext}.outlet.concentration(:,opt.comp_ext_ID))...
+        * opt.molMass(opt.comp_ext_ID) * opt.flowRate_extract / Nominator;
+
+    Productivity_raffinate = trapz(plotData{position_raf}.outlet.time, plotData{position_raf}.outlet.concentration(:,opt.comp_raf_ID))...
+        * opt.molMass(opt.comp_raf_ID) * opt.flowRate_raffinate / Nominator;
+
+        
     if opt.enableDebug
         fprintf('Purity (Extract): %g %% \n', Purity_extract * 100);
         fprintf('Purity (Raffinate): %g %% \n', Purity_raffinate * 100)
@@ -198,7 +235,7 @@ function objective = objectiveFunction(Results, opt)
 %-----------------------------------------------------------------------------------------
 % The objective function for the optimizers
 % You can also define your own objective function here. The default function is: 
-
+%
 % Max Productivity_extract + Productivity_raffinate
 % s.t. Purity_extract   >= 99% for more retained component
 %      Purity_raffinate >= 99% for less retained component
@@ -246,17 +283,22 @@ function plotFigures(opt, currentData)
             y = [currentData{4}.outlet.concentration; currentData{3}.outlet.concentration;...
                 currentData{2}.outlet.concentration; currentData{1}.outlet.concentration];
             
-            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,2e-3])
+            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
             ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
+            if opt.nComponents == 2
+                legend('comp 1', 'comp 2');
+            elseif opt.nComponents == 3
+                legend('comp 1', 'comp 2', 'comp 3');
+            end
             
             set(FigSet, 'LineWidth', 2);
             set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-            set(gca, 'XTick', opt.timePoints/2:opt.timePoints:(opt.nColumn-0.5)*opt.timePoints);
+            set(gca, 'XTick', (1/2:2:(opt.nColumn-0.5)).*opt.timePoints);
             set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+            set(gca, 'ygrid', 'on');
             
             for i = 1: (opt.nColumn-1)
-                line([i*opt.timePoints,i*opt.timePoints], [0, 2e-3], 'color', 'k', 'LineStyle', ':');
+                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
             end
             
         elseif opt.nColumn == 8
@@ -268,17 +310,82 @@ function plotFigures(opt, currentData)
             currentData{4}.outlet.concentration; currentData{3}.outlet.concentration;...
             currentData{2}.outlet.concentration; currentData{1}.outlet.concentration];
         
-            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,2e-3])
+            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
             ylabel('Concentration [Mol]', 'FontSize', 10);
-            legend('comp 1', 'comp 2');
+            if opt.nComponents == 2
+                legend('comp 1', 'comp 2');
+            elseif opt.nComponents == 3
+                legend('comp 1', 'comp 2', 'comp 3');
+            end
             
             set(FigSet, 'LineWidth', 2);
             set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-            set(gca, 'XTick', opt.timePoints:2*opt.timePoints:(opt.nColumn-1)*opt.timePoints);
+            set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
             set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+            set(gca, 'ygrid', 'on');
             
             for i = 1: (opt.nColumn-1)
-                line([i*opt.timePoints,i*opt.timePoints], [0, 2e-3], 'color', 'k', 'LineStyle', ':');
+                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
+            end
+            
+        elseif opt.nColumn == 12
+            
+            figure(01);clf
+
+            y = [currentData{12}.outlet.concentration; currentData{11}.outlet.concentration;...
+            currentData{10}.outlet.concentration; currentData{9}.outlet.concentration;...
+            currentData{8}.outlet.concentration; currentData{7}.outlet.concentration;...
+            currentData{6}.outlet.concentration; currentData{5}.outlet.concentration;...
+            currentData{4}.outlet.concentration; currentData{3}.outlet.concentration;...
+            currentData{2}.outlet.concentration; currentData{1}.outlet.concentration];
+        
+            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
+            ylabel('Concentration [Mol]', 'FontSize', 10);
+            if opt.nComponents == 2
+                legend('comp 1', 'comp 2');
+            elseif opt.nComponents == 3
+                legend('comp 1', 'comp 2', 'comp 3');
+            end
+            
+            set(FigSet, 'LineWidth', 2);
+            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+            set(gca, 'XTick', (opt.nColumn/8:3:(opt.nColumn-1)).*opt.timePoints);
+            set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+            set(gca, 'ygrid', 'on');
+            
+            for i = 1: (opt.nColumn-1)
+                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
+            end
+            
+        elseif opt.nColumn == 16
+            
+            figure(01);clf
+
+            y = [currentData{16}.outlet.concentration; currentData{15}.outlet.concentration;...
+            currentData{14}.outlet.concentration; currentData{13}.outlet.concentration;...
+            currentData{12}.outlet.concentration; currentData{11}.outlet.concentration;...
+            currentData{10}.outlet.concentration; currentData{9}.outlet.concentration;...
+            currentData{8}.outlet.concentration; currentData{7}.outlet.concentration;...
+            currentData{6}.outlet.concentration; currentData{5}.outlet.concentration;...
+            currentData{4}.outlet.concentration; currentData{3}.outlet.concentration;...
+            currentData{2}.outlet.concentration; currentData{1}.outlet.concentration];
+        
+            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
+            ylabel('Concentration [Mol]', 'FontSize', 10);
+            if opt.nComponents == 2
+                legend('comp 1', 'comp 2');
+            elseif opt.nComponents == 3
+                legend('comp 1', 'comp 2', 'comp 3');
+            end
+            
+            set(FigSet, 'LineWidth', 2);
+            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+            set(gca, 'XTick', (opt.nColumn/8:4:(opt.nColumn-1)).*opt.timePoints);
+            set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+            set(gca, 'ygrid', 'on');
+            
+            for i = 1: (opt.nColumn-1)
+                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
             end
             
         end

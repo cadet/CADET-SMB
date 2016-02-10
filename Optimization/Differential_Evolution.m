@@ -2,12 +2,12 @@ function Differential_Evolution(params)
 
 % =============================================================================
 % Differential Evolution algorithm (DE)
-
+%
 % DE optimizes a problem by maintaining a population of candidate solutions
 % and creating new candidate solutions by combing existing ones according
 % to its mathematical formula, and then keeping whichever candidate solution
 % has the best score or fitness on the optimization problem at hand
-
+%
 %  Parameter:
 %        - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
@@ -75,12 +75,12 @@ function opt = getOptions_DE(params)
 
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
-
+%
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
 %        to be optimized.
-
+%
 %  Return:
 %       - opt.
 %           + PopulSize. The number of the candidates (particles)
@@ -133,7 +133,7 @@ function [Population, OptPopul] = InitPopulation(opt)
 
 % -----------------------------------------------------------------------------
 % The initilization of the population
-
+%
 %  Parameter:
 %       - opt.
 %           + PopulSize. The number of the candidates (particles)
@@ -145,7 +145,7 @@ function [Population, OptPopul] = InitPopulation(opt)
 %           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
-
+%
 % Return:
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
@@ -179,12 +179,12 @@ function [Population, OptPopul] = DE_Evolution(Population, OptPopul, opt)
 
 % -----------------------------------------------------------------------------
 % The evolution of population
-
+%
 % Parameters:
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 %       - opt. Please see the comments of the function, InitPopulation
-
+%
 % Return:
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.

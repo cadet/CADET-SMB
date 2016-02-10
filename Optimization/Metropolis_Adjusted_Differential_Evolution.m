@@ -2,17 +2,17 @@ function Metropolis_Adjusted_Differential_Evolution(params)
 
 % =============================================================================
 % Metropolis Adjusted Differential Evolution algorithm (MADE)
-
+%
 % MADE optimizes a problem by combining the prominent features of Metropolis 
 % Hastings algorithm and Differential Evolution algorithm. In the upper level, 
 % each chain is accepted with the Metropolis probability, while in the lower 
 % level, chains have an evolution with resort to heuristic method, Differential 
 % Evolution algorithm.
-
+%
 % Unlike the algorithm, PSO and DE, the MADE obtain the parameter distributions
 % rather than the single parameter set. It provides the confidential intervals 
 % for each parameter, since it is based on the Markov Chain Monte Carlo (MCMC).
-
+%
 %  Parameter:
 %        - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
@@ -163,12 +163,12 @@ function opt = getOptions_MADE(params)
 
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
-
+%
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
 %        to be optimized.
-
+%
 %  Return:
 %       - opt.
 %           + Nchain. The number of the candidates (particles)
@@ -232,7 +232,7 @@ function initChain = initChains(opt)
 
 % -----------------------------------------------------------------------------
 % The initilization of the chains
-
+%
 %  Parameter:
 %       - opt.
 %           + PopulSize. The number of the candidates (particles)
@@ -244,7 +244,7 @@ function initChain = initChains(opt)
 %           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
-
+%
 % Return:
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
@@ -314,12 +314,12 @@ function [tempPop, OptPopul] = DE_Evolution(Population, opt)
 
 % -----------------------------------------------------------------------------
 % The evolution of population
-
+%
 % Parameters:
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 %       - opt. Please see the comments of the function, InitPopulation
-
+%
 % Return:
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
@@ -429,7 +429,7 @@ function y = GammarDistribution(m, n, a, b)
 %  p(x|A,B) = B^-A/gamma(A)*x^(A-1)*exp(-x/B)
 %
 %  Uses method of Marsaglia and Tsang (2000)
-
+%
 % G. Marsaglia and W. W. Tsang:
 % A Simple Method for Generating Gamma Variables,
 % ACM Transactions on Mathematical Software, Vol. 26, No. 3, September 2000, 363-372.

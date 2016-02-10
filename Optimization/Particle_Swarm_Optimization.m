@@ -2,7 +2,7 @@ function Particle_Swarm_Optimization(params)
 
 % =============================================================================
 % Particle Swarm Optimization algorithm (PSO)
-
+%
 %  PSO optimizes a problem by having a population of candidates
 %  (particles), and moving these particles around in the search space
 %  according to mathematical formula ovet the particle's position and
@@ -10,8 +10,7 @@ function Particle_Swarm_Optimization(params)
 %  best-known position but, is also guided toward the best-known positions
 %  in the search space, which are updated as better positions are found by
 %  other particles
-
- 
+% 
 %  Parameter:
 %        - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
@@ -80,12 +79,12 @@ function opt = getOptions_PSO(params)
 
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
-
+%
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
 %        to be optimized.
-
+%
 %  Return:
 %       - opt.
 %           + swarmSize. The number of the candidates (particles)
@@ -150,7 +149,7 @@ function [ParSwarm,OptSwarm,ToplOptSwarm] = InitSwarm(opt)
 
 % -----------------------------------------------------------------------------
 % The initilization of the population
-
+%
 % Parameter:
 %       - opt.
 %           + swarmSize. The number of the candidates (particles)
@@ -170,7 +169,7 @@ function [ParSwarm,OptSwarm,ToplOptSwarm] = InitSwarm(opt)
 %                   the rest particles. This is the default one in the
 %                   literatures. However in this case, it will results in the
 %                   unmature convergence.
-
+%
 %  Return:
 %       - ParSwarm. The swarm of the particles, correspondingly the objective value
 %       - OptSwarm. The local optima that each particle ever encountered
@@ -214,7 +213,7 @@ function [ParSwarm,OptSwarm,ToplOptSwarm] = ParticlesEvolution(ParSwarm, OptSwar
 
 % -----------------------------------------------------------------------------
 % The evolution of particles, according to the local optima and the global optima.
-
+%
 % Parameters:
 %       - ParSwarm. The swarm of the particles, correspondingly the objective value
 %       - OptSwarm. The local optima that each particle ever encountered
@@ -222,7 +221,7 @@ function [ParSwarm,OptSwarm,ToplOptSwarm] = ParticlesEvolution(ParSwarm, OptSwar
 %           shared by the rest particles.
 %       - CurCount. The iteration number in the main loop
 %       - opt. Please see the comments of the function, InitSwarm
-
+%
 % Return:
 %       - ParSwarm. The swarm of the particles, correspondingly the objective value
 %       - OptSwarm. The local optima that each particle ever encountered

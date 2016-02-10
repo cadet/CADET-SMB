@@ -2,9 +2,9 @@ function Riemann_Manifold_Metropolis_Adjusted_Langevin(params)
 
 % =============================================================================
 % Metropolis Adjusted Langevin algorithm under Riemann Manifold using Parallel tempering (PRML)
-
+%
 % PRML optimizes a problem by ...
-
+%
 %  Parameter:
 %        - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
@@ -150,12 +150,12 @@ function opt = getOptions_PRML(params)
 
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
-
+%
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
 %        to be optimized.
-
+%
 %  Return:
 %       - opt.
 %           + Nchain. The number of the candidates (particles)
@@ -221,7 +221,7 @@ function [initChain, MetricTensor] = initChains(beta, opt)
 
 % -----------------------------------------------------------------------------
 % The initilization of the chains
-
+%
 %  Parameter:
 %       - opt.
 %           + PopulSize. The number of the candidates (particles)
@@ -233,7 +233,7 @@ function [initChain, MetricTensor] = initChains(beta, opt)
 %           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
-
+%
 % Return:
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
