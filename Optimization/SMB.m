@@ -77,7 +77,7 @@ classdef SMB < handle
             flowRate.desorbent  = valueAssign.desorbent;    % m^3/s
             flowRate.extract    = valueAssign.extract;      % m^3/s
             flowRate.raffinate  = flowRate.desorbent - flowRate.extract + flowRate.feed;        % m^3/s
-            opt.flowRate_extract = flowRate.extract;
+            opt.flowRate_extract   = flowRate.extract;
             opt.flowRate_raffinate = flowRate.raffinate;
 
 %           Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
@@ -88,8 +88,8 @@ classdef SMB < handle
             interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
             concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
-            opt.molMass 	= [180.16, 180.16]; % The molar mass of each components
-            opt.yLim 		= max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
+            opt.molMass         = [180.16, 180.16]; % The molar mass of each components
+            opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
 
 %           Feed concentration setup   
             Feed.time = linspace(0, opt.switch, opt.timePoints);
@@ -127,6 +127,7 @@ classdef SMB < handle
 
 %           Get parameters
             [opt, ~, ~] = getParameters(ParSwarm);
+%             [opt, ~, ~] = SMB.getParameters(ParSwarm);
 
             model = ModelGRM();
             model.nComponents = opt.nComponents;
@@ -852,6 +853,7 @@ classdef SMB < handle
             end
 
             [opt, interstVelocity, Feed] = getParameters(ParSwarm);
+%             [opt, interstVelocity, Feed] = SMB.getParameters(ParSwarm);
 
 %           Initialize the starting points, currentData
             currentData = cell(1, opt.nColumn);  

@@ -74,7 +74,7 @@ classdef SMB < handle
             flowRate.raffinate  = 1.40e-7;      % m^3/s
             flowRate.desorbent  = 1.96e-7;      % m^3/s
             flowRate.extract    = 1.54e-7;      % m^3/s
-            opt.flowRate_extract = flowRate.extract;
+            opt.flowRate_extract   = flowRate.extract;
             opt.flowRate_raffinate = flowRate.raffinate;
             
 %           Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
@@ -163,7 +163,7 @@ classdef SMB < handle
             flowRate.raffinate  = 0.0266e-6;      % m^3/s
             flowRate.desorbent  = 0.0414e-6;      % m^3/s
             flowRate.extract    = 0.0348e-6;      % m^3/s
-            opt.flowRate_extract = flowRate.extract;
+            opt.flowRate_extract   = flowRate.extract;
             opt.flowRate_raffinate = flowRate.raffinate;
             
 %           Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
@@ -253,7 +253,7 @@ classdef SMB < handle
             flowRate.raffinate  = 1.40e-8;      % m^3/s
             flowRate.desorbent  = 1.96e-8;      % m^3/s
             flowRate.extract    = 1.54e-8;      % m^3/s
-            opt.flowRate_extract = flowRate.extract;
+            opt.flowRate_extract   = flowRate.extract;
             opt.flowRate_raffinate = flowRate.raffinate;
             
 %           Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
@@ -264,7 +264,7 @@ classdef SMB < handle
             interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
             concentrationFeed   = [180e3, 180e3, 180e3];   % g/m^3 [concentration_compA, concentration_compB]
-            opt.molMass         = [342.30, 180.16, 180.16 ];
+            opt.molMass         = [342.30, 180.16, 180.16];
             opt.yLim            = max(concentrationFeed ./ opt.molMass);
 
 %           Feed concentration setup   

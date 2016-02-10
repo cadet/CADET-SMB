@@ -4,6 +4,7 @@ function updateAvailable = isSMBupdateAvailable
 % This is function to check if there is a new version SMB available.
 %==============================================================================
 
+
     localPath = fileparts(mfilename('fullpath'));
     fileID = fopen([localPath filesep 'version.txt']);
     
@@ -30,6 +31,7 @@ function updateAvailable = isSMBupdateAvailable
         return;
     end
     
+    stableVersionString = stableVersion;
     splitted = textscan(stableVersion, '%s', 'delimiter', '.');
     stableVersion = splitted{1};
 
@@ -40,5 +42,17 @@ function updateAvailable = isSMBupdateAvailable
             break;
         end
     end
+    
+    fprintf('The newest version is now installed, Version %s', stableVersionString);
 
 end
+% =============================================================================
+%  SMB - The Simulated Moving Bed Chromatography for separation of
+%  target compounds, such as fructose and glucose
+%  
+%  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
+%                                      
+%  Institute: Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
+%  
+%  All rights reserved. Please see the license of CADET.
+% =============================================================================

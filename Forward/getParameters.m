@@ -65,7 +65,7 @@ function [opt, interstVelocity, Feed] = getParameters()
     flowRate.raffinate  = 1.40e-7;      % m^3/s
     flowRate.desorbent  = 1.96e-7;      % m^3/s
     flowRate.extract    = 1.54e-7;      % m^3/s
-    opt.flowRate_extract = flowRate.extract;
+    opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
 %   Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
@@ -77,7 +77,7 @@ function [opt, interstVelocity, Feed] = getParameters()
    
     concentrationFeed 	= [0.55, 0.55];    % g/m^3 [concentration_compA, concentration_compB]
     opt.molMass         = [180.16, 180.16]; % The molar mass of each components
-    opt.yLim 		= max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
+    opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
     
 %   Feed concentration setup   
     Feed.time = linspace(0, opt.switch, opt.timePoints);
