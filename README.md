@@ -6,16 +6,20 @@ The CADET-SMB is a comprehensive simulator used for design and simulation of chr
 # Introduction
 
 There are two important, practical modes of carrying out industrial purification by preparative chromatography. The most straightforward and the most frequently used of these is the cyclic batch elution chromatography. The simulation of the first mode is available in CADET (https://github.com/modsim/CADET). The second mode available is counter-current chromatography, in which the fluid and the solid phase flow through the column in opposite directions. In principle, there are two possibilities of this mode, the continuous true moving bed and the cyclic simulated moving bed method (SMB). In practical, only the latter method is widespread. In this repository, we offer a open-source software to carry out the simulation of Simulated Moving Bed (SMB) processes.
+![The SMB scheme of binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
 
 The CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB comprises tow parts, CADET which is a fast and accurate solver for the General Rate Model (GRM) of packed bed liquid chromatography, and SMB which is the simulator for simulated moving bed. SMB also involves optimizer that covers a wide range of variants.
 
 # Features
 
 * Ternary separation is available, using Five-Zone technique;
+![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG)
+![Axial concentration profile in the ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.jpg)
 * In ternary separation, 1-1-1-1-1, and 2-2-2-2-2 configurations are accessible;
 * Binary separation is available; Ternary components in binary separation is also possible;
 * In binary separation, 1-1-1-1, 2-2-2-2, 3-3-3-3, 4-4-4-4 column configurations are available;
 * In binary separation, the using of ModiCon tech is possible;
+![Axial concentration profile in the binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.jpg)
 * MATLAB interface, you are allowed to monitor the dynamic characteristics of each column;
 * Optimization of decision variables to gain benefits in productivity, purity, operating costs;
 * Fit model against experimental data will come later;
