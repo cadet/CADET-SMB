@@ -27,6 +27,22 @@ function simulatedMovingBed()
 %       /                            \          |         /                          \
 % Desorbent                         Raffinate   |   Desorbent                       Raffinate
 %
+%                                       FIVE-ZONE
+%              5-column SMB                                       10-column SMB
+%    Ext2                          Feed       |      Ext2                            Feed
+%       \                          /          |         \                            /
+%        --------Zone II(c)--------           |          --------Zone III(e/f)--------
+%        |                        |           |          |                           | 
+% Zone II(b)                      |           |     Zone II(d/c)                     |
+%        |                        |           |          |                           |
+% Ext1 ——                    Zone IV(d)       |   Ext1 ——                        Zone IV(g/h)
+%        |                        |           |          |                           |
+% Zone I(a)                       |           |     Zone I(b/a)                      |
+%        |                        |           |          |                           | 
+%        --------Zone V(e)---------           |          ---------Zone V(j/i)---------
+%       /                          \          |         /                            \
+% Desorbent                       Raffinate   |   Desorbent                         Raffinate
+%
 % Fluid phase goes from Zone I to Zone II to Zone III, while the ports switch direction
 % is from Zone I to Zone IV to Zone III;
 % =============================================================================
@@ -37,7 +53,6 @@ function simulatedMovingBed()
     tTotal = tic;
     
     [opt, interstVelocity, Feed] = getParameters();
-%     [opt, interstVelocity, Feed] = SMB.getParameters3(); % the default setup
 
 %   Initialize the starting points, currentData
     currentData = cell(1, opt.nColumn);  
@@ -48,34 +63,58 @@ function simulatedMovingBed()
     end
     
 %   Number the columns for the sake of plotting
-    if opt.nColumn == 4
+    if opt.nZone == 4
         
-        sequence = cell2struct( [{4} {1} {2} {3}],{'a' 'b' 'c' 'd'},2 );
-        string = char('a','b','c','d');
-        convergIndx = 3;
+        if opt.nColumn == 4
+
+            sequence = cell2struct( [{4} {1} {2} {3}],{'a' 'b' 'c' 'd'},2 );
+            string = char('a','b','c','d');
+            convergIndx = 3;
+
+        elseif opt.nColumn == 8
+
+            sequence = cell2struct( [{8} {1} {2} {3} {4} {5} {6} {7}],{'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'},2 );
+            string = char('a','b','c','d','e','f','g','h');
+            convergIndx = 5;
+
+        elseif opt.nColumn == 12
+
+            sequence = cell2struct( [{12} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}],...
+                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'},2 );
+            string = char('a','b','c','d','e','f','g','h','i','j','k','l');
+            convergIndx = 7;
+
+        elseif opt.nColumn == 16
+
+            sequence = cell2struct( [{16} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14} {15}],...
+                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'},2 );
+            string = char('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p');
+            convergIndx = 9;
+
+        else
+            warning('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
+
+        end
         
-    elseif opt.nColumn == 8
+    elseif opt.nZone == 5
         
-        sequence = cell2struct( [{8} {1} {2} {3} {4} {5} {6} {7}],{'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'},2 );
-        string = char('a','b','c','d','e','f','g','h');
-        convergIndx = 5;
-        
-    elseif opt.nColumn == 12
-        
-        sequence = cell2struct( [{12} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}],...
-            {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'},2 );
-        string = char('a','b','c','d','e','f','g','h','i','j','k','l');
-        convergIndx = 7;
-        
-    elseif opt.nColumn == 16
-        
-        sequence = cell2struct( [{16} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14} {15}],...
-            {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'},2 );
-        string = char('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p');
-        convergIndx = 9;
-        
-    else
-        warning('The simulation of %3g_column case is not finished so far', opt.nColumn);
+        if opt.nColumn == 5
+            
+            sequence = cell2struct( [{5} {1} {2} {3} {4}],{'a' 'b' 'c' 'd' 'e'},2 );
+            string = char('a','b','c','d', 'e');
+            convergIndx = 4;
+            
+        elseif opt.nColumn == 10
+            
+            sequence = cell2struct( [{10} {1} {2} {3} {4} {5} {6} {7} {8} {9}],...
+                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j'},2 );
+            string = char('a','b','c','d','e','f','g','h','i','j');
+            convergIndx = 7;
+            
+        else
+            warning('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
+            
+        end
         
     end
         
@@ -89,20 +128,33 @@ function simulatedMovingBed()
 %   Main loop 
     for i = 1:opt.nMaxIter 
 
-        if opt.nColumn == 4
-            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                {'a' 'b' 'c' 'd'} );
-        elseif opt.nColumn == 8
-            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'} );
-        elseif opt.nColumn == 12
-            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'} );
-        elseif opt.nColumn == 16
-            sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'} );
-        end
+        if opt.nZone == 4
+            
+            if opt.nColumn == 4
+                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                    {'a' 'b' 'c' 'd'} );
+            elseif opt.nColumn == 8
+                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'} );
+            elseif opt.nColumn == 12
+                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'} );
+            elseif opt.nColumn == 16
+                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'} );
+            end
         
+        elseif opt.nZone == 5
+            
+            if opt.nColumn == 5
+                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                    {'a' 'b' 'c' 'd' 'e'} );
+            elseif opt.nColumn == 10
+                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
+                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j'} );
+            end
+            
+        end
         
 %       The simulation of four columns by the sequence, say, 'a', 'b', 'c', 'd'
         for k = 1:opt.nColumn

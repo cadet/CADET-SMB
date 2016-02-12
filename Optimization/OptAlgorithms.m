@@ -119,12 +119,12 @@ classdef OptAlgorithms < handle
 %           Check out the dimension of the set of parameters, and the boundary limiatation
             [row, col] = size(opt.IndivSize);
             if row > 1 || col > 1
-                error('The initialized dimension of the set of parameters might be wrong');
+                error('getOptions_DE: The initialized dimension of the set of parameters might be wrong');
             end
 
             [row, col] = size(opt.IndivScope);
-            if row ~= opt.IndivSize && col ~= 2
-                error('Please check your setup of the range of parameters');
+            if row ~= opt.IndivSize || col ~= 2
+                error('getOptions_DE: Please check your setup of the range of parameters');
             end
 
 %           Those are the specific parameters for the DE algorithm   
@@ -417,23 +417,24 @@ classdef OptAlgorithms < handle
             opt.particleSize   = length(fieldnames(params));
 
 %           the row represents the parameter, while the column denotes the upbound and lowerbound
-            opt.paramsRange    = log( [0.20    0.30;
-                                       150     230;
-                                       8.0e-7  10e-7;
-                                       0.9e-7  2.0e-7;
-                                       0.7e-7  2.0e-7;
-                                       1.0e-7  2.0e-7] );   
+            opt.paramsRange    = log( [0.10    0.20;
+                                       220     300;
+                                       2.5e-7  3.8e-7;
+                                       0.9e-8  2.3e-8;
+                                       1.5e-7  2.8e-7;
+                                       1.0e-7  2.4e-7;
+                                       4.0e-8  5.5e-8] );   
             opt.loopCount      = 300;
 
 %           check out the dimension of the set of parameters, and the boundary limitation
             [row, col] = size(opt.particleSize);
             if row > 1 || col > 1
-                error('The initialized dimension of the set of parameters might be wrong');
+                error('getOptions_PSO: The initialized dimension of the set of parameters might be wrong');
             end
 
             [row, col] = size(opt.paramsRange);
-            if row ~= opt.particleSize && col ~= 2
-                error('Please check your setup of the range of parameters');
+            if row ~= opt.particleSize || col ~= 2
+                error('getOptions_PSO: Please check your setup of the range of parameters');
             end
 
 %           Those are the specific parameters for the PSO algorithm
@@ -482,7 +483,7 @@ classdef OptAlgorithms < handle
 
 %           Check out the variables which are needed in this funciton
             if nargout < 3
-                error('There are not enough output in the subroutine InitSwarm');
+                error('InitSwarm: There are not enough output in the subroutine InitSwarm');
             end
 
 
@@ -532,10 +533,10 @@ classdef OptAlgorithms < handle
 
 
             if nargin ~= 5
-                error('There are error in the input of the function ParticlesEvolution')
+                error('ParticlesEvolution: There are error in the input of the function ParticlesEvolution')
             end
             if nargout ~= 3 
-                error('There are error in the output of the function ParticlesEvolution')
+                error('ParticlesEvolution: There are error in the output of the function ParticlesEvolution')
             end
 
 
@@ -892,12 +893,12 @@ classdef OptAlgorithms < handle
 %           Check out the dimension of the set of parameters, and the boundary limitation
             [row, col] = size(opt.dimension);
             if row > 1 || col > 1
-                error('The initialized dimension of the set of parameters might be wrong');
+                error('getOptions_MADE: The initialized dimension of the set of parameters might be wrong');
             end
 
             [row, col] = size(opt.bounds);
-            if col ~= opt.dimension && row ~= 2
-                error('Please check your setup of the range of parameters');
+            if col ~= opt.dimension || row ~= 2
+                error('getOptions_MADE: Please check your setup of the range of parameters');
             end
 
 %           Those are the specific parameters for the Markov Chain Simulation

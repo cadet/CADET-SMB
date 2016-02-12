@@ -8,10 +8,21 @@ function SMBOptimization()
 %       - flowRates_recycle 
 %       - flowRate_feed
 %       - flowRate_desorbent
-%       - flowRate_extrct
+%       - flowRate_extract
 % 
 %       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_E}
 % 
+% In the FIVE-ZONE, the optimized parameters are
+%       - columnLength 
+%       - switchTime 
+%       - flowRates_recycle 
+%       - flowRate_feed
+%       - flowRate_desorbent
+%       - flowRate_extract_1
+%       - flowRate_extract_2
+% 
+%       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_{E1}, Q_{E2}}
+%
 % There are four types of algorithms are integrated into this code, either
 % based on Heuristical theory or Deterministic theory, either optimization or sampling.
 %       - Particle Swarm Optimizatio (PSO)
@@ -22,14 +33,13 @@ function SMBOptimization()
 % =============================================================================
 
 
-
 %   There are four optimization algorithms are availabe in this programme
     optimization_method = struct('Particle_Swarm_Optimization',[], 'Differential_Evolution',[],...
        'Metropolis_Adjusted_Differential_Evolution',[], 'Riemann_Manifold_Metropolis_Adjusted_Langevin',[],...
        'Deterministic_algorithm_fmincon',[]);
 
 %   The set of the parameters which are optimized
-    params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]);
+    params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]);
 
     
 %   Select one method and make it true (correspondingly the rest methods false)
@@ -61,7 +71,9 @@ function SMBOptimization()
 
     elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
             && optimization_method.Deterministic_algorithm_fmincon
-        
+ 
+%       This is the demonstration case for the binary separation under FOUR-ZONE, 
+%           in which 6 decision variables are optimized.      
         initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
 
         loBound = [0.20, 150, 8.0e-7, 0.9e-7, 0.7e-7, 1.0e-7];

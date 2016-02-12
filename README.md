@@ -11,13 +11,15 @@ The CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of
 
 # Features
 
-* Binary separation is available now, the ternary separation will come later;
-* Ternary components in binary separation is also possible;
-* 1-1-1-1, 2-2-2-2, 3-3-3-3, 4-4-4-4 column configurations are available;
-* MATLAB interface, you are allowed to monitor the dynamic characteristic of each column;
+* Ternary separation is available, using Five-Zone technique;
+* In ternary separation, 1-1-1-1-1, and 2-2-2-2-2 configurations are accessible;
+* Binary separation is available; Ternary components in binary separation is also possible;
+* In binary separation, 1-1-1-1, 2-2-2-2, 3-3-3-3, 4-4-4-4 column configurations are available;
+* In binary separation, the using of ModiCon tech is possible;
+* MATLAB interface, you are allowed to monitor the dynamic characteristics of each column;
 * Optimization of decision variables to gain benefits in productivity, purity, operating costs;
 * Fit model against experimental data will come later;
-* Flexible model that permits the study of other SMB variants, such as One-Column Analog, Dynamic Analog;
+* Flexible model that permits the study of other SMB variants, such as One-Column Analog, Dynamic Analog, which are focused on the different objects. However, they are not published in GitHub now;
 * Kinetic models of CADET including transport dispersive, equilibrium dispersive and general rate model (GRM);
 * Wide range of standard equilibrium/isotherm models that allow either pure component or multi-component/competitive behaviour;
 * As for the more features of CADET, I refer you to the website, https://github.com/modsim/CADET.
@@ -43,7 +45,9 @@ Regarding the installation of SMB,
 
 # Demenstration 
 
-As for the two demonstrated cases (getParameters.m and getParameters2.m) in the repository are both laboratory cases. While the four-column case is from the paper http://www.sciencedirect.com/science/article/pii/S009813540600192X , and the eight-column case is from the paper http://www.sciencedirect.com/science/article/pii/S0959152401000051. But the data of case for the ternary components (getParameters3.m) is totally fake. 
+As for the several demonstrated cases in the examples repository are both laboratory cases. While the four-column case is from the paper http://www.sciencedirect.com/science/article/pii/S009813540600192X , and the eight-column case is from the paper http://www.sciencedirect.com/science/article/pii/S0959152401000051. But the data of case for the ternary components in binary separation is totally fake, which is extended from the eight-column case. The five-column case for the ternary separation is from the paper, http://www.sciencedirect.com/science/article/pii/S002196731101363X. 
+
+You can directly use the demonstration cases by coping it from the examples directory into the Forward/Optimization directory, then changing the file name to getParameters.m. 
 
 You can also write your own parameter routines by refering the getParameters.m. 
 
