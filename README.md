@@ -12,14 +12,14 @@ The CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of
 
 # Features
 
-* Ternary separation is available, using Five-Zone technique;
+* Ternary separation is available, using Five-Zone technique; Quaternary components in ternary separation is possible;
 ![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG)
-![Axial concentration profile in the ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.jpg)
-* In ternary separation, 1-1-1-1-1, and 2-2-2-2-2 configurations are accessible;
+![Axial concentration profile in the ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
+* In ternary separation, 1-1-1-1-1, 2-2-2-2-2, 3-3-3-3-3, and 4-4-4-4-4 configurations are accessible;
 * Binary separation is available; Ternary components in binary separation is also possible;
 * In binary separation, 1-1-1-1, 2-2-2-2, 3-3-3-3, 4-4-4-4 column configurations are available;
 * In binary separation, the using of ModiCon tech is possible;
-![Axial concentration profile in the binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.jpg)
+![Axial concentration profile in the binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
 * MATLAB interface, you are allowed to monitor the dynamic characteristics of each column;
 * Optimization of decision variables to gain benefits in productivity, purity, operating costs;
 * Fit model against experimental data will come later;
@@ -43,15 +43,23 @@ Regarding the installation of CADET,
 
 Regarding the installation of SMB,
 
-* Make a directory, say, simulatedMovingBed, under the directory of the CADET;
-* Unzip the archive to the new directory, in my case simulatedMovingBed;
-* Change the directory to simulatedMovingBed and run simulatedMovingBed.m.
+* Make a directory, simulatedMovingBed, under the directory of the CADET;
+* Unzip the archive to the new directory, simulatedMovingBed;
+* Change the directory to simulatedMovingBed 
+* For the forward simulation, copy one getParameter routine from the examples/Forward to the directory of simulatedMovingBed, and change the name to getParameters.m; Then run the routine, simulatedMovingBed.m.
+* For the optimization case, copy one getParameter routine from the examples/Optimization to the directory of simulatedMovingBed, and also change the name to getParameters.m; Then run the routine, SMBOptimization.m.
 
 # Demenstration 
 
-As for the several demonstrated cases in the examples repository are both laboratory cases. While the four-column case is from the paper http://www.sciencedirect.com/science/article/pii/S009813540600192X , and the eight-column case is from the paper http://www.sciencedirect.com/science/article/pii/S0959152401000051. But the data of case for the ternary components in binary separation is totally fake, which is extended from the eight-column case. The five-column case for the ternary separation is from the paper, http://www.sciencedirect.com/science/article/pii/S002196731101363X. 
+As for the several demonstrated cases in the examples repository are both laboratory cases. 
 
-You can directly use the demonstration cases by coping it from the examples directory into the Forward/Optimization directory, then changing the file name to getParameters.m. 
+* While the four-column case is from the paper http://www.sciencedirect.com/science/article/pii/S009813540600192X;
+* and the eight-column case is from the paper http://www.sciencedirect.com/science/article/pii/S0959152401000051; 
+* But the data of case for the ternary components in binary separation is totally fake, which is extended from the eight-column case;
+* The five-column case for the ternary separation is from the paper, http://www.sciencedirect.com/science/article/pii/S002196731101363X; 
+* The ten-column case for the ternary separation is from the paper, http://www.sciencedirect.com/science/article/pii/S0009250904007742.
+
+You can directly use the demonstration cases by coping it from the examples directory into the simulatedMovingBed directory, then changing the file name to getParameters.m. 
 
 You can also write your own parameter routines by refering the getParameters.m. 
 

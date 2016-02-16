@@ -1,4 +1,4 @@
-function [opt, interstVelocity, Feed] = getParameters()
+function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   Case 5, five-clumn demenstration case for ternary separation
 
 % =============================================================================
@@ -37,7 +37,7 @@ function [opt, interstVelocity, Feed] = getParameters()
     opt.nZone   = 5;     % 5-zone for ternary separation
     opt.nColumn = 5;     % 5-column case is available so far
 %     opt.nColumn = 10;
-        
+
 %   Binding: Linear Binding isotherm
     opt.nComponents = 3;
     opt.KA = [3.15, 7.4, 23]; % [comp_A, comp_B, comp_C], A,B for raffinate, C for extract
@@ -45,7 +45,7 @@ function [opt, interstVelocity, Feed] = getParameters()
     opt.comp_raf_ID  = 1; % the target component withdrawn from the raffinate ports
     opt.comp_ext1_ID = 3; % the target component withdrawn from the extract_1 ports
     opt.comp_ext2_ID = 2; % the target component withdrawn from the extract_2 ports
-    
+
 %   Transport
     opt.dispersionColumn          = 3.8148e-10;     % D_{ax}
     opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5];      % K_f 
@@ -79,12 +79,12 @@ function [opt, interstVelocity, Feed] = getParameters()
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);      % m/s
     interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);      % m/s
-   
+
     concentrationFeed 	= [1.0, 1.0, 1.0];    % g/m^3 [concentration_compA, concentration_compB]
     opt.molMass         = [227.217, 267.24, 251.24192]; % The molar mass of each components
-    opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
-    
-%   Feed concentration setup   
+    opt.yLim            = max(concentrationFeed ./ opt.molMass) * 1.1; % the magnitude for plotting
+
+%   Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
     Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 
@@ -95,7 +95,7 @@ function [opt, interstVelocity, Feed] = getParameters()
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
-%  target compounds, such as fructose and glucose
+%  target compounds, either binary or ternary.
 %  
 %  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      

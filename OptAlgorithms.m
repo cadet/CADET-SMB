@@ -169,7 +169,7 @@ classdef OptAlgorithms < handle
 
 
 %           Simulation of the sampled points, using subroutine simulatedMovingBed
-            Population(:, opt.IndivSize+1) = arrayfun( @(idx) feval(@SMB.simulatedMovingBed, ...
+            Population(:, opt.IndivSize+1) = arrayfun( @(idx) feval(@simulatedMovingBed, ...
                 exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize );    
 
 
@@ -278,7 +278,7 @@ classdef OptAlgorithms < handle
 
 
 %           Simulate the new population and compare their objective function values
-            tempValue(:, 1) = arrayfun(@(idx) feval( @SMB.simulatedMovingBed, exp(tempPop(idx, 1:C)) ), 1:R ); 
+            tempValue(:, 1) = arrayfun(@(idx) feval( @simulatedMovingBed, exp(tempPop(idx, 1:C)) ), 1:R ); 
 
             [row, ~] = find(tempValue < Population(:,C+1));
 
@@ -496,7 +496,7 @@ classdef OptAlgorithms < handle
 
 
 %           Simulation of the sampled points, using subroutine simulatedMovingBed
-            ParSwarm(: ,2 * opt.particleSize + 1) = arrayfun( @(idx) feval(@SMB.simulatedMovingBed,...
+            ParSwarm(: ,2 * opt.particleSize + 1) = arrayfun( @(idx) feval(@simulatedMovingBed,...
                 exp(ParSwarm(idx, 1:opt.particleSize)) ), 1:opt.swarmSize );
 
 %           The statistics of the population
@@ -614,7 +614,7 @@ classdef OptAlgorithms < handle
 
 
 %               Simulation of the sampled points, using subroutine simulatedMovingBed
-                ParSwarm(row, 2*ParCol+1) = feval( @SMB.simulatedMovingBed, exp(ParSwarm(row, 1:ParCol)) );
+                ParSwarm(row, 2*ParCol+1) = feval( @simulatedMovingBed, exp(ParSwarm(row, 1:ParCol)) );
 
 %               if the updated position is better than the current position, the
 %               particle flies to the updated positon; otherwise, keep still in current position
@@ -953,7 +953,7 @@ classdef OptAlgorithms < handle
 
 
         %   Simulation of the sampled points, using subroutine simulatedMovingBed    
-            initChain(:,opt.dimension+1) = arrayfun( @(idx) feval( @SMB.simulatedMovingBed, ...
+            initChain(:,opt.dimension+1) = arrayfun( @(idx) feval( @simulatedMovingBed, ...
                 exp( initChain(idx,1:opt.dimension)) ), 1: opt.Nchain);
 
         end
@@ -984,7 +984,7 @@ classdef OptAlgorithms < handle
                     rho = 0;
                 else            
 
-                    newSS = feval( @SMB.simulatedMovingBed, exp(proposal) );
+                    newSS = feval( @simulatedMovingBed, exp(proposal) );
                     SS    = states(j, opt.dimension+1);
 
 %                     rho = exp( -0.5*(newSS - SS) / sigmaSqu(j));
@@ -1220,7 +1220,7 @@ classdef OptAlgorithms < handle
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
-%  target compounds, such as fructose and glucose.
+%  target compounds, either binary or ternary.
 %  
 %  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      

@@ -102,7 +102,7 @@ function SMBOptimization()
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
-%  target compounds, such as fructose and glucose.
+%  target compounds, either binary or ternary.
 %  
 %  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      

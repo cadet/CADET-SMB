@@ -1,4 +1,4 @@
-function [opt, interstVelocity, Feed] = getParameters()
+function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   Case 1, a four-column demonstration case
 
 % =============================================================================
@@ -81,7 +81,7 @@ function [opt, interstVelocity, Feed] = getParameters()
     opt.molMass         = [180.16, 180.16];
     opt.yLim            = max(concentrationFeed ./ opt.molMass);
 
-%   Feed concentration setup   
+%   Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
     Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 
@@ -92,7 +92,7 @@ function [opt, interstVelocity, Feed] = getParameters()
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
-%  target compounds, such as fructose and glucose
+%  target compounds, either binary or ternary.
 %  
 %  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      

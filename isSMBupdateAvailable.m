@@ -1,7 +1,7 @@
 function updateAvailable = isSMBupdateAvailable
 
 %==============================================================================
-% This is function to check if there is a new version SMB available.
+% This is the function to check if there is a new version SMB available.
 %==============================================================================
 
 
@@ -48,7 +48,7 @@ function updateAvailable = isSMBupdateAvailable
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
-%  target compounds, such as fructose and glucose
+%  target compounds, either binary or ternary.
 %  
 %  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      
