@@ -35,10 +35,10 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 
     opt.enableDebug = true;  % set it true when you want to see the figures
     opt.nZone   = 5;     % 5-zone for ternary separation
-%     opt.nColumn = 5;     % 5-column case is available so far
-    opt.nColumn = 10;
+    opt.nColumn = 10;    % 5, 10 -column case is available
 
 %   Binding: Linear Binding isotherm
+    opt.BindingModel = 'LinearBinding';
     opt.nComponents = 3;
     opt.KA = [5.34, 6.80, 11.20]; % [comp_A, comp_B, comp_C], A,B for raffinate, C for extract
     opt.KD = [1, 1, 1];       % K_A < K_B < K_C

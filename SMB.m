@@ -41,12 +41,43 @@ classdef SMB < handle
 
             model = ModelGRM();
             model.nComponents = opt.nComponents;
-            model.kineticBindingModel = false;
-            model.bindingModel = LinearBinding(); % if you want to change the equilibrium isotherm
 
-%           Adsorption parameters
-            model.bindingParameters.LIN_KA         = opt.KA;
-            model.bindingParameters.LIN_KD         = opt.KD;
+%           if you want to change the equilibrium isotherm            
+            if strcmp(opt.BindingModel, 'LinearBinding')
+
+                model.kineticBindingModel = false;
+                model.bindingModel = LinearBinding(); 
+
+%               Adsorption parameters
+                model.bindingParameters.LIN_KA   = opt.KA;
+                model.bindingParameters.LIN_KD   = opt.KD;
+
+            elseif strcmp(opt.BindingModel, 'MultiComponentLangmuirBinding')
+
+                model.kineticBindingModel = true;
+                model.bindingModel = MultiComponentLangmuirBinding();
+
+                model.bindingParameters.MCL_KA   = opt.KA;
+                model.bindingParameters.MCL_KD   = opt.KD;
+                model.bindingParameters.MCL_QMAX = opt.QMAX;
+
+            elseif strcmp(opt.BindingModel, 'MultiComponentBiLangmuirBinding')
+
+                model.kineticBindingModel = true;
+                model.bindingModel = MultiComponentBiLangmuirBinding();
+
+                model.bindingParameters.MCL_KA1   = opt.KA(1);
+                model.bindingParameters.MCL_KD1   = opt.KD(1);
+                model.bindingParameters.MCL_QMAX1 = opt.QMAX(1);
+                model.bindingParameters.MCL_KA2   = opt.KA(2);
+                model.bindingParameters.MCL_KD2   = opt.KD(2);
+                model.bindingParameters.MCL_QMAX2 = opt.QMAX(2);
+
+            elseif strcmp(opt.BindingModel, 'StericMassAction')
+
+                error('%s: it is not available yet.', opt.BindingModel);
+
+            end
 
             if nargin >= 3 && ~isempty(lastState)
                 model.initialState = lastState;
@@ -156,7 +187,7 @@ classdef SMB < handle
 %        |                        |           |          |                           | 
 % Zone II(b)                      |           |     Zone II(d/c)                     |
 %        |                        |           |          |                           |
-% Ext1 ——                    Zone IV(d)       |   Ext1 ——                        Zone IV(g/h)
+% Ext1 --                    Zone IV(d)       |   Ext1 --                        Zone IV(g/h)
 %        |                        |           |          |                           |
 % Zone I(a)                       |           |     Zone I(b/a)                      |
 %        |                        |           |          |                           | 
@@ -171,7 +202,7 @@ classdef SMB < handle
 %        |                          |           |          |                             | 
 % Zone II(f/e/d)                    |           | Zone II(h/g/f/e)                       |
 %        |                          |           |          |                             |
-% Ext1 ——                    Zone IV(j/k/l)     |   Ext1 ——                        Zone IV(m/n/o/p)
+% Ext1 --                    Zone IV(j/k/l)     |   Ext1 --                        Zone IV(m/n/o/p)
 %        |                          |           |          |                             |
 % Zone I(c/b/a)                     |           | Zone I(d/c/b/a)                        |
 %        |                          |           |          |                             | 
@@ -1431,7 +1462,7 @@ classdef SMB < handle
                 end
 
 
-%               Please be quite careful, which components is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+%               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
                 if opt.nComponents == 2
 %                   Extract ports
                     Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID)) /...
@@ -1490,7 +1521,7 @@ classdef SMB < handle
                     position_ext1 = 18; position_ext2 = 14; position_raf = 6;
                 end
 
-%               Please be quite careful, which components is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+%               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
                 if opt.nComponents == 3
 %                   Extract ports
                     Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) /...
@@ -2161,7 +2192,7 @@ classdef SMB < handle
                     end
 
 
-                end % if opt.nZone == 4/ opt.nZone == 5
+                end % if opt.nZone == 4 / opt.nZone == 5
 
 
             end % if opt.enableDebug

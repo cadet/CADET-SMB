@@ -6,18 +6,20 @@ function updateAvailable = isSMBupdateAvailable
 
 
     localPath = fileparts(mfilename('fullpath'));
+    fprintf('Adding %s to MATLAB PATH\n', localPath);
+    path(localPath, path);
     fileID = fopen([localPath filesep 'version.txt']);
-    
+
     currentVersion = [];    
     try
         currentVersion = fgets(fileID);
     end
-    
+
     if isempty(currentVersion)
         fprintf('The local version.txt file has been deleted. \n');
         return;
     end
-    
+
     splitted = textscan(currentVersion, '%s', 'delimiter', '.');
     currentVersion = splitted{1};
 
@@ -25,12 +27,12 @@ function updateAvailable = isSMBupdateAvailable
     try
         stableVersion = urlread('https://raw.githubusercontent.com/modsim/CADET-SMB/master/version.txt'); 
     end
-    
+
     if isempty(stableVersion)
         fprintf('The internet connection is not available now. \n');
         return;
     end
-    
+
     stableVersionString = stableVersion;
     splitted = textscan(stableVersion, '%s', 'delimiter', '.');
     stableVersion = splitted{1};
@@ -42,7 +44,7 @@ function updateAvailable = isSMBupdateAvailable
             break;
         end
     end
-    
+
     fprintf('The newest version is now installed, Version %s', stableVersionString);
 
 end

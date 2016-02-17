@@ -41,29 +41,29 @@ function SMBOptimization()
 %   The set of the parameters which are optimized
     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]);
 
-    
+
 %   Select one method and make it true (correspondingly the rest methods false)
-    optimization_method.Particle_Swarm_Optimization = true;
     optimization_method.Differential_Evolution = false;
-    optimization_method.Metropolis_Adjusted_Differential_Evolution = false;
+    optimization_method.Particle_Swarm_Optimization = true;
     optimization_method.Deterministic_algorithm_fmincon = false;
+    optimization_method.Metropolis_Adjusted_Differential_Evolution = false;
 
 
     if isfield(optimization_method, 'Particle_Swarm_Optimization') ...
             && optimization_method.Particle_Swarm_Optimization
-        
+
         OptAlgorithms.Particle_Swarm_Optimization(params);
-        
+
     elseif isfield(optimization_method, 'Differential_Evolution') ...
             && optimization_method.Differential_Evolution
-        
+
         OptAlgorithms.Differential_Evolution(params);
-        
+
     elseif isfield(optimization_method, 'Metropolis_Adjusted_Differential_Evolution') ...
             && optimization_method.Metropolis_Adjusted_Differential_Evolution
-        
+
         OptAlgorithms.Metropolis_Adjusted_Differential_Evolution(params);
-        
+
 %     elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
 %             && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin
 %         
@@ -78,10 +78,10 @@ function SMBOptimization()
 
         loBound = [0.20, 150, 8.0e-7, 0.9e-7, 0.7e-7, 1.0e-7];
         upBound = [0.30, 230, 10e-7,  2.0e-7, 2.0e-7, 2.0e-7];
-        
+
         options = optimoptions('fmincon', 'Algorithm', 'interior-point', 'Display', 'iter',...
             'TolX',1e-6,'TolCon',1e-6,'TolFun',1e-6,'MaxIter',500);
-        
+
         try
             [SMBparams, fval, exitflag, output, ~, grad] = fmincon( @simulatedMovingBed, ...
                 initParams, [],[],[],[], loBound, upBound, [], options);
@@ -89,16 +89,16 @@ function SMBOptimization()
             disp('Errors in the MATLAB build-in optimizer: fmincon. \n Please check your input parameters and run again. \n');
             disp('The message from fmincon: %s \n', exception.message);
         end
-        
+
         fprintf('Minimum: %g,   Parameters:[%g| %g| %g| %g| %g| %g] \n', fval, SMBparams);
-        
+
     else
-        
+
         warning('The method you selected is not provided in this programme');
-        
+
     end
-    
-    
+
+
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of

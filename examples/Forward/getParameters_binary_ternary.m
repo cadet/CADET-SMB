@@ -35,11 +35,9 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.enableDebug = true;
     opt.nZone   = 4;    % 4-zone for binary separation, 5-zone for ternary separation
     opt.nColumn = 8;    % 4,8,12,16- column cases are available
-%     opt.nColumn = 8;
-%     opt.nColumn = 12;
-%     opt.nColumn = 16;
 
 %   Binding: Linear Binding isotherm
+    opt.BindingModel = 'LinearBinding';
     opt.nComponents = 3;
     opt.KA = [0.23, 0.28, 0.61]; % [comp_A comp_B comp_C], A for raffinate, B C for extract
     opt.KD = [1, 1, 1];
@@ -88,7 +86,6 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     for i = 1:opt.nComponents
        Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
     end
-
 
 end
 % =============================================================================
