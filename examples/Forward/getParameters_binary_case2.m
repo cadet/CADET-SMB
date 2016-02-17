@@ -1,4 +1,5 @@
-function [opt, interstVelocity, Feed] = getParameters()
+function [opt, interstVelocity, Feed] = getParameters(varargin)
+%   Case 2, a eight-column demonstration case
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation
@@ -24,47 +25,47 @@ function [opt, interstVelocity, Feed] = getParameters()
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
 
-%   The parameter setting for the SMB
-    opt.switch          = 607;
+%   The parameter settting for the SMB 
+    opt.switch          = 1552;
     opt.timePoints      = 1000;
     opt.Purity_extract_limit    = 0.99;
     opt.Purity_raffinate_limit  = 0.99;
     opt.Penalty_factor          = 10;
 
     opt.enableDebug = true;
-    opt.nColumn = 4;  % 4,8,12,16- column cases are available
-%     opt.nColumn = 8;
+    opt.nZone   = 4;    % 4-zone for binary separation, 5-zone for ternary separation
+    opt.nColumn = 8;    % 4,8,12,16- column cases are available
 %     opt.nColumn = 12;
 %     opt.nColumn = 16;
 
 %   Binding: Linear Binding isotherm
-    opt.nComponents = 3;
-    opt.KA = [0.29, 0.336, 1.2]; % [comp_A comp_B comp_C], A for raffinate, B C for extract
-    opt.KD = [1, 1, 1];
-    opt.comp_raf_ID = 1; % the target component withdrawn from the raffinate ports
-    opt.comp_ext_ID = 3; % the target component withdrawn from the extract ports
+    opt.nComponents = 2;
+    opt.KA = [0.28 0.54]; % [comp_A, comp_B], A for raffinate, B for extract
+    opt.KD = [1, 1];
+    opt.comp_raf_ID = 1;  % the target component withdrawn from the raffinate ports
+    opt.comp_ext_ID = 2;  % the target component withdrawn from the extract ports
 
 %   Transport
-    opt.dispersionColumn          = 3.8148e-20;     %
-    opt.filmDiffusion             = [100 100 100];      % unknown 
-    opt.diffusionParticle         = [1.6e4 1.6e4 1.6e4];  % unknown
-    opt.diffusionParticleSurface  = [0.0 0.0 0.0];
+    opt.dispersionColumn          = 3.8148e-6;      % 
+    opt.filmDiffusion             = [5e-5 5e-5];      % unknown 
+    opt.diffusionParticle         = [1.6e4 1.6e4];  % unknown
+    opt.diffusionParticleSurface  = [0.0 0.0];
 
 %   Geometry
-    opt.columnLength        = 45e-2;      % m
-    opt.columnDiameter      = 1.5e-2;     % m
-    opt.particleRadius      = 320e-6;     % m % macrometer to meter
-    opt.porosityColumn      = 0.389;
-    opt.porosityParticle    = 0.000001;   % unknown
+    opt.columnLength        = 53.6e-2;        % m
+    opt.columnDiameter      = 2.60e-2;        % m
+    opt.particleRadius      = 0.325e-2 /2;    % m
+    opt.porosityColumn      = 0.38;
+    opt.porosityParticle    = 0.00001;        % unknown
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
-    crossArea = pi * (opt.columnDiameter/2)^2;
-    flowRate.recycle    = 9.62e-8;      % m^3/s  
-    flowRate.feed       = 0.98e-8;      % m^3/s
-    flowRate.raffinate  = 1.40e-8;      % m^3/s
-    flowRate.desorbent  = 1.96e-8;      % m^3/s
-    flowRate.extract    = 1.54e-8;      % m^3/s
+    crossArea = pi * (opt.columnDiameter/2)^2;        % m^2
+    flowRate.recycle    = 0.1395e-6;      % m^3/s 
+    flowRate.feed       = 0.02e-6  ;      % m^3/s
+    flowRate.raffinate  = 0.0266e-6;      % m^3/s
+    flowRate.desorbent  = 0.0414e-6;      % m^3/s
+    flowRate.extract    = 0.0348e-6;      % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -75,22 +76,22 @@ function [opt, interstVelocity, Feed] = getParameters()
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    concentrationFeed   = [180e3, 180e3, 180e3];   % g/m^3 [concentration_compA, concentration_compB]
-    opt.molMass         = [342.30, 180.16, 180.16];
+    concentrationFeed 	= [0.5, 0.5];   % g/m^3 [concentration_compA, concentration_compB]
+    opt.molMass         = [180.16, 180.16];
     opt.yLim            = max(concentrationFeed ./ opt.molMass);
 
-%   Feed concentration setup   
+%   Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
     Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 
     for i = 1:opt.nComponents
-       Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
+        Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
     end
 
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
-%  target compounds, such as fructose and glucose.
+%  target compounds, either binary or ternary.
 %  
 %  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
 %                                      
