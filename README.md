@@ -1,6 +1,7 @@
 ![](https://github.com/modsim/CADET/blob/master/doc/logo/CADET-GitHub.png)
 
 # CADET-SMB
+
 The CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatograpy. 
 
 # Introduction
@@ -69,6 +70,6 @@ Of course, the examples can be modified of replaced by own models, operating con
 
 For more details of the CADET-SMB software, see the file doc.pdf in the repository.
 
-# Further Devekopment 
+# Further Development 
 
 SMB is actively developed. Hence, breaking changes and extensive restructuring may occur in any commit and release. For non-developers it is recommended to upgrade from release to release instead of always working with the most recent commit.
