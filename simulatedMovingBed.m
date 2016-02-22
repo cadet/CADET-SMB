@@ -64,14 +64,16 @@ function objective = simulatedMovingBed(varargin)
 % =============================================================================
 
 
-    global string;
+    global string stringSet;
 
     tTotal = tic;
 
     [opt, interstVelocity, Feed] = getParameters(varargin{:});
 
 %   Initialize the starting points, currentData
-    currentData = cell(1, opt.nColumn);  
+    currentData  = cell(1, opt.nColumn);
+    columnNumber = cell(1, opt.nColumn);
+
     for k = 1:opt.nColumn
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
@@ -79,122 +81,56 @@ function objective = simulatedMovingBed(varargin)
     end
 
 %   Number the columns for the sake of plotting
-%   Four-zone for binary separation, 1-1-1-1, 2-2-2-2, 3-3-3-3, and 4-4-4-4 configurations are available
+    for k = 1:opt.nColumn
+        if k == 1
+            columnNumber{1} = opt.nColumn;
+        else
+            columnNumber{k} = k-1;
+        end
+    end
+
+% 	Construct the string in order to tell simulator the calculation sequence
+	stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
+                 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'...
+                 'aa' 'bb' 'cc' 'dd' 'ee' 'ff' 'gg' 'hh' 'ii' 'jj' 'kk' 'll' 'mm'...
+                 'nn' 'oo' 'pp' 'qq' 'rr' 'ss' 'tt' 'uu' 'vv' 'ww' 'xx' 'yy' 'zz'};
+
+    if opt.nColumn > length(stringSet)
+        error('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
+    end
+
+    sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
+
+    string = char(stringSet(1:opt.nColumn));
+ 
+% 	Specify the column for the convergence checking
     if opt.nZone == 4
-
-        if opt.nColumn == 4
-
-            sequence = cell2struct( [{4} {1} {2} {3}],{'a' 'b' 'c' 'd'},2 );
-            string = char('a','b','c','d');
-            convergIndx = 3;
-
-        elseif opt.nColumn == 8
-
-            sequence = cell2struct( [{8} {1} {2} {3} {4} {5} {6} {7}],{'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'},2 );
-            string = char('a','b','c','d','e','f','g','h');
-            convergIndx = 5;
-
-        elseif opt.nColumn == 12
-
-            sequence = cell2struct( [{12} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}],...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'},2 );
-            string = char('a','b','c','d','e','f','g','h','i','j','k','l');
-            convergIndx = 7;
-
-        elseif opt.nColumn == 16
-
-            sequence = cell2struct( [{16} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14} {15}],...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'},2 );
-            string = char('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p');
-            convergIndx = 9;
-
-        else
-            warning('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
-
-        end
-
-%   Five-zone for ternary separation, 1-1-1-1, 2-2-2-2, 3-3-3-3, and 4-4-4-4 configurations are available
-    elseif opt.nZone == 5
-
-        if opt.nColumn == 5
-
-            sequence = cell2struct( [{5} {1} {2} {3} {4}],{'a' 'b' 'c' 'd' 'e'},2 );
-            string = char('a','b','c','d', 'e');
-            convergIndx = 4;
-
-        elseif opt.nColumn == 10
-
-            sequence = cell2struct( [{10} {1} {2} {3} {4} {5} {6} {7} {8} {9}],...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j'},2 );
-            string = char('a','b','c','d','e','f','g','h','i','j');
-            convergIndx = 7;
-
-        elseif opt.nColumn == 15
-
-            sequence = cell2struct( [{15} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14}],...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o'},2 );
-            string = char('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o');
-            convergIndx = 10;
-
-        elseif opt.nColumn == 20
-
-            sequence = cell2struct( [{20} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14} {15} {16} {17} {18} {19}],...
-                {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't'},2 );
-            string = char('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t');
-            convergIndx = 13;
-
-        else
-            warning('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
-
-        end
-
+    	convergIndx = sum(opt.structID(1:2)) + 1;
+	elseif opt.nZone == 5
+		convergIndx = sum(opt.structID(1:3)) + 1;
     end
 
 %   preallocation
-    plotData = cell(opt.nColumn,opt.nColumn);     
+%   The dimension of plotData (columnNumber x switches)
+%          t_s   2*t_s  3*t_s  4*t_s
+%          {1}    {1}    {1}    {1}
+%          {2}    {2}    {2}    {2}
+%          {3}    {3}    {3}    {3}
+%          {4}    {4}    {4}    {4}
+    plotData = cell(opt.nColumn,opt.nColumn);
 %   convergPrevious is used for stopping criterion
     convergPrevious = currentData{convergIndx}.outlet.concentration;
 
 
 %-----------------------------------------------------------------------------------------
-%   Main loop 
-    for i = 1:opt.nMaxIter 
+%   Main loop
+    for i = 1:opt.nMaxIter
 
-        if opt.nZone == 4
+%		switching the ports, in the countercurrent manner of fluid
+		sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
-            if opt.nColumn == 4
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd'} );
-            elseif opt.nColumn == 8
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'} );
-            elseif opt.nColumn == 12
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l'} );
-            elseif opt.nColumn == 16
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'} );
-            end
-
-        elseif opt.nZone == 5
-
-            if opt.nColumn == 5
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd' 'e'} );
-            elseif opt.nColumn == 10
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j'} );
-            elseif opt.nColumn == 15
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o'} );
-            elseif opt.nColumn == 20
-                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), ...
-                    {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't'} );
-            end
-
-        end
-
-%       The simulation of four columns by the sequence, say, 'a', 'b', 'c', 'd'
+%       The simulation of columns within a SMB unit by the sequence, 
+%       say, 'a', 'b', 'c', 'd' in four-column cases
         for k = 1:opt.nColumn
 
            column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, string(k));
@@ -206,8 +142,7 @@ function objective = simulatedMovingBed(varargin)
         end
 
 
-%       Store the data, each one round (opt.nColumn switches), into plotData
-%       plotData = column x position; 
+%       Store the data of one round (opt.nColumn switches), into plotData
         index = mod(i, opt.nColumn);
         if index == 0
             plotData(:,opt.nColumn) = currentData';
@@ -217,36 +152,14 @@ function objective = simulatedMovingBed(varargin)
 
 
 %       convergence criterion was adopted in each nColumn iteration
-%           ||( C(z, t) - C(z, t + 4 * t_s) ) / C(z, t)|| < tol for the column x
+%           ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
         if fix(i/opt.nColumn) == i/(opt.nColumn)
 
-            if opt.nComponents == 2
-                diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                    norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) );
+            diffNorm = 0; stateNorm = 0;
 
-                stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                    norm( currentData{convergIndx}.outlet.concentration(:,2));
-
-            elseif opt.nComponents == 3
-                diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                    norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) ) + ...
-                    norm( convergPrevious(:,3) - currentData{convergIndx}.outlet.concentration(:,3) );
-
-                stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                    norm( currentData{convergIndx}.outlet.concentration(:,2) ) + ...
-                    norm( currentData{convergIndx}.outlet.concentration(:,3) );
-
-            elseif opt.nComponents == 4
-                diffNorm = norm( convergPrevious(:,1) - currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                    norm( convergPrevious(:,2) - currentData{convergIndx}.outlet.concentration(:,2) ) + ...
-                    norm( convergPrevious(:,3) - currentData{convergIndx}.outlet.concentration(:,3) ) + ...
-                    norm( convergPrevious(:,4) - currentData{convergIndx}.outlet.concentration(:,4) );
-
-                stateNorm = norm( currentData{convergIndx}.outlet.concentration(:,1) ) + ...
-                    norm( currentData{convergIndx}.outlet.concentration(:,2) ) + ...
-                    norm( currentData{convergIndx}.outlet.concentration(:,3) ) + ...
-                    norm( currentData{convergIndx}.outlet.concentration(:,4) );
-
+            for k = 1:opt.nComponents
+                diffNorm = diffNorm + norm( convergPrevious(:,k) - currentData{convergIndx}.outlet.concentration(:,k) );
+                stateNorm = stateNorm + norm( currentData{convergIndx}.outlet.concentration(:,k) );
             end
 
             relativeDelta = diffNorm / stateNorm;
@@ -260,9 +173,10 @@ function objective = simulatedMovingBed(varargin)
 
             if relativeDelta <= opt.tolIter
                 break
+            else
+                convergPrevious = currentData{convergIndx}.outlet.concentration;
             end
 
-            convergPrevious = currentData{convergIndx}.outlet.concentration;
         end
     end
 %-----------------------------------------------------------------------------------------
@@ -276,10 +190,10 @@ function objective = simulatedMovingBed(varargin)
 
     tTotal = toc(tTotal);
     if opt.enableDebug
-        fprintf('Time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
+        fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
     end
 
-%   store the final data into DATA.mat file
+%   store the final data into DATA.mat file in the mode of forward simulation
     if opt.enableDebug
         save(sprintf('DATA_%2d.mat',fix(rand*100)),'Results');
         fprintf('The results have been stored in the DATA.mat \n');
@@ -289,10 +203,13 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-%  
-%  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
-%                                      
-%  Institute: Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-%  
-%  All rights reserved. Please see the license of CADET.
+% 
+%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
+% 
+%      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
+% 
+%  All rights reserved. This program and the accompanying materials
+%  are made available under the terms of the GNU Public License v3.0 (or, at
+%  your option, any later version) which accompanies this distribution, and
+%  is available at http://www.gnu.org/licenses/gpl.html
 % =============================================================================

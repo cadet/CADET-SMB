@@ -2,7 +2,6 @@
 classdef SMB < handle
 % =============================================================================
 % This is the class of the functions of simulated moving bed.
-%
 % =============================================================================
 
 
@@ -14,14 +13,15 @@ classdef SMB < handle
 % Simulation of the single column
 %
 % Parameters:
-%       - inletProfile. Inlet time and corresponding concentration
+%       - inletProfile. Inlet time and corresponding concentration profile
 %       - params. Get parameters for simulation
-%       - lastState. The recorded last STATE from previous simulation
-%       of next simulation
+%       - lastState. The last STATE from previous simulation of next simulation
+%       - ParSwarm. In the optimization situations, this is the vector which contains
+%           the optimized decision variables
 % 
 % Returns:
-%       - outletProfile. outlet time and corresponding concentration
-%       - lastState. Record the last STATE which used as the initial state
+%       - outletProfile. outlet time and corresponding concentration profile
+%       - lastState. Record the last STATE which is used as the boundary condition 
 % -----------------------------------------------------------------------------
 
 
@@ -29,20 +29,23 @@ classdef SMB < handle
                 ParSwarm = [];
                 if nargin < 3
                     lastState = [];
+                    if nargin < 2
+                        error('secColumn: There are no enough inputs for carrying out Simulator in CADET');
+                    end
                 end
             end
 
             if isempty(params.initMobilCon) && isempty(params.initSolidCon) && isempty(lastState)
-                warning('There are no Initial Conditions / Boundary Conditions for the Simulator');
+                error('secColumn: There are no Initial / Boundary Conditions for the Simulator');
             end
 
-%           Get parameters
+%           Get parameters options
             [opt, ~, ~] = getParameters(ParSwarm);
 
             model = ModelGRM();
             model.nComponents = opt.nComponents;
 
-%           if you want to change the equilibrium isotherm            
+%           The equilibrium isotherms
             if strcmp(opt.BindingModel, 'LinearBinding')
 
                 model.kineticBindingModel = false;
@@ -113,7 +116,7 @@ classdef SMB < handle
 
             model.setInletsFromData(Time, Profile);
 
-%           Turn off the warnings of the interpolation
+%           Turn off the warnings of the interpolation, optional
             warning('off', 'MATLAB:interp1:ppGriddedInterpolant');
             warning('off', 'MATLAB:interp1:UsePCHIP');
 
@@ -152,7 +155,7 @@ classdef SMB < handle
 
         end % secColumn
 
-        function column = massConservation(currentData, interstVelocity, Feed, opt, sequence, index)
+        function column = massConservation(currentData, interstVelocity, Feed, opt, sequence, alphabet)
 % -----------------------------------------------------------------------------
 % This is the function to calculate the concentration changes on each node.
 %
@@ -220,1218 +223,245 @@ classdef SMB < handle
 %       - interstVelocity. The interstitial velocity of each column
 %       - Feed. The initialied injection 
 %       - opt. Options
-%       - sequence. During switching, the structure used for storing the
-%       sequence of columns
-%       - index. It is a character. It tell this subroutine to calculate the specified column 
+%       - sequence. During switching, the structure used for storing the sequence of columns
+%       - alphabet. It is a character. It tells this subroutine to calculate the specified column 
 % 
-% Returns: column
+% Returns:
 %   Preparation for next column simulation
 %       - column.inlet. The new inlet concentration of each column, which is
 %       obtained from mass conservation on each node.
 %       - column.lastState. 
 %       - column.params. Set the initial Mobile and Solid concentration to the
-%       Simulator (if there is no lastState given), and also store the
-%       interstitial velocity.
+%       Simulator (if there is no lastState given), and also store the interstitial velocity.
 % -----------------------------------------------------------------------------
 
+
+            global stringSet;
 
 %           Time points
             column.inlet.time = linspace(0, opt.switch, opt.timePoints);
 
-%           Get the interstitial velocity of each columns and initial condition
-            params = SMB.getParams(sequence, interstVelocity, opt);
+%           Translate the alphabet into the position index of SMB unit
+            index = SMB.stringIndexing(opt, alphabet);
 
-            if opt.nZone == 4
+            if ~strcmp(alphabet, 'a')
+                pre_alphabet = char(alphabet - 1);
+            else
+                pre_alphabet = char(stringSet(opt.nColumn));
+            end
 
-                if opt.nColumn == 4
+%           Get the interstitial velocity of each column and boundary conditions
+            params = SMB.getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet);
 
-                    switch index
+            idx_i = eval( ['sequence' '.' alphabet] );     % the number of current column
+            idx_j = eval( ['sequence' '.' pre_alphabet] ); % the number of the column before
 
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a' 
+%           Update the intersitial velocity, boundary conditions
+            column.params = params{idx_i};
+            column.initialState = currentData{idx_i}.lastState;
 
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
+%           Calculate concentration of the column due to its position in the SMB unit
+            switch index
 
-                            %   C_a^in = Q_d * C_d^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
+                case 'D' % node DESORBENT
 
-                            column.inlet.concentration = concentration .* params{sequence.d}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity; 
+                    %   C_i^in = Q_{i-1} * C_{i-1}^out / Q_i
+                    concentration = zeros(length(Feed.time), opt.nComponents);
 
+                    column.inlet.concentration = concentration .* params{idx_j}.interstitialVelocity...
+                        ./ params{idx_i}.interstitialVelocity; 
 
-%                       The calculation of the column in the Zone II
-%                       node EXTRACT (index b)
-                        case 'b'
+                case 'F' % node FEED
 
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
+                    %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
+                    column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
+                        params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                        ./ params{idx_i}.interstitialVelocity; 
 
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
+                otherwise % node EXTRACT; RAFFINATE; MIDDLE
 
-
-%                       The calculation of the column in the Zone III
-%                       node FEED (index c)
-                        case 'c' 
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = (Q_b * C_b^out + Q_F * C_F) / Q_c
-                            column.inlet.concentration = (currentData{sequence.b}.outlet.concentration .* ...
-                                params{sequence.b}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                                ./ params{sequence.c}.interstitialVelocity; 
-
-
-%                       The calculation of the column in the Zone IV
-%                       node RAFFINATE (index d)
-                        case 'd' 
-
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = C_c^out
-                            column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
-                    end
-
-
-%     ------------------------------------------------------------------------------------    
-                elseif opt.nColumn == 8
-
-                    switch index
-
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a'  
-
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
-
-                            %   C_a^in = Q_h * C_h^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
-
-                            column.inlet.concentration = concentration .* params{sequence.h}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity;
-
-
-%                       node DESORBENT (index b)
-                        case 'b'  
-
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
-
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone II  
-%                       node EXTRACT (index c)
-                        case 'c'  
-
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = C_b^out
-                            column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
-
-
-%                       node EXTRACT (index d)
-                        case 'd'  
-
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = C_c^out
-                            column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III
-%                       node FEED (index e)
-                        case 'e' 
-
-                            column.params = params{sequence.e};
-                            column.initialState = currentData{sequence.e}.lastState;
-
-                            %   C_e^in = (Q_d * C_d^out + Q_F * C_F) / Q_e
-                            column.inlet.concentration = (currentData{sequence.d}.outlet.concentration .* ...
-                            params{sequence.d}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                            ./ params{sequence.e}.interstitialVelocity;
-
-
-%                       node FEED (index f)
-                        case 'f' 
-
-                            column.params = params{sequence.f};
-                            column.initialState = currentData{sequence.f}.lastState;
-
-                            %   C_f^in = C_e^out
-                            column.inlet.concentration = currentData{sequence.e}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone IV 
-%                       node RAFFINATE (index g)
-                        case 'g'  
-
-                            column.params = params{sequence.g};
-                            column.initialState = currentData{sequence.g}.lastState;
-
-                            %   C_g^in = C_f^out
-                            column.inlet.concentration = currentData{sequence.f}.outlet.concentration;
-
-
-%                       node RAFFINATE (index h)
-                        case 'h' 
-
-                            column.params = params{sequence.h};
-                            column.initialState = currentData{sequence.h}.lastState;
-
-                            %   C_h^in = C_g^out
-                            column.inlet.concentration = currentData{sequence.g}.outlet.concentration;
-
-                    end
-
-%     ------------------------------------------------------------------------------------    
-                elseif opt.nColumn == 12
-
-                    switch index
-
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a'  
-
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
-
-                            %   C_a^in = Q_l * C_l^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
-
-                            column.inlet.concentration = concentration .* params{sequence.l}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity;
-
-
-%                       node DESORBENT (index b)
-                        case 'b'  
-
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
-
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
-
-
-%                       node DESORBENT (index c)
-                        case 'c'  
-
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = C_b^out
-                            column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
-
-
-%                      The calculation of the column in the Zone II  
-%                      node EXTRACT (index d)
-                        case 'd'  
-
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = C_c^out
-                            column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
-
-
-%                       node EXTRACT (index e)
-                        case 'e'  
-
-                            column.params = params{sequence.e};
-                            column.initialState = currentData{sequence.e}.lastState;
-
-                            %   C_e^in = C_d^out
-                            column.inlet.concentration = currentData{sequence.d}.outlet.concentration;
-
-
-%                       node EXTRACT (index f)
-                        case 'f'  
-
-                            column.params = params{sequence.f};
-                            column.initialState = currentData{sequence.f}.lastState;
-
-                            %   C_f^in = C_e^out
-                            column.inlet.concentration = currentData{sequence.e}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III
-%                       node FEED (index g)
-                        case 'g' 
-
-                            column.params = params{sequence.g};
-                            column.initialState = currentData{sequence.g}.lastState;
-
-                            %   C_g^in = (Q_f * C_f^out + Q_F * C_F) / Q_g
-                            column.inlet.concentration = (currentData{sequence.f}.outlet.concentration .* ...
-                            params{sequence.f}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                            ./ params{sequence.g}.interstitialVelocity;
-
-
-%                       node FEED (index h)
-                        case 'h' 
-
-                            column.params = params{sequence.h};
-                            column.initialState = currentData{sequence.h}.lastState;
-
-                            %   C_h^in = C_g^out
-                            column.inlet.concentration = currentData{sequence.g}.outlet.concentration;
-
-
-%                       node FEED (index i)
-                        case 'i' 
-
-                            column.params = params{sequence.i};
-                            column.initialState = currentData{sequence.i}.lastState;
-
-                            %   C_i^in = C_h^out
-                            column.inlet.concentration = currentData{sequence.h}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone IV 
-%                       node RAFFINATE (index j)
-                        case 'j'  
-
-                            column.params = params{sequence.j};
-                            column.initialState = currentData{sequence.j}.lastState;
-
-                            %   C_j^in = C_i^out
-                            column.inlet.concentration = currentData{sequence.i}.outlet.concentration;
-
-
-%                       node RAFFINATE (index k)
-                        case 'k' 
-
-                            column.params = params{sequence.k};
-                            column.initialState = currentData{sequence.k}.lastState;
-
-                            %   C_k^in = C_j^out
-                            column.inlet.concentration = currentData{sequence.j}.outlet.concentration;
-
-
-%                       node RAFFINATE (index l)
-                        case 'l' 
-
-                            column.params = params{sequence.l};
-                            column.initialState = currentData{sequence.l}.lastState;
-
-                            %   C_l^in = C_k^out
-                            column.inlet.concentration = currentData{sequence.k}.outlet.concentration;
-
-                    end
-
-%     ------------------------------------------------------------------------------------    
-                elseif opt.nColumn == 16
-
-                    switch index
-
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a'  
-
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
-
-                            %   C_a^in = Q_p * C_p^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
-
-                            column.inlet.concentration = concentration .* params{sequence.p}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity;
-
-
-%                       node DESORBENT (index b)
-                        case 'b'  
-
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
-
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
-
-
-%                       node DESORBENT (index c)
-                        case 'c'  
-
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = C_b^out
-                            column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
-
-
-%                       node DESORBENT (index d)
-                        case 'd'  
-
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = C_c^out
-                            column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone II  
-%                       node EXTRACT (index e)
-                        case 'e'  
-
-                            column.params = params{sequence.e};
-                            column.initialState = currentData{sequence.e}.lastState;
-
-                            %   C_e^in = C_d^out
-                            column.inlet.concentration = currentData{sequence.d}.outlet.concentration;
-
-
-%                       node EXTRACT (index f)
-                        case 'f'  
-
-                            column.params = params{sequence.f};
-                            column.initialState = currentData{sequence.f}.lastState;
-
-                            %   C_f^in = C_e^out
-                            column.inlet.concentration = currentData{sequence.e}.outlet.concentration;
-
-
-%                       node EXTRACT (index g)
-                        case 'g'  
-
-                            column.params = params{sequence.g};
-                            column.initialState = currentData{sequence.g}.lastState;
-
-                            %   C_g^in = C_f^out
-                            column.inlet.concentration = currentData{sequence.f}.outlet.concentration;
-
-
-%                       node EXTRACT (index h)
-                        case 'h'  
-
-                            column.params = params{sequence.h};
-                            column.initialState = currentData{sequence.h}.lastState;
-
-                            %   C_h^in = C_g^out
-                            column.inlet.concentration = currentData{sequence.g}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III
-%                       node FEED (index i)
-                        case 'i' 
-
-                            column.params = params{sequence.i};
-                            column.initialState = currentData{sequence.i}.lastState;
-
-                            %   C_i^in = (Q_h * C_h^out + Q_F * C_F) / Q_i
-                            column.inlet.concentration = (currentData{sequence.h}.outlet.concentration .* ...
-                            params{sequence.h}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                            ./ params{sequence.i}.interstitialVelocity;
-
-
-%                       node FEED (index j)
-                        case 'j' 
-
-                            column.params = params{sequence.j};
-                            column.initialState = currentData{sequence.j}.lastState;
-
-                            %   C_j^in = C_i^out
-                            column.inlet.concentration = currentData{sequence.i}.outlet.concentration;
-
-
-%                       node FEED (index k)
-                        case 'k' 
-
-                            column.params = params{sequence.k};
-                            column.initialState = currentData{sequence.k}.lastState;
-
-                            %   C_k^in = C_j^out
-                            column.inlet.concentration = currentData{sequence.j}.outlet.concentration;
-
-
-%                       node FEED (index l)
-                        case 'l' 
-
-                            column.params = params{sequence.l};
-                            column.initialState = currentData{sequence.l}.lastState;
-
-                            %   C_l^in = C_k^out
-                            column.inlet.concentration = currentData{sequence.k}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone IV 
-%                       node RAFFINATE (index m)
-                        case 'm'  
-
-                            column.params = params{sequence.m};
-                            column.initialState = currentData{sequence.m}.lastState;
-
-                            %   C_m^in = C_l^out
-                            column.inlet.concentration = currentData{sequence.l}.outlet.concentration;
-
-
-%                       node RAFFINATE (index n)
-                        case 'n' 
-
-                            column.params = params{sequence.n};
-                            column.initialState = currentData{sequence.n}.lastState;
-
-                            %   C_n^in = C_m^out
-                            column.inlet.concentration = currentData{sequence.m}.outlet.concentration;
-
-
-%                       node RAFFINATE (index o)
-                        case 'o' 
-
-                            column.params = params{sequence.o};
-                            column.initialState = currentData{sequence.o}.lastState;
-
-                            %   C_o^in = C_n^out
-                            column.inlet.concentration = currentData{sequence.n}.outlet.concentration;
-
-
-%                       node RAFFINATE (index p)
-                        case 'p' 
-
-                            column.params = params{sequence.p};
-                            column.initialState = currentData{sequence.p}.lastState;
-
-                            %   C_p^in = C_o^out
-                            column.inlet.concentration = currentData{sequence.o}.outlet.concentration;
-
-                    end
-
-                end
-
-
-%     ***********************************************************************************
-            elseif opt.nZone == 5
-
-                if opt.nColumn == 5
-
-                    switch index
-
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a' 
-
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
-
-                            %   C_a^in = Q_e * C_e^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
-
-                            column.inlet.concentration = concentration .* params{sequence.e}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity; 
-
-
-%                       The calculation of the column in the Zone II
-%                       node EXTRACT1 (index b)
-                        case 'b'
-
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
-
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
-
-
-                            
-%                       The calculation of the column in the Zone III
-%                       node EXTRACT2 (index c)
-                        case 'c'
-
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = C_b^out
-                            column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
-                            
-                            
-%                       The calculation of the column in the Zone IV
-%                       node FEED (index d)
-                        case 'd' 
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = (Q_c * C_c^out + Q_F * C_F) / Q_d
-                            column.inlet.concentration = (currentData{sequence.c}.outlet.concentration .* ...
-                                params{sequence.c}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                                ./ params{sequence.d}.interstitialVelocity; 
-
-
-%                       The calculation of the column in the Zone V
-%                       node RAFFINATE (index e)
-                        case 'e' 
-
-                            column.params = params{sequence.e};
-                            column.initialState = currentData{sequence.e}.lastState;
-
-                            %   C_e^in = C_d^out
-                            column.inlet.concentration = currentData{sequence.d}.outlet.concentration;
-                    end
-
-%     ------------------------------------------------------------------------------------
-                elseif opt.nColumn == 10
-
-                    switch index
-
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a'  
-
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
-
-                            %   C_a^in = Q_j * C_j^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
-
-                            column.inlet.concentration = concentration .* params{sequence.j}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity;
-
-
-%                       node DESORBENT (index b)
-                        case 'b'  
-
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
-
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
-
-                            
-%                       The calculation of the column in the Zone II
-%                       node EXTRACT_1 (index c)
-                        case 'c'  
-
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = C_b^out
-                            column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
-
-
-%                       node EXTRACT_1 (index d)
-                        case 'd'  
-
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = C_c^out
-                            column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
-                            
-                            
-%                       The calculation of the column in the Zone III  
-%                       node EXTRACT_2 (index e)
-                        case 'e'  
-
-                            column.params = params{sequence.e};
-                            column.initialState = currentData{sequence.e}.lastState;
-
-                            %   C_e^in = C_d^out
-                            column.inlet.concentration = currentData{sequence.d}.outlet.concentration;
-
-
-%                       node EXTRACT_2 (index f)
-                        case 'f'  
-
-                            column.params = params{sequence.f};
-                            column.initialState = currentData{sequence.f}.lastState;
-
-                            %   C_f^in = C_e^out
-                            column.inlet.concentration = currentData{sequence.e}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III
-%                       node FEED (index g)
-                        case 'g' 
-
-                            column.params = params{sequence.g};
-                            column.initialState = currentData{sequence.g}.lastState;
-
-                            %   C_g^in = (Q_f * C_f^out + Q_F * C_F) / Q_g
-                            column.inlet.concentration = (currentData{sequence.f}.outlet.concentration .* ...
-                            params{sequence.f}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                            ./ params{sequence.g}.interstitialVelocity;
-
-
-%                       node FEED (index h)
-                        case 'h' 
-
-                            column.params = params{sequence.h};
-                            column.initialState = currentData{sequence.h}.lastState;
-
-                            %   C_h^in = C_g^out
-                            column.inlet.concentration = currentData{sequence.g}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone V 
-%                       node RAFFINATE (index i)
-                        case 'i'  
-
-                            column.params = params{sequence.i};
-                            column.initialState = currentData{sequence.i}.lastState;
-
-                            %   C_i^in = C_h^out
-                            column.inlet.concentration = currentData{sequence.h}.outlet.concentration;
-
-
-%                       node RAFFINATE (index j)
-                        case 'j' 
-
-                            column.params = params{sequence.j};
-                            column.initialState = currentData{sequence.j}.lastState;
-
-                            %   C_j^in = C_i^out
-                            column.inlet.concentration = currentData{sequence.i}.outlet.concentration;
-
-                    end
-
-
-%     ------------------------------------------------------------------------------------
-                elseif opt.nColumn == 15
-
-                    switch index
-
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a'  
-
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
-
-                            %   C_a^in = Q_o * C_o^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
-
-                            column.inlet.concentration = concentration .* params{sequence.o}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity;
-
-
-%                       node DESORBENT (index b)
-                        case 'b'  
-
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
-
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
-
- 
-%                       node DESORBENT (index c)
-                        case 'c'  
-
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = C_b^out
-                            column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone II
-%                       node EXTRACT_1 (index d)
-                        case 'd'
-
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = C_c^out
-                            column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
-
-
-%                       node EXTRACT_1 (index e)
-                        case 'e'  
-
-                            column.params = params{sequence.e};
-                            column.initialState = currentData{sequence.e}.lastState;
-
-                            %   C_e^in = C_d^out
-                            column.inlet.concentration = currentData{sequence.d}.outlet.concentration;
-
-
-%                       node EXTRACT_1 (index f)
-                        case 'f'  
-
-                            column.params = params{sequence.f};
-                            column.initialState = currentData{sequence.f}.lastState;
-
-                            %   C_f^in = C_e^out
-                            column.inlet.concentration = currentData{sequence.e}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III  
-%                       node EXTRACT_2 (index g)
-                        case 'g'  
-
-                            column.params = params{sequence.g};
-                            column.initialState = currentData{sequence.g}.lastState;
-
-                            %   C_g^in = C_f^out
-                            column.inlet.concentration = currentData{sequence.f}.outlet.concentration;
-
-
-%                       node EXTRACT_2 (index h)
-                        case 'h'  
-
-                            column.params = params{sequence.h};
-                            column.initialState = currentData{sequence.h}.lastState;
-
-                            %   C_h^in = C_g^out
-                            column.inlet.concentration = currentData{sequence.g}.outlet.concentration;
-
-
-%                       node EXTRACT_2 (index i)
-                        case 'i'  
-
-                            column.params = params{sequence.i};
-                            column.initialState = currentData{sequence.i}.lastState;
-
-                            %   C_i^in = C_h^out
-                            column.inlet.concentration = currentData{sequence.h}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III
-%                       node FEED (index j)
-                        case 'j' 
-
-                            column.params = params{sequence.j};
-                            column.initialState = currentData{sequence.j}.lastState;
-
-                            %   C_j^in = (Q_i * C_i^out + Q_F * C_F) / Q_j
-                            column.inlet.concentration = (currentData{sequence.i}.outlet.concentration .* ...
-                            params{sequence.i}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                            ./ params{sequence.j}.interstitialVelocity;
-
-
-%                       node FEED (index k)
-                        case 'k' 
-
-                            column.params = params{sequence.k};
-                            column.initialState = currentData{sequence.k}.lastState;
-
-                            %   C_k^in = C_j^out
-                            column.inlet.concentration = currentData{sequence.j}.outlet.concentration;
-
-
-%                       node FEED (index l)
-                        case 'l' 
-
-                            column.params = params{sequence.l};
-                            column.initialState = currentData{sequence.l}.lastState;
-
-                            %   C_l^in = C_k^out
-                            column.inlet.concentration = currentData{sequence.k}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone V 
-%                       node RAFFINATE (index m)
-                        case 'm'  
-
-                            column.params = params{sequence.m};
-                            column.initialState = currentData{sequence.m}.lastState;
-
-                            %   C_m^in = C_l^out
-                            column.inlet.concentration = currentData{sequence.l}.outlet.concentration;
-
-
-%                       node RAFFINATE (index n)
-                        case 'n' 
-
-                            column.params = params{sequence.n};
-                            column.initialState = currentData{sequence.n}.lastState;
-
-                            %   C_n^in = C_m^out
-                            column.inlet.concentration = currentData{sequence.m}.outlet.concentration;
-
-
-%                       node RAFFINATE (index o)
-                        case 'o' 
-
-                            column.params = params{sequence.o};
-                            column.initialState = currentData{sequence.o}.lastState;
-
-                            %   C_o^in = C_n^out
-                            column.inlet.concentration = currentData{sequence.n}.outlet.concentration;
-
-                    end
-
-
-%     ------------------------------------------------------------------------------------
-                elseif opt.nColumn == 20
-
-                    switch index
-
-%                       The calculation of the column in the Zone I
-%                       node DESORBENT (index a)
-                        case 'a'  
-
-                            column.params = params{sequence.a};
-                            column.initialState = currentData{sequence.a}.lastState;
-
-                            %   C_a^in = Q_t * C_t^out / Q_a
-                            concentration = zeros(length(Feed.time), opt.nComponents);
-
-                            column.inlet.concentration = concentration .* params{sequence.t}.interstitialVelocity...
-                                ./ params{sequence.a}.interstitialVelocity;
-
-
-%                       node DESORBENT (index b)
-                        case 'b'  
-
-                            column.params = params{sequence.b};
-                            column.initialState = currentData{sequence.b}.lastState;
-
-                            %   C_b^in = C_a^out
-                            column.inlet.concentration = currentData{sequence.a}.outlet.concentration;
-
-
-%                       node DESORBENT (index c)
-                        case 'c'  
-
-                            column.params = params{sequence.c};
-                            column.initialState = currentData{sequence.c}.lastState;
-
-                            %   C_c^in = C_b^out
-                            column.inlet.concentration = currentData{sequence.b}.outlet.concentration;
-                            
-                            
-%                       node DESORBENT (index d)
-                        case 'd'  
-
-                            column.params = params{sequence.d};
-                            column.initialState = currentData{sequence.d}.lastState;
-
-                            %   C_d^in = C_c^out
-                            column.inlet.concentration = currentData{sequence.c}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone II
-%                       node EXTRACT_1 (index e)
-                        case 'e'  
-
-                            column.params = params{sequence.e};
-                            column.initialState = currentData{sequence.e}.lastState;
-
-                            %   C_e^in = C_d^out
-                            column.inlet.concentration = currentData{sequence.d}.outlet.concentration;
-
-
-%                       node EXTRACT_1 (index f)
-                        case 'f'  
-
-                            column.params = params{sequence.f};
-                            column.initialState = currentData{sequence.f}.lastState;
-
-                            %   C_f^in = C_e^out
-                            column.inlet.concentration = currentData{sequence.e}.outlet.concentration;
-
-
-%                       node EXTRACT_1 (index g)
-                        case 'g'  
-
-                            column.params = params{sequence.g};
-                            column.initialState = currentData{sequence.g}.lastState;
-
-                            %   C_g^in = C_f^out
-                            column.inlet.concentration = currentData{sequence.f}.outlet.concentration;
-
-
-%                       node EXTRACT_1 (index h)
-                        case 'h'  
-
-                            column.params = params{sequence.h};
-                            column.initialState = currentData{sequence.h}.lastState;
-
-                            %   C_h^in = C_g^out
-                            column.inlet.concentration = currentData{sequence.g}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III  
-%                       node EXTRACT_2 (index i)
-                        case 'i'  
-
-                            column.params = params{sequence.i};
-                            column.initialState = currentData{sequence.i}.lastState;
-
-                            %   C_i^in = C_h^out
-                            column.inlet.concentration = currentData{sequence.h}.outlet.concentration;
-
-
-%                       node EXTRACT_2 (index j)
-                        case 'j'  
-
-                            column.params = params{sequence.j};
-                            column.initialState = currentData{sequence.j}.lastState;
-
-                            %   C_j^in = C_i^out
-                            column.inlet.concentration = currentData{sequence.i}.outlet.concentration;
-
-
-%                       node EXTRACT_2 (index k)
-                        case 'k'  
-
-                            column.params = params{sequence.k};
-                            column.initialState = currentData{sequence.k}.lastState;
-
-                            %   C_k^in = C_j^out
-                            column.inlet.concentration = currentData{sequence.j}.outlet.concentration;
-
-%                       node EXTRACT_2 (index l)
-                        case 'l'  
-
-                            column.params = params{sequence.l};
-                            column.initialState = currentData{sequence.l}.lastState;
-
-                            %   C_l^in = C_k^out
-                            column.inlet.concentration = currentData{sequence.k}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone III
-%                       node FEED (index m)
-                        case 'm' 
-
-                            column.params = params{sequence.m};
-                            column.initialState = currentData{sequence.m}.lastState;
-
-                            %   C_m^in = (Q_l * C_l^out + Q_F * C_F) / Q_m
-                            column.inlet.concentration = (currentData{sequence.l}.outlet.concentration .* ...
-                            params{sequence.l}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                            ./ params{sequence.m}.interstitialVelocity;
-
-
-%                       node FEED (index n)
-                        case 'n' 
-
-                            column.params = params{sequence.n};
-                            column.initialState = currentData{sequence.n}.lastState;
-
-                            %   C_n^in = C_m^out
-                            column.inlet.concentration = currentData{sequence.m}.outlet.concentration;
-
-
-%                       node FEED (index o)
-                        case 'o' 
-
-                            column.params = params{sequence.o};
-                            column.initialState = currentData{sequence.o}.lastState;
-
-                            %   C_o^in = C_n^out
-                            column.inlet.concentration = currentData{sequence.n}.outlet.concentration;
-
-
-%                       node FEED (index p)
-                        case 'p' 
-
-                            column.params = params{sequence.p};
-                            column.initialState = currentData{sequence.p}.lastState;
-
-                            %   C_p^in = C_o^out
-                            column.inlet.concentration = currentData{sequence.o}.outlet.concentration;
-
-
-%                       The calculation of the column in the Zone V 
-%                       node RAFFINATE (index q)
-                        case 'q'  
-
-                            column.params = params{sequence.q};
-                            column.initialState = currentData{sequence.q}.lastState;
-
-                            %   C_q^in = C_p^out
-                            column.inlet.concentration = currentData{sequence.p}.outlet.concentration;
-
-
-%                       node RAFFINATE (index r)
-                        case 'r' 
-
-                            column.params = params{sequence.r};
-                            column.initialState = currentData{sequence.r}.lastState;
-
-                            %   C_r^in = C_q^out
-                            column.inlet.concentration = currentData{sequence.q}.outlet.concentration;
-
-
-%                       node RAFFINATE (index s)
-                        case 's' 
-
-                            column.params = params{sequence.s};
-                            column.initialState = currentData{sequence.s}.lastState;
-
-                            %   C_s^in = C_r^out
-                            column.inlet.concentration = currentData{sequence.r}.outlet.concentration;
-
-
-%                       node RAFFINATE (index t)
-                        case 't' 
-
-                            column.params = params{sequence.t};
-                            column.initialState = currentData{sequence.t}.lastState;
-
-                            %   C_t^in = C_s^out
-                            column.inlet.concentration = currentData{sequence.s}.outlet.concentration;
-
-                    end
-
-                end
-
-
+                    %   C_i^in = C_{i-1}^out
+                    column.inlet.concentration = currentData{idx_j}.outlet.concentration;
 
             end
 
         end % massConservation
 
-        function params = getParams(sequence, interstVelocity, opt)
+        function index = stringIndexing(opt, alphabet)
 %-----------------------------------------------------------------------------------------
-% After each swtiching, the value of velocities and initial conditions are
-% changed 
+% This is the function which interpret the alphabet of columns into the position of
+% SMB unit.
+% 
+% Parameters:
+% 		- opt. options involving the parameters for models
+% 		- alphabet. The letter is used for switching
+%
+% Returns:
+% 		- index. The indexing letter used for calculation of the mass conservation
 %-----------------------------------------------------------------------------------------
 
 
-            global string;
+            global stringSet;
 
-            params = cell(1, opt.nColumn);
-            for k = 1:opt.nColumn
-                params{k} = struct('initMobilCon', [], 'initSolidCon', [], 'interstitialVelocity', []);
+            string = stringSet(1:opt.nColumn);
+
+%           Preallocation
+%           stringBlock is used for storing the alphabet in each zone
+            stringBlock = cell(1, opt.nZone);
+
+%           Separate the string into nZone cells
+            stringBlock{1} = string(1:opt.structID(1));
+            for k = 2:opt.nZone
+                stringBlock{k} = string( sum(opt.structID(1:k-1))+1 : sum(opt.structID(1:k)) );
             end
 
-            for j = 1:opt.nColumn
-%               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
-                params{eval(['sequence' '.' string(j)])}.initMobilCon = zeros(1,opt.nComponents);
-                params{eval(['sequence' '.' string(j)])}.initSolidCon = zeros(1,opt.nComponents);
-            end
-
+%           Assign each alphabet with the indexing letter, D,E,F,R
             if opt.nZone == 4
 
-                if opt.nColumn == 4
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('b', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                        elseif strcmp('c', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-                        elseif strcmp('d', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                if any( strcmp(alphabet, stringBlock{1}) )
+                    if strcmp(alphabet, stringBlock{1}(1))
+                        index = 'D';
+                    else
+                        index = 'M_D';
                     end
 
-                elseif opt.nColumn == 8
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i)) || strcmp('b', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('c', string(i)) || strcmp('d', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                        elseif strcmp('e', string(i)) || strcmp('f', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-                        elseif strcmp('g', string(i)) || strcmp('h', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                elseif any( strcmp(alphabet, stringBlock{2}) )
+                    if strcmp(alphabet, stringBlock{2}(1))
+                        index = 'E';
+                    else
+                        index = 'M_E';
                     end
 
-                elseif opt.nColumn == 12
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i)) || strcmp('b', string(i)) || strcmp('c', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('d', string(i)) || strcmp('e', string(i)) || strcmp('f', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                        elseif strcmp('g', string(i)) || strcmp('h', string(i)) || strcmp('i', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-                        elseif strcmp('j', string(i)) || strcmp('k', string(i)) || strcmp('l', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                elseif any( strcmp(alphabet, stringBlock{3}) )
+                    if strcmp(alphabet, stringBlock{3}(1))
+                        index = 'F';
+                    else
+                        index = 'M_F';
                     end
 
-                elseif opt.nColumn == 16
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i)) || strcmp('b', string(i)) || strcmp('c', string(i)) || strcmp('d', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('e', string(i)) || strcmp('f', string(i)) || strcmp('g', string(i)) || strcmp('h', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                        elseif strcmp('i', string(i)) || strcmp('j', string(i)) || strcmp('k', string(i)) || strcmp('l', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-                        elseif strcmp('m', string(i)) || strcmp('n', string(i)) || strcmp('o', string(i)) || strcmp('p', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                elseif any( strcmp(alphabet, stringBlock{4}) )
+                    if strcmp(alphabet, stringBlock{4}(1))
+                        index = 'R';
+                    else
+                        index = 'M_R';
                     end
 
                 end
 
-%  ----------------------------------------------------------------------------
             elseif opt.nZone == 5
 
-                if opt.nColumn == 5
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('b', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                        elseif strcmp('c', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                        elseif strcmp('d', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-                        elseif strcmp('e', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                if any( strcmp(alphabet, stringBlock{1}) )
+                    if strcmp(alphabet, stringBlock{1}(1))
+                        index = 'D';
+                    else
+                        index = 'M_D';
                     end
 
-                elseif opt.nColumn == 10
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i)) || strcmp('b', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('c', string(i)) || strcmp('d', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                        elseif strcmp('e', string(i)) || strcmp('f', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                        elseif strcmp('g', string(i)) || strcmp('h', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-                        elseif strcmp('i', string(i)) || strcmp('j', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                elseif any( strcmp(alphabet, stringBlock{2}) )
+                    if strcmp(alphabet, stringBlock{2}(1))
+                        index = 'E1';
+                    else
+                        index = 'M_E1';
                     end
 
-                elseif opt.nColumn == 15
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i)) || strcmp('b', string(i)) || strcmp('c', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('d', string(i)) || strcmp('e', string(i)) || strcmp('f', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                        elseif strcmp('g', string(i)) || strcmp('h', string(i)) || strcmp('i', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                        elseif strcmp('j', string(i)) || strcmp('k', string(i)) || strcmp('l', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-                        elseif strcmp('m', string(i)) || strcmp('n', string(i)) || strcmp('p', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                elseif any( strcmp(alphabet, stringBlock{3}) )
+                    if strcmp(alphabet, stringBlock{3}(1))
+                        index = 'E2';
+                    else
+                        index = 'M_E2';
                     end
 
-                elseif opt.nColumn == 20
-
-                    for i = 1: opt.nColumn
-%                       Interstitial velocity of each ZONE
-                        if strcmp('a', string(i)) || strcmp('b', string(i)) || strcmp('c', string(i)) || strcmp('d', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle;
-                        elseif strcmp('e', string(i)) || strcmp('f', string(i)) || strcmp('g', string(i)) || strcmp('h', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                        elseif strcmp('i', string(i)) || strcmp('j', string(i)) || strcmp('k', string(i)) || strcmp('l', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                        elseif strcmp('m', string(i)) || strcmp('n', string(i)) || strcmp('o', string(i)) || strcmp('p', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-                        elseif strcmp('q', string(i)) || strcmp('r', string(i)) || strcmp('s', string(i)) || strcmp('t', string(i))
-                            params{eval(['sequence' '.' string(i)])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        end
+                elseif any( strcmp(alphabet, stringBlock{4}) )
+                    if strcmp(alphabet, stringBlock{4}(1))
+                        index = 'F';
+                    else
+                        index = 'M_F';
                     end
+
+                elseif any( strcmp(alphabet, stringBlock{5}) )
+                    if strcmp(alphabet, stringBlock{5}(1))
+                        index = 'R';
+                    else
+                        index = 'M_R';
+                    end
+
+                end
+
+            end
+
+        end % stringIndexing
+
+        function params = getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet)
+%-----------------------------------------------------------------------------------------
+% After each swtiching, the value of velocities and initial conditions are changed
+%
+% Parameters:
+% 		- sequence. The alphabet of each zone and their column number
+% 		- interstVelocity. The interstitial velocity of each zone 
+% 		- opt. option of parameterss
+% 		- index. The capital letter used to indicate which zone current column situated in
+% 		- alphabet. The letter of current calculated column, i. 
+% 		- pre_alphabet. The letter of column before the current calculated one, i-1. 
+% 
+% Returns:
+% 		- params. It contains interstitial velocity and boundary conditions
+%-----------------------------------------------------------------------------------------
+
+
+%             global stringSet;
+%             string = char(stringSet(1:opt.nColumn));
+
+            params = cell(1, opt.nColumn);
+            for k = 1:opt.nColumn
+%               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
+                params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
+                    zeros(1,opt.nComponents), 'interstitialVelocity', []);
+            end
+
+%             for j = 1:opt.nColumn
+% %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
+%                 params{ eval(['sequence' '.' string(j)]) }.initMobilCon = zeros(1,opt.nComponents);
+%                 params{ eval(['sequence' '.' string(j)]) }.initSolidCon = zeros(1,opt.nComponents);
+%             end
+
+            if opt.nZone == 4
+
+                switch index
+
+                    case {'D' 'M_D'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                    case {'E' 'M_E'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                    case {'F' 'M_F'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                    case {'R' 'M_R'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+
+                end
+
+            elseif opt.nZone == 5
+
+                switch index
+
+                    case {'D' 'M_D'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                    case {'E1' 'M_E1'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                    case {'E2' 'M_E2'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                    case {'F' 'M_F'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                    case {'R' 'M_R'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
 
                 end
 
@@ -1443,51 +473,39 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 % Calculation of the performance index of SMB, such Purity and Productivity
 %
-% 
+% Parameters:
+% 		- plotData. The data for plotting
+% 		- opt. options of parameters
+%
+% Returns:
+% 		- Resutls. A struct data which contains the purity and productivity of extract
+% 			and raffinate ports, respectively
 %-----------------------------------------------------------------------------------------
 
 
+%           Get the position of the withdrawn ports to calculate the purity and productivity
+            obj = SMB.positionIndexing(opt);
+
+%           The nominator of the formualar of productivity
             Nominator = pi * (opt.columnDiameter/2)^2 * opt.columnLength * (1-opt.porosityColumn);
 
             if opt.nZone == 4
-%           using column 1 to calculate the integral of purity
-                if opt.nColumn == 4
-                    position_ext = 1; position_raf = 3;
-                elseif opt.nColumn == 8
-                    position_ext = 8; position_raf = 4;
-                elseif opt.nColumn == 12
-                    position_ext = 11; position_raf = 5;
-                elseif opt.nColumn == 16
-                    position_ext = 14; position_raf = 6;
-                end
 
+%               using column 1 to calculate the integral of purity, plotData{1,x}
+                position_ext = obj.position_ext; position_raf = obj.position_raf;
 
 %               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
-                if opt.nComponents == 2
-%                   Extract ports
-                    Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID)) /...
-                        ( trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,1)) );
-
-%                   Raffinate ports
-                    Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
-                        ( trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) );
-
-                elseif opt.nComponents == 3
-%                   Extract ports
-                    Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID)) /...
-                        ( trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,1)) );
-
-%                   Raffinate ports
-                    Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
-                        ( trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) );
-
+                sum_ext = 0; sum_raf = 0;
+                for k = 1:opt.nComponents
+                    sum_ext = sum_ext + trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,k));
+                    sum_raf = sum_raf + trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,k));
                 end
+
+%               Extract ports
+                Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID)) / sum_ext;
+
+%               Raffinate ports
+                Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / sum_raf;
 
 %               per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
                 Productivity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID))...
@@ -1511,57 +529,22 @@ classdef SMB < handle
 
             elseif opt.nZone == 5
 
-                if opt.nColumn == 5
-                    position_ext1 = 1; position_ext2 = 5; position_raf = 3;
-                elseif opt.nColumn == 10
-                    position_ext1 = 10; position_ext2 = 8; position_raf = 4;
-                elseif opt.nColumn == 15
-                    position_ext1 = 14; position_ext2 = 11; position_raf = 5;
-                elseif opt.nColumn == 20
-                    position_ext1 = 18; position_ext2 = 14; position_raf = 6;
-                end
+                position_ext1 = obj.position_ext1; position_ext2 = obj.position_ext2; position_raf = obj.position_raf;
 
 %               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
-                if opt.nComponents == 3
-%                   Extract ports
-                    Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) /...
-                        ( trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,1)) );
-
-                    Purity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID)) /...
-                        ( trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,1)) );
-
-%                   Raffinate ports
-                    Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
-                        ( trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) );
-
-                elseif opt.nComponents == 4
-%                   Extract ports
-                    Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) /...
-                        ( trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,4)) +...
-                        trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,1)) );
-
-                    Purity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID)) /...
-                        ( trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,4)) +...
-                        trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,1)) );
-
-%                   Raffinate ports
-                    Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / ...
-                        ( trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,4)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,3)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,2)) +...
-                        trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,1)) );
-
+                sum_ext1 = 0; sum_ext2 = 0; sum_raf = 0;
+                for k = 1:opt.nComponents
+                    sum_ext1 = sum_ext1 + trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,k));
+                    sum_ext2 = sum_ext2 + trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,k));
+                    sum_raf = sum_raf + trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,k));
                 end
+
+%               Extract ports
+                Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) / sum_ext1;
+                Purity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID)) / sum_ext2;
+
+%               Raffinate ports
+                Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / sum_raf;
 
 %               per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
                 Productivity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID))...
@@ -1592,6 +575,47 @@ classdef SMB < handle
 
         end % Purity_Productivity
 
+        function obj = positionIndexing(opt)
+%-----------------------------------------------------------------------------------------
+% This is the function that tells the Purity_Productivity which column is used for
+% calculation of purity and productivity. It is vital in arbitrary column
+% configurations and it also depends on the plotData and the referred column.
+%
+% Parameters:
+% 		- opt. options
+%
+% Returns:
+% 		- obj. A struct data which contains the numbers for indicating the EXTRACT and 
+% 			RAFFINATE ports those are used for calculation of purity and productivity
+%-----------------------------------------------------------------------------------------
+
+
+            Number = circshift( (fliplr(1:opt.nColumn))', 1 );
+
+%           numberBlock is used for storing the column number in each zone
+            numberBlock = cell(1, opt.nZone);
+
+%           separate the number string into nZone cells
+            numberBlock{1} = Number(1:opt.structID(1));
+            for k = 2:opt.nZone
+                numberBlock{k} = Number( sum(opt.structID(1:k-1))+1 : sum(opt.structID(1:k)) );
+            end
+
+            if opt.nZone == 4
+
+                obj.position_ext = numberBlock{1}(end); % Desorbent node
+                obj.position_raf = numberBlock{3}(end); % Feed node
+
+            elseif opt.nZone == 5
+
+                obj.position_ext1 = numberBlock{1}(end); % Desorbent node
+                obj.position_ext2 = numberBlock{2}(end); % Extract_1 node
+                obj.position_raf = numberBlock{4}(end);  % Feed node
+
+            end
+
+        end % positionIndexing
+
         function objective = objectiveFunction(Results, opt)
 %-----------------------------------------------------------------------------------------
 % The objective function for the optimizers
@@ -1609,7 +633,7 @@ classdef SMB < handle
                 penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
 
-%               (-)Since in the optimizer, the defined programme is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum.    
                 objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 5
@@ -1618,7 +642,7 @@ classdef SMB < handle
                     + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
 
-%               (-)Since in the optimizer, the defined programme is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum.    
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
             end
 
@@ -1631,13 +655,17 @@ classdef SMB < handle
 
         function plotFigures(opt, plotData)
 %-----------------------------------------------------------------------------------------
-%  This is the plot function 
-%  The numbers in the figure() represent the number of the columns
+% This is the plot function 
+% The numbers in the figure() represent the number of the columns
+% 
+% Parameters:
+% 		- opt. options
+% 		- plotData. The data for plotting
 %-----------------------------------------------------------------------------------------
 
 
             if nargin < 2
-                disp('Error: there are no enough input data for the function, plotFigures');
+                disp('Error in plotFigures: there are no enough input data for the function');
             else
                 if isempty(opt)
                     disp('Error in plotFigures: the options of the parameters are missing');
@@ -1646,32 +674,36 @@ classdef SMB < handle
                 end
             end
 
-            if opt.enableDebug                        
+            if opt.enableDebug
 
-                if opt.nZone == 4
+               for j = 1:opt.nColumn
+                    figure(j);clf
 
-                    if opt.nColumn == 4
+                    y = zeros(1, opt.nComponents);
+                    for k = 1:opt.nColumn
+                        y = [y; plotData{j,k}.outlet.concentration];
+                    end
 
-                        for j = 1:opt.nColumn
+                    FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
+                    ylabel('Concentration [Mol]', 'FontSize', 10);
+                    if opt.nComponents == 2
+                        legend('comp 1', 'comp 2');
+                    elseif opt.nComponents == 3
+                        legend('comp 1', 'comp 2', 'comp 3');
+                    elseif opt.nComponents == 4
+                        legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                    end
 
-                            figure(j);clf
+                    set(FigSet, 'LineWidth', 2);
+                    set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                    set(gca, 'ygrid', 'on');
 
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration];
 
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 2
-                                legend('comp 1', 'comp 2');
-                            elseif opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            end
+                    if opt.nZone == 4
 
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        if opt.nColumn == 4 && all( eq(opt.structID, [1 1 1 1]) )
+
                             set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
-                            set(gca, 'ygrid', 'on');
-
                             switch j
                                 case 1
                                     set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
@@ -1683,34 +715,7 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
-                        end
-
-                    elseif opt.nColumn == 8
-
-                        for j = 1:opt.nColumn
-
-                            figure(j);clf
-
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
-                                plotData{j,5}.outlet.concentration; plotData{j,6}.outlet.concentration;...
-                                plotData{j,7}.outlet.concentration; plotData{j,8}.outlet.concentration];
-
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 2
-                                legend('comp 1', 'comp 2');
-                            elseif opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            end
-
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                            set(gca, 'ygrid', 'on');
+                        elseif opt.nColumn == 8 && all( eq(opt.structID, [2 2 2 2]) )
 
                             switch j
                                 case 1
@@ -1739,37 +744,7 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
-                        end
-
-                    elseif opt.nColumn == 12
-
-                        for j = 1:opt.nColumn
-
-                            figure(j);clf
-
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
-                                plotData{j,5}.outlet.concentration; plotData{j,6}.outlet.concentration;...
-                                plotData{j,7}.outlet.concentration; plotData{j,8}.outlet.concentration;...
-                                plotData{j,9}.outlet.concentration; plotData{j,10}.outlet.concentration;...
-                                plotData{j,11}.outlet.concentration; plotData{j,12}.outlet.concentration];
-
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 2
-                                legend('comp 1', 'comp 2');
-                            elseif opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            end
-
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                            set(gca, 'ygrid', 'on');
-
+                        elseif opt.nColumn == 12 && all( eq(opt.structID, [3 3 3 3]) )
                             switch j
                                 case 1
                                     set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints);
@@ -1809,38 +784,7 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
-                        end
-
-                    elseif opt.nColumn == 16
-
-                        for j = 1:opt.nColumn
-
-                            figure(j);clf
-
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
-                                plotData{j,5}.outlet.concentration; plotData{j,6}.outlet.concentration;...
-                                plotData{j,7}.outlet.concentration; plotData{j,8}.outlet.concentration;...
-                                plotData{j,9}.outlet.concentration; plotData{j,10}.outlet.concentration;...
-                                plotData{j,11}.outlet.concentration; plotData{j,12}.outlet.concentration;...
-                                plotData{j,13}.outlet.concentration; plotData{j,14}.outlet.concentration;...
-                                plotData{j,15}.outlet.concentration; plotData{j,16}.outlet.concentration];
-
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 2
-                                legend('comp 1', 'comp 2');
-                            elseif opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            end
-
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                            set(gca, 'ygrid', 'on');
+                        elseif opt.nColumn == 16 && all( eq(opt.structID, [4 4 4 4]) )
 
                             switch j
                                 case 1
@@ -1893,41 +837,15 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
                         end
 
-                    end
+                    elseif opt.nZone == 5
+                        
+                        if opt.nColumn == 5 && all( eq(opt.structID, [1 1 1 1 1]) )
 
-% -----------------------------------------------------------------------------                   
-                elseif opt.nZone == 5
-
-                    if opt.nColumn == 5
-
-                        for j = 1:opt.nColumn
-
-                            figure(j);clf
-
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
-                                plotData{j,5}.outlet.concentration];
-
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            elseif opt.nComponents == 4
-                                legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
-                            end
-
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
                             set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
-                            set(gca, 'ygrid', 'on');
-
                             switch j
+                                
                                 case 1
                                     set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
                                 case 2
@@ -1940,35 +858,7 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
-                        end
-
-                    elseif opt.nColumn == 10
-
-                        for j = 1:opt.nColumn
-
-                            figure(j);clf
-
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
-                                plotData{j,5}.outlet.concentration; plotData{j,6}.outlet.concentration;...
-                                plotData{j,7}.outlet.concentration; plotData{j,8}.outlet.concentration;...
-                                plotData{j,9}.outlet.concentration; plotData{j,10}.outlet.concentration];
-
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            elseif opt.nComponents == 4
-                                legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
-                            end
-
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                            set(gca, 'ygrid', 'on');
+                        elseif opt.nColumn == 10 && all( eq(opt.structID, [2 2 2 2 2]) )
 
                             switch j
                                 case 1
@@ -2003,38 +893,7 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
-                        end
-
-                    elseif opt.nColumn == 15
-
-                        for j = 1:opt.nColumn
-
-                            figure(j);clf
-
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
-                                plotData{j,5}.outlet.concentration; plotData{j,6}.outlet.concentration;...
-                                plotData{j,7}.outlet.concentration; plotData{j,8}.outlet.concentration;...
-                                plotData{j,9}.outlet.concentration; plotData{j,10}.outlet.concentration;...
-                                plotData{j,11}.outlet.concentration; plotData{j,12}.outlet.concentration;...
-                                plotData{j,13}.outlet.concentration; plotData{j,14}.outlet.concentration;...
-                                plotData{j,15}.outlet.concentration];
-
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            elseif opt.nComponents == 4
-                                legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
-                            end
-
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                            set(gca, 'ygrid', 'on');
+                        elseif opt.nColumn == 15 && all( eq(opt.structID, [3 3 3 3 3]) )
 
                             switch j
                                 case 1
@@ -2084,41 +943,7 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
-                        end
-
-                    elseif opt.nColumn == 20
-
-                        for j = 1:opt.nColumn
-
-                            figure(j);clf
-
-                            y = [plotData{j,1}.outlet.concentration; plotData{j,2}.outlet.concentration;...
-                                plotData{j,3}.outlet.concentration; plotData{j,4}.outlet.concentration;...
-                                plotData{j,5}.outlet.concentration; plotData{j,6}.outlet.concentration;...
-                                plotData{j,7}.outlet.concentration; plotData{j,8}.outlet.concentration;...
-                                plotData{j,9}.outlet.concentration; plotData{j,10}.outlet.concentration;...
-                                plotData{j,11}.outlet.concentration; plotData{j,12}.outlet.concentration;...
-                                plotData{j,13}.outlet.concentration; plotData{j,14}.outlet.concentration;...
-                                plotData{j,15}.outlet.concentration; plotData{j,16}.outlet.concentration;...
-                                plotData{j,17}.outlet.concentration; plotData{j,18}.outlet.concentration;...
-                                plotData{j,19}.outlet.concentration; plotData{j,20}.outlet.concentration];
-
-                            FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                            ylabel('Concentration [Mol]', 'FontSize', 10);
-                            if opt.nComponents == 3
-                                legend('comp 1', 'comp 2', 'comp 3');
-                            elseif opt.nComponents == 4
-                                legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
-                            end
-
-                            set(FigSet, 'LineWidth', 2);
-                            set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                            set(gca, 'ygrid', 'on');
+                        elseif opt.nColumn == 20 && all( eq(opt.structID, [4 4 4 4 4]) )
 
                             switch j
                                 case 1
@@ -2183,33 +1008,35 @@ classdef SMB < handle
                                     set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
                             end
 
-                            for i = 1: (opt.nColumn-1)
-                                line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                            end
-
                         end
 
+                    end % if opt.nZone == 4 / opt.nZone == 5
+
+                    for i = 1: (opt.nColumn-1)
+                        line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
                     end
 
-
-                end % if opt.nZone == 4 / opt.nZone == 5
-
+               end % for j = 1:opt.nColumn
 
             end % if opt.enableDebug
 
-        end % function plotFigures
+        end % plotFigures
 
 
-    end
+    end % methods
 
-end
+
+end % classdef
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-%  
-%  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
-%                                      
-%  Institute: Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-%  
-%  All rights reserved. Please see the license of CADET.
+% 
+%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
+% 
+%      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
+% 
+%  All rights reserved. This program and the accompanying materials
+%  are made available under the terms of the GNU Public License v3.0 (or, at
+%  your option, any later version) which accompanies this distribution, and
+%  is available at http://www.gnu.org/licenses/gpl.html
 % =============================================================================
