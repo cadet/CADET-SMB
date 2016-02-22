@@ -23,7 +23,7 @@ classdef OptAlgorithms < handle
 %        And let the main function informed that which parameters are need
 %        to be optimized
 % -----------------------------------------------------------------------------
-    
+
 
             startTime = clock;
 
@@ -196,7 +196,7 @@ classdef OptAlgorithms < handle
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 % -----------------------------------------------------------------------------
-    
+
 
             R = opt.PopulSize;
             C = opt.IndivSize;
@@ -295,10 +295,10 @@ classdef OptAlgorithms < handle
 
 
         end 
-        
+
     end
-    
-    
+
+
 %   PSO    
     methods (Static = true, Access = 'public') 
 
@@ -448,7 +448,7 @@ classdef OptAlgorithms < handle
             opt.compValue      = 1e5;
 
         end
-    
+
         function [ParSwarm,OptSwarm,ToplOptSwarm] = InitSwarm(opt)
 % -----------------------------------------------------------------------------
 % The initilization of the population
@@ -688,10 +688,10 @@ classdef OptAlgorithms < handle
             OptSwarm(ParRow+1, ParCol+1) = minValue; 
 
         end
-        
+
     end
- 
-    
+
+
 %   MADE    
     methods (Static = true, Access = 'public')
 
@@ -714,8 +714,8 @@ classdef OptAlgorithms < handle
 %        And let the main function informed that which parameters are need
 %        to be optimized
 % -----------------------------------------------------------------------------
-    
-    
+
+
             startTime = clock;
 
 %           Get the sampler options
@@ -851,9 +851,9 @@ classdef OptAlgorithms < handle
                     set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
                 end
             end
-    
+
         end    
-   
+
         function opt = getOptions_MADE(params)
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
@@ -1221,10 +1221,13 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-%  
-%  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
-%                                      
-%  Institute: Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-%  
-%  All rights reserved. Please see the license of CADET.
+% 
+%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
+% 
+%      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
+% 
+%  All rights reserved. This program and the accompanying materials
+%  are made available under the terms of the GNU Public License v3.0 (or, at
+%  your option, any later version) which accompanies this distribution, and
+%  is available at http://www.gnu.org/licenses/gpl.html
 % =============================================================================

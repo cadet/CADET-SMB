@@ -38,10 +38,11 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     
     opt.enableDebug = false; % set it false if you are using the optimizer
     opt.nZone   = 5;
-    opt.nColumn = 5;         % 4,8,12,16 -column cases are available
-%     opt.nColumn = 10;
+    opt.nColumn = 5;
+    opt.structID = [1 1 1 1 1];
 
 %   Binding: Linear Binding isotherm
+    opt.BindingModel = 'LinearBinding';
     opt.nComponents = 3;
     opt.KA = [3.15, 7.4, 23]; % [comp_A, comp_B], A for raffinate, B for extract
     opt.KD = [1, 1, 1];
@@ -99,10 +100,13 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-%  
-%  Author: QiaoLe He   E-mail: q.he@fz-juelich.de
-%                                      
-%  Institute: Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-%  
-%  All rights reserved. Please see the license of CADET.
+% 
+%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
+% 
+%      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
+% 
+%  All rights reserved. This program and the accompanying materials
+%  are made available under the terms of the GNU Public License v3.0 (or, at
+%  your option, any later version) which accompanies this distribution, and
+%  is available at http://www.gnu.org/licenses/gpl.html
 % =============================================================================
