@@ -33,9 +33,9 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.Penalty_factor          = 10;
 
     opt.enableDebug = true;
-    opt.nZone   = 4;    % 4-zone for binary separation, 5-zone for ternary separation
-    opt.nColumn = 8;
-    opt.structID = [2 2 2 2];
+    opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
+    opt.nColumn     = 8;
+    opt.structID    = [2 2 2 2];
 
 %   Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';

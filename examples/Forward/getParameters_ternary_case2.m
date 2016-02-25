@@ -34,9 +34,9 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.Penalty_factor          = 10;    % penalty factor in penalty function
 
     opt.enableDebug = true;  % set it true when you want to see the figures
-    opt.nZone   = 5;     % 5-zone for ternary separation
-    opt.nColumn = 10;
-    opt.structID = [2 2 2 2 2];
+    opt.nZone       = 5;     % 5-zone for ternary separation
+    opt.nColumn     = 10;
+    opt.structID    = [2 2 2 2 2];
 
 %   Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';
@@ -98,7 +98,7 @@ end
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
 % 
-%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
+%      Copyright © 2008-2015: Eric von Lieres, Qiaole He
 % 
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 % 

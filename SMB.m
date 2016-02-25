@@ -21,7 +21,7 @@ classdef SMB < handle
 % 
 % Returns:
 %       - outletProfile. outlet time and corresponding concentration profile
-%       - lastState. Record the last STATE which is used as the boundary condition
+%       - lastState. Record the last STATE which is used as the boundary condition 
 % -----------------------------------------------------------------------------
 
 
@@ -258,6 +258,7 @@ classdef SMB < handle
 
 %           Update the intersitial velocity, boundary conditions
             column.params = params{idx_i};
+            column.initialState = currentData{idx_i}.lastState;
 
 %           Calculate concentration of the column due to its position in the SMB unit
             switch index
@@ -589,7 +590,7 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
-            Number = (1:opt.nColumn);
+            Number = circshift( (fliplr(1:opt.nColumn))', 1 );
 
 %           numberBlock is used for storing the column number in each zone
             numberBlock = cell(1, opt.nZone);
@@ -675,85 +676,467 @@ classdef SMB < handle
 
             if opt.enableDebug
 
-                figure(01);clf
+               for j = 1:opt.nColumn
+                    figure(j);clf
 
-                y = zeros(1, opt.nComponents);
-                for k = opt.nColumn:-1:1
-                    y = [y; plotData{k}.outlet.concentration];
-                end
-
-                FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                ylabel('Concentration [Mol]', 'FontSize', 10);
-                if opt.nComponents == 2
-                    legend('comp 1', 'comp 2');
-                elseif opt.nComponents == 3
-                    legend('comp 1', 'comp 2', 'comp 3');
-                elseif opt.nComponents == 4
-                    legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
-                end
-
-                set(FigSet, 'LineWidth', 2);
-                set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                set(gca, 'ygrid', 'on');
-
-
-                if opt.nZone == 4
-
-                    if opt.nColumn == 4 && all( eq(opt.structID, [1 1 1 1]) )
-
-                        set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
-                    elseif opt.nColumn == 8 && all( eq(opt.structID, [2 2 2 2]) )
-
-                        set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
-                    elseif opt.nColumn == 12 && all( eq(opt.structID, [3 3 3 3]) )
-
-                        set(gca, 'XTick', (opt.nColumn/8:3:(opt.nColumn-1)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
-                    elseif opt.nColumn == 16 && all( eq(opt.structID, [4 4 4 4]) )
-
-                        set(gca, 'XTick', (opt.nColumn/8:4:(opt.nColumn-1)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
+                    y = zeros(1, opt.nComponents);
+                    for k = 1:opt.nColumn
+                        y = [y; plotData{j,k}.outlet.concentration];
                     end
 
-                elseif opt.nZone == 5
-
-                    if opt.nColumn == 5 && all( eq(opt.structID, [1 1 1 1 1]) )
-
-                        set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
-                    elseif opt.nColumn == 10 && all( eq(opt.structID, [2 2 2 2 2]) )
-
-                        set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
-                    elseif opt.nColumn == 15 && all( eq(opt.structID, [3 3 3 3 3]) )
-
-                        set(gca, 'XTick', (opt.nColumn/10:3:(opt.nColumn-1)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
-                    elseif opt.nColumn == 20 && all( eq(opt.structID, [4 4 4 4 4]) )
-
-                        set(gca, 'XTick', (opt.nColumn/10:4:(opt.nColumn-1)).*opt.timePoints);
-                        set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-
+                    FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints*opt.nInterval, 0,opt.yLim])
+                    ylabel('Concentration [Mol]', 'FontSize', 10);
+                    if opt.nComponents == 2
+                        legend('comp 1', 'comp 2');
+                    elseif opt.nComponents == 3
+                        legend('comp 1', 'comp 2', 'comp 3');
+                    elseif opt.nComponents == 4
+                        legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
                     end
 
-                end % if opt.nZone == 4 / opt.nZone == 5
+                    set(FigSet, 'LineWidth', 2);
+                    set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                    set(gca, 'ygrid', 'on');
 
-                for i = 1: (opt.nColumn-1)
-                    line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
-                end
+
+                    if opt.nZone == 4
+
+                        if opt.nColumn == 4 && all( eq(opt.structID, [1 1 1 1]) )
+
+                            set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints*opt.nInterval);
+                            switch j
+                                case 1
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 2
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 3
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 4
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        elseif opt.nColumn == 8 && all( eq(opt.structID, [2 2 2 2]) )
+
+                            switch j
+                                case 1
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II','Zone I'});
+                                case 2
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 3
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III','Zone II'});
+                                case 4
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 5
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV','Zone III'});
+                                case 6
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 7
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone IV'});
+                                case 8
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        elseif opt.nColumn == 12 && all( eq(opt.structID, [3 3 3 3]) )
+                            switch j
+                                case 1
+                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                                case 2
+                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 3
+                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 4
+                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 5
+                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 6
+                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 7
+                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 8
+                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 9
+                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 10
+                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 11
+                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                                case 12
+                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        elseif opt.nColumn == 16 && all( eq(opt.structID, [4 4 4 4]) )
+
+                            switch j
+                                case 1
+                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                                case 2
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II','Zone I'});
+                                case 3
+                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 4
+                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 5
+                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
+                                case 6
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III','Zone II'});
+                                case 7
+                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 8
+                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 9
+                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
+                                case 10
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV','Zone III'});
+                                case 11
+                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 12
+                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 13
+                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
+                                case 14
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone IV'});
+                                case 15
+                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                                case 16
+                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        end
+
+                    elseif opt.nZone == 5
+                        
+                        if opt.nColumn == 5 && all( eq(opt.structID, [1 1 1 1 1]) )
+
+                            set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints*opt.nInterval);
+                            switch j
+                                
+                                case 1
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 2
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 3
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 4
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 5
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        elseif opt.nColumn == 10 && all( eq(opt.structID, [2 2 2 2 2]) )
+
+                            switch j
+                                case 1
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                                case 2
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 3
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 4
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 5
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 6
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 7
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 8
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 9
+                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 10
+                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        elseif opt.nColumn == 15 && all( eq(opt.structID, [3 3 3 3 3]) )
+
+                            switch j
+                                case 1
+                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                                case 2
+                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 3
+                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 4
+                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 5
+                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 6
+                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 7
+                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 8
+                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 9
+                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 10
+                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 11
+                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 12
+                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 13
+                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 14
+                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                                case 15
+                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        elseif opt.nColumn == 20 && all( eq(opt.structID, [4 4 4 4 4]) )
+
+                            switch j
+                                case 1
+                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                                case 2
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                                case 3
+                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 4
+                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 5
+                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 6
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III','Zone II'});
+                                case 7
+                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 8
+                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 9
+                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 10
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV','Zone III'});
+                                case 11
+                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 12
+                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 13
+                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 14
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V','Zone IV'});
+                                case 15
+                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 16
+                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 17
+                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 18
+                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone V'});
+                                case 19
+                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                                case 20
+                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints*opt.nInterval);
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        end
+
+                    end % if opt.nZone == 4 / opt.nZone == 5
+
+                    for i = 1: (opt.nColumn-1)
+                        line([i*opt.timePoints*opt.nInterval,i*opt.timePoints*opt.nInterval], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                    end
+
+               end % for j = 1:opt.nColumn
 
             end % if opt.enableDebug
 
         end % plotFigures
+        
+        function plotDynamic(opt, dyncData, iter)
+%-----------------------------------------------------------------------------------------
+%  This is the plot function
+%  The numbers in the figure() represent the number of the columns
+%-----------------------------------------------------------------------------------------
+
+
+            if nargin < 2
+                disp('Error: there are no enough input data for the function, plotFigures');
+            else
+                if isempty(opt)
+                    disp('Error in plotFigures: the options of the parameters are missing');
+                elseif isempty(dyncData)
+                    disp('Error in plotFigures: the data for figures plotting are missing');
+                end
+            end
+
+            if opt.enableDebug
+
+                figure(100);clf
+                if opt.nZone == 4
+
+                    for i = 1:2
+
+                        y = cat(1, dyncData{i,:});
+
+                        subplot(2,1,i);
+                        FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
+                        ylabel('Concentration [Mol]', 'FontSize', 10);
+                        if opt.nComponents == 2
+                            legend('comp 1', 'comp 2');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 3
+                            legend('comp 1', 'comp 2', 'comp 3');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 4
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                        end
+
+                        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        set(gca, 'ygrid', 'on');
+                        set(gca, 'XTick', size(y,1)/2);
+
+                        switch i
+                            case 1
+                                set(gca, 'XTickLabel', {'Raffinate Port'});
+                            case 2
+                                set(gca, 'XTickLabel', {'Extract Port'});
+                        end
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                        end
+
+                    end
+
+                    suptitle('The evolution of the concentration from the Raffinate port and Extract port');
+
+                elseif opt.nZone == 5
+
+                     for i = 1:3
+
+                        y = cat(1, dyncData{i,:});
+
+                        subplot(3,1,i);
+                        FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
+                        ylabel('Concentration [Mol]', 'FontSize', 10);
+                        if opt.nComponents == 2
+                            legend('comp 1', 'comp 2');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 3
+                            legend('comp 1', 'comp 2', 'comp 3');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 4
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                        end
+
+                        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        set(gca, 'ygrid', 'on');
+                        set(gca, 'XTick', size(y,1)/2);
+
+                        switch i
+                            case 1
+                                set(gca, 'XTickLabel', {'Raffinate Port'});
+                            case 2
+                                set(gca, 'XTickLabel', {'Extract_2 Port'});
+                            case 3
+                                set(gca, 'XTickLabel', {'Extract_1 Port'});
+                        end
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                        end
+
+                    end
+
+                    suptitle('The evolution of the concentration from the Raffinate port and Extract ports');
+
+                end
+
+            end
+
+        end % plotDynamic
 
 
     end % methods

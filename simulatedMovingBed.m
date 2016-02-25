@@ -71,27 +71,33 @@ function objective = simulatedMovingBed(varargin)
     [opt, interstVelocity, Feed] = getParameters(varargin{:});
 
 %   Initialize the starting points, currentData
-    currentData  = cell(1, opt.nColumn);
-	columnNumber = cell(1, opt.nColumn);
+    currentData    = cell(1, opt.nColumn);
+    transitionData = cell(1, opt.nColumn);
+    tempData       = cell(1, opt.nColumn);
+    columnNumber   = cell(1, opt.nColumn);
 
     for k = 1:opt.nColumn
+%       currentData stores the outlets of each interval of columns
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
+        currentData{k}.lastState = []; 
+
+%       transitionData stores the composition profile of nInterval pieces
+        transitionData{k}.outlet.time = linspace(0, opt.switch*opt.nInterval, opt.timePoints*opt.nInterval);
+        transitionData{k}.outlet.concentration = zeros(opt.timePoints*opt.nInterval, opt.nComponents); 
+
+%       This is the temporary data for dynamic trajectory plotting
+        tempData{k}.concentration = cell(1, opt.nInterval);
     end
 
-%   Number the columns for the sake of plotting 
+%   Number the columns for the sake of plotting
     for k = 1:opt.nColumn
-		columnNumber{k} = k;
+        if k == 1
+            columnNumber{1} = opt.nColumn;
+        else
+            columnNumber{k} = k-1;
+        end
     end
-
-%	Specify the column for convergence checking	
-    if opt.nZone == 4
-        convergIndx = sum(opt.structID(1:2)) + 1;
-    elseif opt.nZone == 5
-        convergIndx = sum(opt.structID(1:3)) + 1;
-    end
-%   convergPrevious is used for stopping criterion
-    convergPrevious = currentData{convergIndx}.outlet.concentration;
 
 % 	Construct the string in order to tell simulator the calculation sequence
 	stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
@@ -99,50 +105,96 @@ function objective = simulatedMovingBed(varargin)
                  'aa' 'bb' 'cc' 'dd' 'ee' 'ff' 'gg' 'hh' 'ii' 'jj' 'kk' 'll' 'mm'...
                  'nn' 'oo' 'pp' 'qq' 'rr' 'ss' 'tt' 'uu' 'vv' 'ww' 'xx' 'yy' 'zz'};
 
-	if opt.nColumn > length(stringSet)
-		error('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
-	else
-		string = stringSet(1:opt.nColumn);
-	end
+    if opt.nColumn > length(stringSet)
+        error('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
+    end
 
-	sequence = cell2struct( columnNumber, string, 2 );
+    sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
 
-	string = char( [fliplr( string(1:convergIndx) ) fliplr( string(convergIndx+1:end) )] );
+    string = char(stringSet(1:opt.nColumn));
+ 
+% 	Specify the column for the convergence checking
+    if opt.nZone == 4
+    	convergIndx = sum(opt.structID(1:2));
+	elseif opt.nZone == 5
+		convergIndx = sum(opt.structID(1:3));
+    end
+
+%   Preallocation
+%   The dimension of plotData (columnNumber x switches)
+%          t_s   2*t_s  3*t_s  4*t_s
+%          {1}    {1}    {1}    {1}
+%          {2}    {2}    {2}    {2}
+%          {3}    {3}    {3}    {3}
+%          {4}    {4}    {4}    {4}
+    plotData = cell(opt.nColumn,opt.nColumn);
+
+    if opt.nZone == 4
+        dyncData = cell(2, opt.nMaxIter);
+    elseif opt.nZone == 5
+        dyncData = cell(3, opt.nMaxIter);
+    end
+
+%   convergPrevious is used for stopping criterion
+    convergPrevious = transitionData{convergIndx}.outlet.concentration;
 
 
-%----------------------------------------------------------------------------------------- 
+%-----------------------------------------------------------------------------------------
 %   Main loop
     for i = 1:opt.nMaxIter
 
-        if mod(i, opt.nColumn) ~= 0
-            k = mod(i, opt.nColumn);
-        else
-            k = opt.nColumn;
-        end
-
-        if i == 1
-            initialState = [];
-        end
+%		Switching the ports, in the countercurrent manner of fluid
+		sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
 %       The simulation of columns within a SMB unit by the sequence, 
-%       say, 'c', 'b', 'a', 'd' in four-column cases
-        column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, string(k));
-        [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, initialState, varargin{:});
+%       say, 'a', 'b', 'c', 'd' in four-column cases
+        for j = 1:opt.nInterval
 
-        currentData{eval(['sequence' '.' string(k)])}.outlet = outletProfile;
-        initialState  = lastState;
+            for k = 1:opt.nColumn
+
+                column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, string(k));
+                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+
+                currentData{eval(['sequence' '.' string(k)])}.outlet     = outletProfile;
+                currentData{eval(['sequence' '.' string(k)])}.lastState  = lastState;
+
+                tempData{eval(['sequence' '.' string(k)])}.concentration{j} = outletProfile.concentration;
+            end
+
+            if opt.nZone == 4
+                dyncData{1, i} = currentData{ eval(['sequence' '.' char(stringSet(sum(opt.structID(1:3))))]) }.outlet.concentration;
+                dyncData{2, i} = currentData{ eval( ['sequence' '.' char(stringSet(opt.structID(1)))]) }.outlet.concentration;
+            elseif opt.nZone == 5
+                dyncData{1, i} = currentData{ eval(['sequence' '.' char(stringSet(sum(opt.structID(1:4))))]) }.outlet.concentration;
+                dyncData{2, i} = currentData{ eval(['sequence' '.' char(stringSet(sum(opt.structID(1:2))))]) }.outlet.concentration;
+                dyncData{3, i} = currentData{ eval(['sequence' '.' char(stringSet(opt.structID(1)))])}.outlet.concentration;
+            end
+
+        end
 
 
-%       convergence criterion was adopted in each nColumn iteration
+%       Store the data of one round (opt.nColumn switches), into plotData
+        for ii = 1:opt.nColumn
+            transitionData{ii}.outlet.concentration = cat( 1, tempData{ii}.concentration{:} );
+        end
+
+        index = mod(i, opt.nColumn);
+        if index == 0
+            plotData(:,opt.nColumn) = transitionData';
+        else
+            plotData(:,index) = transitionData';
+        end
+
+%       Convergence criterion was adopted in each nColumn iteration
 %           ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
         if fix(i/opt.nColumn) == i/(opt.nColumn)
 
-			diffNorm = 0; stateNorm = 0;
+            diffNorm = 0; stateNorm = 0;
 
-			for k = 1:opt.nComponents
-				diffNorm = diffNorm + norm( convergPrevious(:,k) - currentData{convergIndx}.outlet.concentration(:,k) );
-				stateNorm = stateNorm + norm( currentData{convergIndx}.outlet.concentration(:,k) );
-			end
+            for k = 1:opt.nComponents
+                diffNorm = diffNorm + norm( convergPrevious(:,k) - transitionData{convergIndx}.outlet.concentration(:,k) );
+                stateNorm = stateNorm + norm( transitionData{convergIndx}.outlet.concentration(:,k) );
+            end
 
             relativeDelta = diffNorm / stateNorm;
 
@@ -150,13 +202,15 @@ function objective = simulatedMovingBed(varargin)
                 fprintf('---- Round: %3d    Switch: %4d    CSS_relError: %g \n', i/opt.nColumn, i, relativeDelta);
             end
 
-%           plot the outlet profile of each column in one round
-            SMB.plotFigures(opt, currentData);
+%           Plot the outlet profile of each column in one round
+            SMB.plotFigures(opt, plotData);
+%           Plot the dynamic trajectory
+            SMB.plotDynamic(opt, dyncData(:,1:i), i);
 
             if relativeDelta <= opt.tolIter
                 break
             else
-                convergPrevious = currentData{convergIndx}.outlet.concentration;
+                convergPrevious = transitionData{convergIndx}.outlet.concentration;
             end
 
         end
@@ -165,7 +219,7 @@ function objective = simulatedMovingBed(varargin)
 
 
 %   Compute the performance index, such Purity and Productivity
-    Results = SMB.Purity_Productivity(currentData, opt);
+    Results = SMB.Purity_Productivity(plotData, opt);
 
 %   Construct your own Objective Function and calculate the value
     objective = SMB.objectiveFunction(Results, opt);

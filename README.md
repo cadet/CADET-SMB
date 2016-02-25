@@ -1,8 +1,8 @@
 ![](https://github.com/modsim/CADET/blob/master/doc/logo/CADET-GitHub.png)
 
-# CADET-SMB_One-Column-Analog
+# CADET-SMB_Dynamic-Analog
 
-The CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatograpy. And the variant, One-Column Analog, is an improved version SMB which converges to the same cyclic steady state (CSS) with full simulation. However, it is less-consuming and only one column configuration is required.
+The CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatograpy. And the variant, Dynamic Analog, is an improved version SMB which converges to the same cyclic steady state (CSS) with Full-simulation. However, it is little more time-consuming to compensate the benifits of obtaining the dynamic trajectory. This SMB simulation variant is regarded as the operator splitting.
 
 # Introduction
 
@@ -14,7 +14,7 @@ CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of For
 # Features
 
 * It possesses the same features with the full-simulation, ternary separation and binary separation with arbitrary column configuration;
-* It converges to the same statiionary state with the naive full-simulation, However it reduces the computational burden drastically.
+* It not only converges to the same statiionary state with the naive full-simulation, but also obtains the dynamic characteristics.
 * Rearding the full-simulation, I refer you to https://github.com/modsim/CADET-SMB;
 
 # Tutorial and Instructions
