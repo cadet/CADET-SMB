@@ -297,8 +297,8 @@ classdef OptAlgorithms < handle
         end 
         
     end
-    
-    
+
+
 %   PSO    
     methods (Static = true, Access = 'public') 
 
@@ -690,8 +690,8 @@ classdef OptAlgorithms < handle
         end
         
     end
- 
-    
+
+
 %   MADE    
     methods (Static = true, Access = 'public')
 
@@ -1216,7 +1216,8 @@ classdef OptAlgorithms < handle
         end
         
     end
-    
+
+
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of

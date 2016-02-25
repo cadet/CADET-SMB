@@ -77,7 +77,7 @@ function objective = simulatedMovingBed(varargin)
     for k = 1:opt.nColumn
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
-        currentData{k}.lastState = []; 
+        currentData{k}.lastState = [];
     end
 
 %   Number the columns for the sake of plotting
@@ -105,12 +105,12 @@ function objective = simulatedMovingBed(varargin)
  
 % 	Specify the column for the convergence checking
     if opt.nZone == 4
-    	convergIndx = sum(opt.structID(1:2)) + 1;
+    	convergIndx = sum(opt.structID(1:2));
 	elseif opt.nZone == 5
-		convergIndx = sum(opt.structID(1:3)) + 1;
+		convergIndx = sum(opt.structID(1:3));
     end
 
-%   preallocation
+%   Preallocation
 %   The dimension of plotData (columnNumber x switches)
 %          t_s   2*t_s  3*t_s  4*t_s
 %          {1}    {1}    {1}    {1}
@@ -118,6 +118,14 @@ function objective = simulatedMovingBed(varargin)
 %          {3}    {3}    {3}    {3}
 %          {4}    {4}    {4}    {4}
     plotData = cell(opt.nColumn,opt.nColumn);
+
+%   The data for plotting dynamic trajectory
+	if opt.nZone == 4
+		dyncData = cell(2, opt.nMaxIter);
+	elseif opt.nZone == 5
+		dyncData = cell(3, opt.nMaxIter);
+	end
+
 %   convergPrevious is used for stopping criterion
     convergPrevious = currentData{convergIndx}.outlet.concentration;
 
@@ -126,8 +134,8 @@ function objective = simulatedMovingBed(varargin)
 %   Main loop
     for i = 1:opt.nMaxIter
 
-%		switching the ports, in the countercurrent manner of fluid
-		sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
+%       Switching the ports, in the countercurrent manner of fluid
+        sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
 %       The simulation of columns within a SMB unit by the sequence, 
 %       say, 'a', 'b', 'c', 'd' in four-column cases
@@ -150,8 +158,17 @@ function objective = simulatedMovingBed(varargin)
             plotData(:,index) = currentData';
         end
 
+        if opt.nZone == 4
+            dyncData{1, i} = currentData{eval(['sequence' '.' char(stringSet(sum(opt.structID(1:3))))])}.outlet.concentration;
+            dyncData{2, i} = currentData{eval(['sequence' '.' char(stringSet(opt.structID(1)))])}.outlet.concentration;
+        elseif opt.nZone == 5
+            dyncData{1, i} = currentData{eval(['sequence' '.' char(stringSet(sum(opt.structID(1:4))))])}.outlet.concentration;
+            dyncData{2, i} = currentData{eval(['sequence' '.' char(stringSet(sum(opt.structID(1:2))))])}.outlet.concentration;
+            dyncData{3, i} = currentData{eval(['sequence' '.' char(stringSet(opt.structID(1)))])}.outlet.concentration;
+        end
 
-%       convergence criterion was adopted in each nColumn iteration
+
+%       Convergence criterion was adopted in each nColumn iteration
 %           ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
         if fix(i/opt.nColumn) == i/(opt.nColumn)
 
@@ -168,8 +185,10 @@ function objective = simulatedMovingBed(varargin)
                 fprintf('---- Round: %3d    Switch: %4d    CSS_relError: %g \n', i/opt.nColumn, i, relativeDelta);
             end
 
-%           plot the outlet profile of each column in one round
+%           Plot the outlet profile of each column in one round
             SMB.plotFigures(opt, plotData);
+%           Plot the dynamic trajectory
+			SMB.plotDynamic(opt, dyncData(:,1:i), i);
 
             if relativeDelta <= opt.tolIter
                 break
@@ -193,7 +212,7 @@ function objective = simulatedMovingBed(varargin)
         fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
     end
 
-%   store the final data into DATA.mat file in the mode of forward simulation
+%   Store the final data into DATA.mat file in the mode of forward simulation
     if opt.enableDebug
         save(sprintf('DATA_%2d.mat',fix(rand*100)),'Results');
         fprintf('The results have been stored in the DATA.mat \n');
