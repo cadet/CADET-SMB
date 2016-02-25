@@ -90,8 +90,17 @@ function objective = simulatedMovingBed(varargin)
     elseif opt.nZone == 5
         convergIndx = sum(opt.structID(1:3)) + 1;
     end
+
+%   Preallocation
 %   convergPrevious is used for stopping criterion
     convergPrevious = currentData{convergIndx}.outlet.concentration;
+
+% 	The data for dynamic trajectory plotting
+    if opt.nZone == 4
+		dyncData = cell(2, opt.nMaxIter);
+	elseif opt.nZone == 5
+		dyncData = cell(3, opt.nMaxIter);
+    end
 
 % 	Construct the string in order to tell simulator the calculation sequence
 	stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
@@ -132,8 +141,19 @@ function objective = simulatedMovingBed(varargin)
         currentData{eval(['sequence' '.' string(k)])}.outlet = outletProfile;
         initialState  = lastState;
 
+        if mod(i, opt.nColumn) == 0
+            if opt.nZone == 4
+                dyncData{1, i/opt.nColumn} = currentData{eval(['sequence' '.' char(stringSet(sum(opt.structID(1:3))))])}.outlet.concentration;
+                dyncData{2, i/opt.nColumn} = currentData{eval(['sequence' '.' char(stringSet(opt.structID(1)))])}.outlet.concentration;
+            elseif opt.nZone == 5
+                dyncData{1, i/opt.nColumn} = currentData{eval(['sequence' '.' char(stringSet(sum(opt.structID(1:4))))])}.outlet.concentration;
+                dyncData{2, i/opt.nColumn} = currentData{eval(['sequence' '.' char(stringSet(sum(opt.structID(1:2))))])}.outlet.concentration;
+                dyncData{3, i/opt.nColumn} = currentData{eval(['sequence' '.' char(stringSet(opt.structID(1)))])}.outlet.concentration;
+            end
+        end
 
-%       convergence criterion was adopted in each nColumn iteration
+
+%       Convergence criterion was adopted in each nColumn iteration
 %           ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
         if fix(i/opt.nColumn) == i/(opt.nColumn)
 
@@ -150,8 +170,10 @@ function objective = simulatedMovingBed(varargin)
                 fprintf('---- Round: %3d    Switch: %4d    CSS_relError: %g \n', i/opt.nColumn, i, relativeDelta);
             end
 
-%           plot the outlet profile of each column in one round
+%           Plot the outlet profile of each column in one round
             SMB.plotFigures(opt, currentData);
+%           Plot the dynamic trajectory
+            SMB.plotDynamic(opt, dyncData(:,1:i/opt.nColumn), i/opt.nColumn);
 
             if relativeDelta <= opt.tolIter
                 break
@@ -175,7 +197,7 @@ function objective = simulatedMovingBed(varargin)
         fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
     end
 
-%   store the final data into DATA.mat file in the mode of forward simulation
+%   Store the final data into DATA.mat file in the mode of forward simulation
     if opt.enableDebug
         save(sprintf('DATA_%2d.mat',fix(rand*100)),'Results');
         fprintf('The results have been stored in the DATA.mat \n');

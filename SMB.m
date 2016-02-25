@@ -755,6 +755,124 @@ classdef SMB < handle
 
         end % plotFigures
 
+        function plotDynamic(opt, dyncData, iter)
+%-----------------------------------------------------------------------------------------
+%  This is the plot function
+%  The numbers in the figure() represent the number of the columns
+%-----------------------------------------------------------------------------------------
+
+
+            if nargin < 2
+                disp('Error: there are no enough input data for the function, plotFigures');
+            else
+                if isempty(opt)
+                    disp('Error in plotFigures: the options of the parameters are missing');
+                elseif isempty(dyncData)
+                    disp('Error in plotFigures: the data for figures plotting are missing');
+                end
+            end
+
+            if opt.enableDebug
+
+                figure(100);clf
+                if opt.nZone == 4
+
+                    for i = 1:2
+
+                        y = cat(1, dyncData{i,:});
+
+                        subplot(2,1,i);
+                        FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
+                        ylabel('Concentration [Mol]', 'FontSize', 10);
+
+                        if opt.nComponents == 2
+                            legend('comp 1', 'comp 2');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 3
+                            legend('comp 1', 'comp 2', 'comp 3');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 4
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                        end
+
+                        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        set(gca, 'ygrid', 'on');
+                        set(gca, 'XTick', size(y,1)/2);
+
+                        switch i
+                            case 1
+                                set(gca, 'XTickLabel', {'Raffinate Port'});
+                            case 2
+                                set(gca, 'XTickLabel', {'Extract Port'});
+                        end
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                        end
+
+                    end
+
+                    suptitle('The evolution of the concentration from the Raffinate port and Extract port');
+
+                elseif opt.nZone == 5
+
+                     for i = 1:3
+
+                        y = cat(1, dyncData{i,:});
+
+                        subplot(3,1,i);
+                        FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
+                        ylabel('Concentration [Mol]', 'FontSize', 10);
+
+                        if opt.nComponents == 2
+                            legend('comp 1', 'comp 2');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 3
+                            legend('comp 1', 'comp 2', 'comp 3');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
+                        elseif opt.nComponents == 4
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                        end
+
+                        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        set(gca, 'ygrid', 'on');
+                        set(gca, 'XTick', size(y,1)/2);
+
+                        switch i
+                            case 1
+                                set(gca, 'XTickLabel', {'Raffinate Port'});
+                            case 2
+                                set(gca, 'XTickLabel', {'Extract_2 Port'});
+                            case 3
+                                set(gca, 'XTickLabel', {'Extract_1 Port'});
+                        end
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                        end
+
+                    end
+
+                    suptitle('The evolution of the concentration from the Raffinate port and Extract ports');
+
+                end
+
+            end
+
+        end % plotDynamic
+
 
     end % methods
 
