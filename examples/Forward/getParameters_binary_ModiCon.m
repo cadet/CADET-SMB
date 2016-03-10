@@ -32,10 +32,10 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.Purity_raffinate_limit  = 0.99;  % used for constructing constraints
     opt.Penalty_factor          = 10;    % penalty factor in penalty function
 
-    opt.enableDebug     = true;  % set it true when you want to see the figures 
-    opt.nZone   = 4;    % 4-zone for binary separation, 5-zone for ternary separation
-    opt.nColumn = 4;
-    opt.structID = [1 1 1 1];
+    opt.enableDebug = true;  % set it true when you want to see the figures 
+    opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
+    opt.nColumn     = 4;
+    opt.structID    = [1 1 1 1];
 
 %   Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';
@@ -98,6 +98,23 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
                 = (concentrationFeed(j,i) / opt.molMass(i));
         end
     end
+
+% -----------------------------------------------------------------------------
+%   Capable of placing a CSTR or DPFR apparatues before and after the calculated column
+
+%   Continuous Stirred Tank Reactor
+    opt.enable_CSTR = false;
+    opt.CSTR_length = 0.01;
+
+%   Dispersive Plug Flow Reactor
+    opt.enable_DPFR = false;
+
+    opt.DPFR_length = 0.0066;
+    opt.DPFR_nCells = 50;
+
+    opt.DPFR_velocity   = 0.00315;
+    opt.DPFR_dispersion = 2.5e-20;
+
 
 end
 % =============================================================================

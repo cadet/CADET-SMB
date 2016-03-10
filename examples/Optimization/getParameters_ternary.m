@@ -17,7 +17,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 
     valueAssign = struct('columnLength',ParSwarm(1), 'switch',ParSwarm(2), 'recycle',ParSwarm(3),...
         'feed',ParSwarm(4), 'desorbent',ParSwarm(5), 'extract',ParSwarm(6));
-    
+
 %   The parameter setting for simulator
     opt.tolIter         = 1e-3;   % tolerance of the SMB stopping criterion
     opt.nMaxIter        = 1000;   % the maximum iteration step in SMB
@@ -27,7 +27,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     opt.ABSTOL          = 1e-9;   % tolerance of CADET stopping criterion
     opt.INIT_STEP_SIZE  = 1e-14;  % refer your to CADET manual
     opt.MAX_STEPS       = 5e6;    % the maximum iteration step in CADET
-  
+
 %   The parameter setting for the SMB
     opt.switch          = valueAssign.switch;  % s % switching time 
     opt.timePoints      = 1000;         % the observed time-points
@@ -35,7 +35,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     opt.Purity_extract2_limit  = 0.69;  % used for constructing constraints
     opt.Purity_raffinate_limit = 0.99;  % used for constructing constraints
     opt.Penalty_factor         = 10;    % penalty factor in penalty function
-    
+
     opt.enableDebug = false; % set it false if you are using the optimizer
     opt.nZone   = 5;
     opt.nColumn = 5;
@@ -49,7 +49,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     opt.comp_raf_ID  = 1; % the target component withdrawn from the raffinate ports
     opt.comp_ext1_ID = 3; % the target component withdrawn from the extract ports
     opt.comp_ext2_ID = 2; % the target component withdrawn from the extract ports
-       
+
 %   Transport
     opt.dispersionColumn          = 3.8148e-10;     % D_{ax}
     opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5];      % K_f 
@@ -83,11 +83,11 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);      % m/s
     interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);      % m/s
-   
+
     concentrationFeed 	= [1.0, 1.0, 1.0];   % g/m^3 [concentration_compA, concentration_compB]
     opt.molMass         = [227.217, 267.24, 251.24192]; % The molar mass of each components
     opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
-    
+
 %   Feed concentration setup   
     Feed.time = linspace(0, opt.switch, opt.timePoints);
     Feed.concentration = zeros(length(Feed.time), opt.nComponents);
@@ -95,7 +95,24 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     for i = 1:opt.nComponents
         Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
     end
-    
+
+% -----------------------------------------------------------------------------
+%   Capable of placing a CSTR or DPFR apparatues before and after the calculated column
+
+%   Continuous Stirred Tank Reactor
+    opt.enable_CSTR = false;
+    opt.CSTR_length = 0.01;
+
+%   Dispersive Plug Flow Reactor
+    opt.enable_DPFR = false;
+
+    opt.DPFR_length = 0.0066;
+    opt.DPFR_nCells = 50;
+
+    opt.DPFR_velocity   = 0.00315;
+    opt.DPFR_dispersion = 2.5e-20;
+
+
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of

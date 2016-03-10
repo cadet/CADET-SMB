@@ -78,6 +78,11 @@ function objective = simulatedMovingBed(varargin)
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
     end
+    if opt.enable_DPFR
+        initialState_DPFR = cell(1,2);
+        initialState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
+        initialState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
+    end
 
 %   Number the columns for the sake of plotting 
     for k = 1:opt.nColumn
@@ -105,6 +110,12 @@ function objective = simulatedMovingBed(varargin)
 % 	Construct the string in order to tell simulator the calculation sequence
 	stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
                  'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'...
+                 'a1' 'b1' 'c1' 'd1' 'e1' 'f1' 'g1' 'h1' 'i1' 'j1' 'k1' 'l1' 'm1'...
+                 'n1' 'o1' 'p1' 'q1' 'r1' 's1' 't1' 'u1' 'v1' 'w1' 'x1' 'y1' 'z1'...
+                 'a2' 'b2' 'c2' 'd2' 'e2' 'f2' 'g2' 'h2' 'i2' 'j2' 'k2' 'l2' 'm2'...
+                 'n2' 'o2' 'p2' 'q2' 'r2' 's2' 't2' 'u2' 'v2' 'w2' 'x2' 'y2' 'z2'...
+                 'a3' 'b3' 'c3' 'd3' 'e3' 'f3' 'g3' 'h3' 'i3' 'j3' 'k3' 'l3' 'm3'...
+                 'n3' 'o3' 'p3' 'q3' 'r3' 's3' 't3' 'u3' 'v3' 'w3' 'x3' 'y3' 'z3'...
                  'aa' 'bb' 'cc' 'dd' 'ee' 'ff' 'gg' 'hh' 'ii' 'jj' 'kk' 'll' 'mm'...
                  'nn' 'oo' 'pp' 'qq' 'rr' 'ss' 'tt' 'uu' 'vv' 'ww' 'xx' 'yy' 'zz'};
 
@@ -117,6 +128,10 @@ function objective = simulatedMovingBed(varargin)
 	sequence = cell2struct( columnNumber, string, 2 );
 
 	string = char( [fliplr( string(1:convergIndx) ) fliplr( string(convergIndx+1:end) )] );
+
+    if opt.enable_CSTR && opt.enable_DPFR
+        error('It is not allowed have both the CSTR and DPFR in the simulation \n');
+    end
 
 
 %----------------------------------------------------------------------------------------- 
@@ -136,7 +151,34 @@ function objective = simulatedMovingBed(varargin)
 %       The simulation of columns within a SMB unit by the sequence, 
 %       say, 'c', 'b', 'a', 'd' in four-column cases
         column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, string(k));
-        [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, initialState, varargin{:});
+
+        if opt.enable_CSTR
+
+            % The CSTR before the current column
+            column.inlet = SMB.CSTR(column.inlet, column, opt);
+
+            [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, initialState, varargin{:});
+
+            % The CSTR after the current column
+            outletProfile = SMB.CSTR(outletProfile, column, opt);
+
+        elseif opt.enable_DPFR
+
+            % The DPFR before the current column
+            [column.inlet, lastState_DPFR_pre] = SMB.DPFR(column.inlet, initialState_DPFR{1}, opt);
+
+            [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, initialState, varargin{:});
+
+            % The DPFR after the current column
+            [outletProfile, lastState_DPFR_pos] = SMB.DPFR(outletProfile, initialState_DPFR{2}, opt);
+
+            initialState_DPFR = [{lastState_DPFR_pre}, {lastState_DPFR_pos}];
+
+        else
+
+            [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, initialState, varargin{:});
+
+        end
 
         currentData{eval(['sequence' '.' string(k)])}.outlet = outletProfile;
         initialState  = lastState;
@@ -167,7 +209,7 @@ function objective = simulatedMovingBed(varargin)
             relativeDelta = diffNorm / stateNorm;
 
             if opt.enableDebug
-                fprintf('---- Round: %3d    Switch: %4d    CSS_relError: %g \n', i/opt.nColumn, i, relativeDelta);
+                fprintf('---- Switch: %4d    CSS_relError: %g \n', i/opt.nColumn, relativeDelta);
             end
 
 %           Plot the outlet profile of each column in one round
