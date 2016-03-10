@@ -2,18 +2,18 @@
 
 # CADET-SMB
 
-The CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatograpy. 
+CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatograpy. 
 
 # Introduction
 
-There are various practical modes of carrying out industrial purification by preparative chromatography. The most straightforward and frequently used is cyclic batch elution chromatography, simulations of which are provided in the CADET framework (https://github.com/modsim/CADET). Another importent mode is counter-current chromatography, in which the fluid and the solid phases flow through the column in opposite directions. Since the continuous true moving bed (TMB) process is technically hard to implement, the cyclic simulated moving bed (SMB) is usually applied. In this repository, we offer an extension of the CADET framework for simulating SMB processes.
+There are various practical modes of carrying out industrial purification by preparative chromatography. The most straightforward and frequently used is cyclic batch elution chromatography, simulations of which are provided in the CADET framework (https://github.com/modsim/CADET). Another importent mode is counter-current chromatography, in which the fluid and the solid phases flow through the column in opposite directions. Since the continuous true moving bed (TMB) process is technically hard to implement, the cyclic simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework for simulating SMB processes.
 
 CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. Specific optimizers are also provided.
 
 # Features
 
-* Three simulation variants of SMB process, conventional simulation (branch: master), one-column analog (branch: One-Column-Analog), and Operator-Splitting Analog (branch: Dynamic-Analog) respectively. Each of them focuses on the different object.
-* Ternary separation is available, using five-zone technique; quaternary components in ternary separation are possible;
+* Three simulation variants of the SMB process are implemented: 1) conventional simulation of the cyclic steady state (branch: master), 2) the one-column analog (branch: One-Column-Analog), and 3) the operator splitting approach (branch: Dynamic-Analog);
+* Ternary separation is available, using five zones; quaternary components in ternary separation are possible;
 ![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG)
 ![Axial concentration profile in the ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
 * Binary separation is available; ternary components in binary separation are also possible;
