@@ -88,6 +88,23 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
        Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
     end
 
+% -----------------------------------------------------------------------------
+%   Capable of placing a CSTR or DPFR apparatues before and after the calculated column
+
+%   Continuous Stirred Tank Reactor
+    opt.enable_CSTR = false;
+    opt.CSTR_length = 0.01;
+
+%   Dispersive Plug Flow Reactor
+    opt.enable_DPFR = false;
+
+    opt.DPFR_length = 0.0066;
+    opt.DPFR_nCells = 50;
+
+    opt.DPFR_velocity   = 0.00315;
+    opt.DPFR_dispersion = 2.5e-20;
+
+
 end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
