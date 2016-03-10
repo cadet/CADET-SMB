@@ -19,8 +19,8 @@ CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of For
 * Binary separation is available; ternary components in binary separation are also possible;
 ![The SMB scheme of binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
 ![Axial concentration profile in the binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-* In both ternary separation and binary separation, arbitrary column configurations are available, rather than the column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
-* Capability of placing the continuous stirred tank reactor (CSTR) and the dispersive plug flow reactor (DPFR) before and after each column in the SMB unit.
+* In both binary and ternary separations, arbitrary column configurations are available, rather than the column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
+* Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for the respective hold-up volumes;
 * In binary separation, the ModiCon process is available;
 * MATLAB interface allows to monitor the dynamic characteristics of each column;
 * Optimization of decision variables for improving, e.g., productivity, purity, operating costs;
@@ -65,7 +65,7 @@ The demonstration cases can directly be run coping them from the examples direct
 Of course, the examples can be modified of replaced by own models, operating conditions, and optimization routines. 
 
 * How to write your own getParameter routine?
-* How to adopt another type of equilibrium isother models?
+* How to adopt other isotherm models?
 
 # Documentation 
 
@@ -73,4 +73,4 @@ For more details of the CADET-SMB software, see the file doc.pdf in the reposito
 
 # Further Development 
 
-SMB is actively developed. Hence, breaking changes and extensive restructuring may occur in any commit and release. For non-developers it is recommended to upgrade from release to release instead of always working with the most recent commit.
+CADET-SMB is actively developed. Hence, breaking changes and extensive restructuring may occur in any commit and release. For non-developers it is recommended to upgrade from release to release instead of always working with the most recent commit.
