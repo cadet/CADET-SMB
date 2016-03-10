@@ -20,7 +20,7 @@ CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of For
 ![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG)
 ![Axial concentration profile in the ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
-* Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for the respective hold-up volumes;
+* Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for hold-up volumes in frits, tubing, and valves;
 * In binary separation, the ModiCon process is available;
 * MATLAB interface allows to monitor the dynamic characteristics of each column;
 * Optimization of decision variables for improving, e.g., productivity, purity, operating costs;
