@@ -13,10 +13,10 @@ CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of For
 # Features
 
 * Three simulation variants of the SMB process are implemented: 1) conventional computation of the cyclic steady state by iteratively simulating all columns (branch: master), 2) the one-column analog (branch: one-column-analog), and 3) the operator splitting approach (branch: dynamic-analog);
-* Binary separation is available; ternary components in binary separation are also possible;
+* Binary separation is available using four zones; ternary components in binary separation are also possible;
 ![The SMB scheme of binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
 ![Axial concentration profile in the binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-* Ternary separation is available, using five zones; quaternary components in ternary separation are possible;
+* Ternary separation is available using five zones; quaternary components in ternary separation are possible;
 ![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG)
 ![Axial concentration profile in the ternary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
 * In both binary and ternary separations, arbitrary column configurations are available, rather than the column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
