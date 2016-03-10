@@ -259,6 +259,10 @@ classdef SMB < handle
 %           Update the intersitial velocity, boundary conditions
             column.params = params{idx_i};
             column.initialState = currentData{idx_i}.lastState;
+%           If DPFRs were implemented, transfer the boundary conditons between switches
+            if opt.enable_DPFR
+                column.initialState_DPFR = currentData{idx_i}.lastState_DPFR;
+            end
 
 %           Calculate concentration of the column due to its position in the SMB unit
             switch index
@@ -286,6 +290,85 @@ classdef SMB < handle
             end
 
         end % massConservation
+
+        function params = getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet)
+%-----------------------------------------------------------------------------------------
+% After each swtiching, the value of velocities and initial conditions are changed
+%
+% Parameters:
+% 		- sequence. The alphabet of each zone and their column number
+% 		- interstVelocity. The interstitial velocity of each zone 
+% 		- opt. option of parameterss
+% 		- index. The capital letter used to indicate which zone current column situated in
+% 		- alphabet. The letter of current calculated column, i. 
+% 		- pre_alphabet. The letter of column before the current calculated one, i-1. 
+% 
+% Returns:
+% 		- params. It contains interstitial velocity and boundary conditions
+%-----------------------------------------------------------------------------------------
+
+
+%             global stringSet;
+%             string = char(stringSet(1:opt.nColumn));
+
+            params = cell(1, opt.nColumn);
+            for k = 1:opt.nColumn
+%               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
+                params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
+                    zeros(1,opt.nComponents), 'interstitialVelocity', []);
+            end
+
+%             for j = 1:opt.nColumn
+% %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
+%                 params{ eval(['sequence' '.' string(j)]) }.initMobilCon = zeros(1,opt.nComponents);
+%                 params{ eval(['sequence' '.' string(j)]) }.initSolidCon = zeros(1,opt.nComponents);
+%             end
+
+            if opt.nZone == 4
+
+                switch index
+
+                    case {'D' 'M_D'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                    case {'E' 'M_E'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                    case {'F' 'M_F'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                    case {'R' 'M_R'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+
+                end
+
+            elseif opt.nZone == 5
+
+                switch index
+
+                    case {'D' 'M_D'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                    case {'E1' 'M_E1'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                    case {'E2' 'M_E2'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                    case {'F' 'M_F'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                    case {'R' 'M_R'}
+                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+
+                end
+
+            end
+
+        end % getParams
+
 
         function index = stringIndexing(opt, alphabet)
 %-----------------------------------------------------------------------------------------
@@ -391,83 +474,84 @@ classdef SMB < handle
 
         end % stringIndexing
 
-        function params = getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet)
+        function obj = positionIndexing(opt)
 %-----------------------------------------------------------------------------------------
-% After each swtiching, the value of velocities and initial conditions are changed
+% This is the function that tells the Purity_Productivity which column is used for
+% calculation of purity and productivity. It is vital in arbitrary column
+% configurations and it also depends on the plotData and the referred column.
 %
 % Parameters:
-% 		- sequence. The alphabet of each zone and their column number
-% 		- interstVelocity. The interstitial velocity of each zone 
-% 		- opt. option of parameterss
-% 		- index. The capital letter used to indicate which zone current column situated in
-% 		- alphabet. The letter of current calculated column, i. 
-% 		- pre_alphabet. The letter of column before the current calculated one, i-1. 
-% 
+% 		- opt. options
+%
 % Returns:
-% 		- params. It contains interstitial velocity and boundary conditions
+% 		- obj. A struct data which contains the numbers for indicating the EXTRACT and 
+% 			RAFFINATE ports those are used for calculation of purity and productivity
 %-----------------------------------------------------------------------------------------
 
 
-%             global stringSet;
-%             string = char(stringSet(1:opt.nColumn));
+            Number = circshift( (fliplr(1:opt.nColumn))', 1 );
 
-            params = cell(1, opt.nColumn);
-            for k = 1:opt.nColumn
-%               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
-                params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
-                    zeros(1,opt.nComponents), 'interstitialVelocity', []);
+%           numberBlock is used for storing the column number in each zone
+            numberBlock = cell(1, opt.nZone);
+
+%           separate the number string into nZone cells
+            numberBlock{1} = Number(1:opt.structID(1));
+            for k = 2:opt.nZone
+                numberBlock{k} = Number( sum(opt.structID(1:k-1))+1 : sum(opt.structID(1:k)) );
             end
-
-%             for j = 1:opt.nColumn
-% %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
-%                 params{ eval(['sequence' '.' string(j)]) }.initMobilCon = zeros(1,opt.nComponents);
-%                 params{ eval(['sequence' '.' string(j)]) }.initSolidCon = zeros(1,opt.nComponents);
-%             end
 
             if opt.nZone == 4
 
-                switch index
-
-                    case {'D' 'M_D'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                    case {'E' 'M_E'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                    case {'F' 'M_F'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                    case {'R' 'M_R'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-
-                end
+                obj.position_ext = numberBlock{1}(end); % Desorbent node
+                obj.position_raf = numberBlock{3}(end); % Feed node
 
             elseif opt.nZone == 5
 
-                switch index
-
-                    case {'D' 'M_D'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                    case {'E1' 'M_E1'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                    case {'E2' 'M_E2'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                    case {'F' 'M_F'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                    case {'R' 'M_R'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-
-                end
+                obj.position_ext1 = numberBlock{1}(end); % Desorbent node
+                obj.position_ext2 = numberBlock{2}(end); % Extract_1 node
+                obj.position_raf = numberBlock{4}(end);  % Feed node
 
             end
 
-        end % getParams
+        end % positionIndexing
+
+
+        function objective = objectiveFunction(Results, opt)
+%-----------------------------------------------------------------------------------------
+% The objective function for the optimizers
+% You can also define your own objective function here. The default function is: 
+%
+% Max Productivity_extract + Productivity_raffinate
+% s.t. Purity_extract   >= 99% for more retained component
+%      Purity_raffinate >= 99% for less retained component
+%      other implicit constraints, such as upbound on Desorbent consumption
+%-----------------------------------------------------------------------------------------
+
+
+            if opt.nZone == 4
+%               Construct the Penalty Function for the objective function
+                penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+
+%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+                objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
+
+            elseif opt.nZone == 5
+%               Construct the Penalty Function for the objective function
+                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+
+%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+                objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
+            end
+
+
+            if opt.enableDebug
+                fprintf('**** The objective value:  %g \n', objective);
+            end
+
+        end % objectiveFunction
 
         function Results = Purity_Productivity(plotData, opt)
 %-----------------------------------------------------------------------------------------
@@ -575,83 +659,128 @@ classdef SMB < handle
 
         end % Purity_Productivity
 
-        function obj = positionIndexing(opt)
-%-----------------------------------------------------------------------------------------
-% This is the function that tells the Purity_Productivity which column is used for
-% calculation of purity and productivity. It is vital in arbitrary column
-% configurations and it also depends on the plotData and the referred column.
+
+        function columnSpline = CSTR(Profile, column, opt)
+% -----------------------------------------------------------------------------
+% Simulation of the continuous stirred tank reactor (CSTR)
 %
 % Parameters:
-% 		- opt. options
-%
+%       - Profile. Inlet time concentration, the initial conditions
+%       - column. The boundary conditions of the CSTR
+%       - opt. Options for the software
+% 
 % Returns:
-% 		- obj. A struct data which contains the numbers for indicating the EXTRACT and 
-% 			RAFFINATE ports those are used for calculation of purity and productivity
-%-----------------------------------------------------------------------------------------
+%       - columnProfile. outlet time and corresponding concentration profile
+%               - time. The time points observed
+%               - concentration. The concentration of the outlet of CSTR due to the time
+%               points
+% -----------------------------------------------------------------------------
 
 
-            Number = circshift( (fliplr(1:opt.nColumn))', 1 );
+            for i = 1:opt.nComponents
 
-%           numberBlock is used for storing the column number in each zone
-            numberBlock = cell(1, opt.nZone);
+                IC = Profile.concentration(1,i);
 
-%           separate the number string into nZone cells
-            numberBlock{1} = Number(1:opt.structID(1));
-            for k = 2:opt.nZone
-                numberBlock{k} = Number( sum(opt.structID(1:k-1))+1 : sum(opt.structID(1:k)) );
-            end
+                [T, Y] = ode15s(@(t, y) ode_CSTR(t, y, Profile.time, Profile.concentration, column.params.interstitialVelocity, i), [0, opt.switch], IC);
 
-            if opt.nZone == 4
-
-                obj.position_ext = numberBlock{1}(end); % Desorbent node
-                obj.position_raf = numberBlock{3}(end); % Feed node
-
-            elseif opt.nZone == 5
-
-                obj.position_ext1 = numberBlock{1}(end); % Desorbent node
-                obj.position_ext2 = numberBlock{2}(end); % Extract_1 node
-                obj.position_raf = numberBlock{4}(end);  % Feed node
+                columnSpline.concentration(:,i) = interp1(T, Y, Profile.time);
 
             end
 
-        end % positionIndexing
+            columnSpline.time = Profile.time;
 
-        function objective = objectiveFunction(Results, opt)
-%-----------------------------------------------------------------------------------------
-% The objective function for the optimizers
-% You can also define your own objective function here. The default function is: 
+
+            function DyDt = ode_CSTR(t, y, time, concentration, interstVelocity, comp)
+            % -----------------------------------------------------------------
+            % The ODE function of continuous stirred tank reactor
+            % DyDt = [ y_{out}(t) - y_{in}(t) ] / tau
+            %
+            % Parameters:
+            %       - t. Time point
+            %       - y. Concentration
+            %       - time. The vector of the observed time points
+            %       - concentration. The initial conditions for the IVP
+            %       - interstVelocity. The velocity of CSTR
+            %       - comp. The index of components
+            % -----------------------------------------------------------------
+
+
+                tankLength = 0.01;
+
+                concentration_f = interp1(time, concentration(:,comp), t);
+
+                tau = tankLength / interstVelocity;
+
+                DyDt = 1/tau * (concentration_f - y);
+
+            end
+
+        end % CSTR
+
+        function [columnSpline, lastState]  = DPFR(Profile, initialState, opt)
+% -----------------------------------------------------------------------------
+% Simulation of the dispersive plug flow reactor (DPFR)
 %
-% Max Productivity_extract + Productivity_raffinate
-% s.t. Purity_extract   >= 99% for more retained component
-%      Purity_raffinate >= 99% for less retained component
-%      other implicit constraints, such as upbound on Desorbent consumption
-%-----------------------------------------------------------------------------------------
+% Parameters:
+%       - Profile. Inlet time concentration, the initial conditions
+%       - initialState. The boundary conditions of the DPFR
+%       - opt. Options for the software
+% 
+% Returns:
+%       - columnProfile. outlet time and corresponding concentration profile
+%               - time. The time points observed
+%               - concentration. The concentration of the outlet of CSTR due to the time
+%               points
+%       - lastState. Record the last state of the DPFRs as the initial state of next
+%       calculation
+% -----------------------------------------------------------------------------
 
 
-            if opt.nZone == 4
-%               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+            lastState = zeros(opt.nComponents, opt.DPFR_nCells);
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
-                objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
+			delta_h = opt.DPFR_length / opt.DPFR_nCells;
 
-            elseif opt.nZone == 5
-%               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+            for i = 1:opt.nComponents
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
-                objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
+                concentration = interp1(Profile.time, Profile.concentration(:,i), 'pchip', 'pp');
+
+                [T, Y] = ode15s(@ode_DPFR, Profile.time, initialState(i,:));
+
+                columnSpline.concentration(:,i) = interp1(T, Y(:,end), Profile.time);
+
+                lastState(i, :) = Y(end, :);
+
             end
 
+            columnSpline.time = Profile.time;
 
-            if opt.enableDebug
-                fprintf('**** The objective value:  %g \n', objective);
+
+            function y = ode_DPFR(t, x)
+            % -----------------------------------------------------------------
+            % The PDE function of dispersive plug flow reactor
+            % Dy/Dt = - u Dy/Dz + D_{ax} DDy/DDz
+            %
+            % Parameters:
+            %       - t. Time point
+            %       - x. Initial conditons
+            % -----------------------------------------------------------------
+
+
+                y = zeros(opt.DPFR_nCells, 1);
+
+                % Convection
+                y(1) = y(1) - opt.DPFR_velocity / delta_h * (x(1) - ppval(concentration, t));
+                y(2:end) = y(2:end) - opt.DPFR_velocity / delta_h * (x(2:end) - x(1:end-1));
+
+                % Dispersion
+                y(1) = y(1) + opt.DPFR_dispersion / sqrt(delta_h) * (x(2) - x(1));
+                y(2:end-1) = y(2:end-1) + opt.DPFR_dispersion / sqrt(delta_h) * (x(3:end) - 2 * x(2:end-1) + x(1:end-2));
+                y(end) = y(end) + opt.DPFR_dispersion / sqrt(delta_h) * (x(end-1) - x(end));
+
             end
 
-        end % objectiveFunction
+        end % DPFR
+
 
         function plotFigures(opt, plotData)
 %-----------------------------------------------------------------------------------------
@@ -1079,7 +1208,11 @@ classdef SMB < handle
                         end
 
                         for j = 1: (iter-1)
-                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', ':');
+                        end
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints*opt.nInterval, j*opt.timePoints*opt.nInterval],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
                         end
 
                     end
@@ -1125,7 +1258,11 @@ classdef SMB < handle
                         end
 
                         for j = 1: (iter-1)
-                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', ':');
+                        end
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints*opt.nInterval, j*opt.timePoints*opt.nInterval],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
                         end
 
                     end

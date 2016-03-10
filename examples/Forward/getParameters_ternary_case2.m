@@ -26,8 +26,9 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.MAX_STEPS       = 5e6;   % the maximum iteration step in CADET
 
 %   The parameter setting for the SMB
-    opt.switch          = 1394.4;   % s  % switching time
-    opt.timePoints      = 1000;  % the observed time-points
+    opt.nInterval       = 5;
+    opt.switch          = 1394.4/opt.nInterval;   % s  % switching time
+    opt.timePoints      = 1000/opt.nInterval;  % the observed time-points
     opt.Purity_extract1_limit   = 0.95;  % used for constructing constraints
     opt.Purity_extract2_limit   = 0.50;  % used for constructing constraints
     opt.Purity_raffinate_limit  = 0.99;  % used for constructing constraints
@@ -92,6 +93,23 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     for i = 1:opt.nComponents
         Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
     end
+
+% -----------------------------------------------------------------------------
+%   Capable of placing a CSTR or DPFR apparatues before and after the calculated column
+
+%   Continuous Stirred Tank Reactor
+    opt.enable_CSTR = false;
+    opt.CSTR_length = 0.01;
+
+%   Dispersive Plug Flow Reactor
+    opt.enable_DPFR = false;
+
+    opt.DPFR_length = 0.0066;
+    opt.DPFR_nCells = 50;
+
+    opt.DPFR_velocity   = 0.00315;
+    opt.DPFR_dispersion = 2.5e-20;
+
 
 end
 % =============================================================================

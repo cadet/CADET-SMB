@@ -25,9 +25,10 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
 
-%   The parameter settting for the SMB 
-    opt.switch          = 1552;
-    opt.timePoints      = 1000;
+%   The parameter settting for the SMB
+    opt.nInterval       = 5;
+    opt.switch          = 1552/opt.nInterval;
+    opt.timePoints      = 1000/opt.nInterval;
     opt.Purity_extract_limit    = 0.99;
     opt.Purity_raffinate_limit  = 0.99;
     opt.Penalty_factor          = 10;
@@ -87,6 +88,23 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     for i = 1:opt.nComponents
         Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
     end
+
+% -----------------------------------------------------------------------------
+%   Capable of placing a CSTR or DPFR apparatues before and after the calculated column
+
+%   Continuous Stirred Tank Reactor
+    opt.enable_CSTR = false;
+    opt.CSTR_length = 0.01;
+
+%   Dispersive Plug Flow Reactor
+    opt.enable_DPFR = false;
+
+    opt.DPFR_length = 0.0066;
+    opt.DPFR_nCells = 50;
+
+    opt.DPFR_velocity   = 0.00315;
+    opt.DPFR_dispersion = 2.5e-20;
+
 
 end
 % =============================================================================
