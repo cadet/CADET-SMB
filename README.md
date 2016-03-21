@@ -14,11 +14,11 @@ CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of For
 
 * Three simulation variants of the SMB process are implemented: 1) conventional computation of the cyclic steady state by iteratively simulating all columns (branch: master), 2) the one-column analog (branch: one-column-analog), and 3) the operator splitting approach (branch: dynamic-analog);
 * Binary separation is available using four zones; ternary components in binary separation are also possible;
-<img scr="https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG" width="83" height="73">
-<img scr="https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG", width="152" height="97">
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
 * Ternary separation is available using five zones; quaternary components in ternary separation are possible;
-<img scr="https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG" width="83" height="73">
-<img scr="https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG" width="137" height="97">
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
 * Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for hold-up volumes in frits, tubing, and valves;
 * In binary separation, the ModiCon process is also available;
