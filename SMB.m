@@ -700,11 +700,9 @@ classdef SMB < handle
             % -----------------------------------------------------------------
 
 
-                tankLength = 0.01;
-
                 concentration_f = interp1(time, concentration(:,comp), t);
 
-                tau = tankLength / interstVelocity;
+                tau = opt.CSTR_length / interstVelocity;
 
                 DyDt = 1/tau * (concentration_f - y);
 
