@@ -7,14 +7,19 @@ The CADET-SMB is a comprehensive simulator for analysis and design of simulated 
 # Introduction
 
 There are various practical modes of carrying out industrial purification by preparative chromatography. The most straightforward and frequently used is cyclic batch elution chromatography, simulations of which are provided in the CADET framework (https://github.com/modsim/CADET). Another importent mode is counter-current chromatography, in which the fluid and the solid phases flow through the column in opposite directions. Since the continuous true moving bed (TMB) process is technically hard to implement, the cyclic simulated moving bed (SMB) is usually applied. In this repository, we offer an extension of the CADET framework for simulating SMB processes.
-![The SMB scheme of binary separation](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary.JPG)
 
 CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. Specific optimizers are also provided.
 
 # Features
+![The SMB scheme of binary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/scheme_binary.JPG)
+![The concentration profile of binary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/profile_binary.JPG)
+![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/scheme_ternary.JPG)
+![The concentration profile of ternary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/profile_ternary.JPG)
 
 * It possesses the same features with the full-simulation, ternary separation and binary separation with arbitrary column configuration;
 * It not only converges to the same statiionary state with the naive full-simulation, but also obtains the dynamic characteristics.
+![operator-splitting](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/operator-splitting.JPG)
+
 * Rearding the full-simulation, I refer you to https://github.com/modsim/CADET-SMB;
 
 # Tutorial and Instructions
