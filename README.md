@@ -11,14 +11,14 @@ There are various practical modes of carrying out industrial purification by pre
 CADET-SMB is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. Specific optimizers are also provided.
 
 # Features
-![The SMB scheme of binary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/scheme_binary.JPG)
-![The concentration profile of binary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/profile_binary.JPG)
-![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/scheme_ternary.JPG)
-![The concentration profile of ternary separation](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/profile_ternary.JPG)
+![The SMB scheme of binary separation](https://github.com/modsim/CADET-SMB/blob/Dynamic-Analog/doc/scheme_binary.JPG)
+![The concentration profile of binary separation](https://github.com/modsim/CADET-SMB/blob/Dynamic-Analog/doc/profile_binary.JPG)
+![The SMB scheme of ternary separation](https://github.com/modsim/CADET-SMB/blob/Dynamic-Analog/doc/scheme_ternary.JPG)
+![The concentration profile of ternary separation](https://github.com/modsim/CADET-SMB/blob/Dynamic-Analog/doc/profile_ternary.JPG)
 
 * It possesses the same features with the full-simulation, ternary separation and binary separation with arbitrary column configuration;
 * It not only converges to the same statiionary state with the naive full-simulation, but also obtains the dynamic characteristics.
-![operator-splitting](https://github.com/modsim/CADET-SMB/blob/One-Column-Analog/doc/operator-splitting.JPG)
+![operator-splitting](https://github.com/modsim/CADET-SMB/blob/Dynamic-Analog/doc/operator_splitting.JPG)
 
 * Rearding the full-simulation, I refer you to https://github.com/modsim/CADET-SMB;
 
