@@ -236,7 +236,7 @@ classdef SMB < handle
 % -----------------------------------------------------------------------------
 
 
-            global stringSet;
+            global stringSet dummyProfile startingPointIndex;
 
 %           Time points
             column.inlet.time = linspace(0, opt.switch, opt.timePoints);
@@ -253,8 +253,8 @@ classdef SMB < handle
 %           Get the interstitial velocity of each column and boundary conditions
             params = SMB.getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet);
 
-            idx_i = eval( ['sequence' '.' alphabet] );     % the number of current column
-            idx_j = eval( ['sequence' '.' pre_alphabet] ); % the number of the column before
+            idx_i = sequence.(alphabet);     % the number of current column
+            idx_j = sequence.(pre_alphabet); % the number of the column before
 
 %           Update the intersitial velocity, boundary conditions
             column.params = params{idx_i};
@@ -270,26 +270,306 @@ classdef SMB < handle
                 case 'D' % node DESORBENT
 
                     %   C_i^in = Q_{i-1} * C_{i-1}^out / Q_i
-                    concentration = zeros(length(Feed.time), opt.nComponents);
-
-                    column.inlet.concentration = concentration .* params{idx_j}.interstitialVelocity...
-                        ./ params{idx_i}.interstitialVelocity; 
+                    if ~strcmp(startingPointIndex, index)
+                        column.inlet.concentration = currentData{idx_j}.outlet.concentration .* ...
+                            params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity;
+                    else
+                        column.inlet.concentration = dummyProfile.concentration .* ...
+                            params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity;
+                    end
 
                 case 'F' % node FEED
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
-                    column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
-                        params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
-                        ./ params{idx_i}.interstitialVelocity; 
+                    if ~strcmp(startingPointIndex, index)
+                        column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    else
+                        column.inlet.concentration = (dummyProfile.concentration .* ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    end
 
                 otherwise % node EXTRACT; RAFFINATE; MIDDLE
 
                     %   C_i^in = C_{i-1}^out
-                    column.inlet.concentration = currentData{idx_j}.outlet.concentration;
+                    if ~strcmp(startingPointIndex, index)
+                        column.inlet.concentration = currentData{idx_j}.outlet.concentration;
+                    else
+                        column.inlet.concentration = dummyProfile.concentration;
+                    end
+
 
             end
 
         end % massConservation
+
+        function objective = simulatedMovingBed(varargin)
+% =============================================================================
+% This is the main function which is charge of switching to reach the
+% cyclic steady state. The layout of the columns and the configuration is
+% listed as follow:
+%
+%                                       FOUR-ZONE
+%              4-column SMB                                       8-column SMB
+% Extract                          Feed       |    Extract                           Feed
+%       \                          /          |         \                            /
+%        --------Zone II(b)--------           |          --------Zone II(c/d)--------
+%        |                        |           |          |                          | 
+% Zone I(a)                  Zone III(c)      |     Zone I(a/b)               Zone III(e/f)
+%        |                        |           |          |                          | 
+%        --------Zone IV(d)--------           |          --------Zone IV(h/g)--------
+%       /                          \          |         /                            \
+% Desorbent                       Raffinate   |   Desorbent                         Raffinate
+%
+%             12-column SMB                                       16-column SMB
+% Extract                            Feed       |    Extract                         Feed
+%       \                            /          |         \                          /
+%        -- ----Zone II(d/e/f)-------           |          -----Zone II(e/f/g/h)-----
+%        |                          |           |          |                        | 
+% Zone I(c/b/a)                Zone III(g/h/i)  |  Zone I(a/b/c/d)           Zone III(i/j/k/l)
+%        |                          |           |          |                        | 
+%        -------Zone IV(l/k/j)-------           |          -----Zone IV(p/o/n/m)-----
+%       /                            \          |         /                          \
+% Desorbent                         Raffinate   |   Desorbent                       Raffinate
+%
+%                                       FIVE-ZONE
+%              5-column SMB                                       10-column SMB
+%    Ext2                          Feed       |      Ext2                            Feed
+%       \                          /          |         \                            /
+%        --------Zone II(c)--------           |          --------Zone III(e/f)--------
+%        |                        |           |          |                           | 
+% Zone II(b)                      |           |     Zone II(d/c)                     |
+%        |                        |           |          |                           |
+% Ext1 --                    Zone IV(d)       |   Ext1 --                        Zone IV(g/h)
+%        |                        |           |          |                           |
+% Zone I(a)                       |           |     Zone I(b/a)                      |
+%        |                        |           |          |                           | 
+%        --------Zone V(e)---------           |          ---------Zone V(j/i)---------
+%       /                          \          |         /                            \
+% Desorbent                       Raffinate   |   Desorbent                         Raffinate
+%
+%             15-column SMB                                       20-column SMB
+%    Ext2                            Feed       |      Ext2                              Feed
+%       \                            /          |         \                              /
+%        -------Zone II(g/h/i)-------           |          -------Zone III(i/g/k/l)-------
+%        |                          |           |          |                             | 
+% Zone II(f/e/d)                    |           | Zone II(h/g/f/e)                       |
+%        |                          |           |          |                             |
+% Ext1 --                    Zone IV(j/k/l)     |   Ext1 --                        Zone IV(m/n/o/p)
+%        |                          |           |          |                             |
+% Zone I(c/b/a)                     |           | Zone I(d/c/b/a)                        |
+%        |                          |           |          |                             | 
+%        -------Zone V(o/n/m)--------           |          -------Zone V(t/s/r/q)---------
+%       /                            \          |         /                              \
+% Desorbent                         Raffinate   |   Desorbent                           Raffinate
+%
+% Fluid phase goes from Zone I to Zone II to Zone III, while the ports switch direction
+% is from Zone I to Zone IV to Zone III;
+% =============================================================================
+
+
+            global string stringSet structID dummyProfile startingPointIndex;
+
+            [opt, interstVelocity, Feed] = getParameters(varargin{:});
+            if ~isfield(opt, 'structID')
+                opt.structID = structID;
+            end
+
+%           Check the interstitial velocity, if anyone was negative, stop the simulation
+%           and assign a very big objective function value to this column configuration.
+            flag = SMB.interstVelocityCheck(interstVelocity, opt);
+            if flag == 1
+                objective = 1e3;  
+                return;  
+            end
+
+%           Initialize the starting points, currentData
+            currentData  = cell(1, opt.nColumn);
+            columnNumber = cell(1, opt.nColumn);
+
+            for k = 1:opt.nColumn
+                currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
+                currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
+                currentData{k}.lastState = [];
+
+                if opt.enable_DPFR
+                    currentData{k}.lastState_DPFR = cell(1, 2);
+                    currentData{k}.lastState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
+                    currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
+                end
+            end
+
+%           Number the columns for the sake of plotting
+            for k = 1:opt.nColumn
+                if k == 1
+                    columnNumber{1} = opt.nColumn;
+                else
+                    columnNumber{k} = k-1;
+                end
+            end
+
+%           Construct the string in order to tell simulator the calculation sequence
+            stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
+                         'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'...
+                         'a1' 'b1' 'c1' 'd1' 'e1' 'f1' 'g1' 'h1' 'i1' 'j1' 'k1' 'l1' 'm1'...
+                         'n1' 'o1' 'p1' 'q1' 'r1' 's1' 't1' 'u1' 'v1' 'w1' 'x1' 'y1' 'z1'...
+                         'a2' 'b2' 'c2' 'd2' 'e2' 'f2' 'g2' 'h2' 'i2' 'j2' 'k2' 'l2' 'm2'...
+                         'n2' 'o2' 'p2' 'q2' 'r2' 's2' 't2' 'u2' 'v2' 'w2' 'x2' 'y2' 'z2'...
+                         'a3' 'b3' 'c3' 'd3' 'e3' 'f3' 'g3' 'h3' 'i3' 'j3' 'k3' 'l3' 'm3'...
+                         'n3' 'o3' 'p3' 'q3' 'r3' 's3' 't3' 'u3' 'v3' 'w3' 'x3' 'y3' 'z3'...
+                         'aa' 'bb' 'cc' 'dd' 'ee' 'ff' 'gg' 'hh' 'ii' 'jj' 'kk' 'll' 'mm'...
+                         'nn' 'oo' 'pp' 'qq' 'rr' 'ss' 'tt' 'uu' 'vv' 'ww' 'xx' 'yy' 'zz'};
+
+            if opt.nColumn > length(stringSet)
+                error('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
+            end
+
+            sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
+
+            string = char(stringSet(1:opt.nColumn));
+
+%           Specify the column for the convergence checking
+            if opt.nZone == 4
+                convergIndx = sum(opt.structID(1:2));
+            elseif opt.nZone == 5
+                convergIndx = sum(opt.structID(1:3));
+            end
+
+%           Preallocation
+%           The dimension of plotData (columnNumber x switches)
+%               t_s   2*t_s  3*t_s  4*t_s
+%               {1}    {1}    {1}    {1}
+%               {2}    {2}    {2}    {2}
+%               {3}    {3}    {3}    {3}
+%               {4}    {4}    {4}    {4}
+            plotData = cell(opt.nColumn,opt.nColumn);
+
+%           The data for plotting dynamic trajectory
+            if opt.nZone == 4
+                dyncData = cell(2, opt.nMaxIter);
+            elseif opt.nZone == 5
+                dyncData = cell(3, opt.nMaxIter);
+            end
+
+%           convergPrevious is used for stopping criterion
+            convergPrevious = currentData{convergIndx}.outlet.concentration;
+
+            if opt.enable_CSTR && opt.enable_DPFR
+                error('It is not allowed have both the CSTR and DPFR in the simulation \n');
+            end
+
+%           if num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
+%           num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
+            string = circshift(string, 4); 
+            startingPointIndex = SMB.stringIndexing(opt, string(1));
+
+%           After switching, dummyProfile is used to transfer concentration profile of last column
+%           to the inlet port of the first column
+            dummyProfile = currentData{sequence.(string(end))}.outlet;
+
+
+%-----------------------------------------------------------------------------------------
+%           Main loop
+            for i = 1:opt.nMaxIter
+
+%               Switching the ports, in the countercurrent manner of fluid
+                sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
+
+%               The simulation of columns within a SMB unit by the sequence, 
+%               say, 'a', 'b', 'c', 'd' in four-column cases
+                for k = string' %1:opt.nColumn
+
+                    column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, k);
+
+                    if opt.enable_CSTR
+
+                        % The CSTR before the current column
+                        column.inlet = SMB.CSTR(column.inlet, column, opt);
+
+                        [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+
+                        % The CSTR after the current column
+                        outletProfile = SMB.CSTR(outletProfile, column, opt);
+
+                    elseif opt.enable_DPFR
+
+                        % The DPFR before the current column
+                        [column.inlet, lastState_DPFR_pre] = SMB.DPFR(column.inlet, column.initialState_DPFR{1}, opt);
+
+                        [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+
+                        % The DPFR after the current column
+                        [outletProfile, lastState_DPFR_pos] = SMB.DPFR(outletProfile, column.initialState_DPFR{2}, opt);
+
+                        currentData{sequence.(k)}.lastState_DPFR = [{lastState_DPFR_pre}, {lastState_DPFR_pos}];
+
+                    else
+
+                        [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+
+                    end
+
+                    if strcmp(k, string(end))
+                        dummyProfile = outletProfile;
+                    end
+                    currentData{sequence.(k)}.outlet     = outletProfile;
+                    currentData{sequence.(k)}.lastState  = lastState;
+
+                end
+
+                if opt.nZone == 4
+                    dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3)))))}.outlet.concentration;
+                    dyncData{2, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+                elseif opt.nZone == 5
+                    dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:4)))))}.outlet.concentration;
+                    dyncData{2, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:2)))))}.outlet.concentration;
+                    dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+                end
+
+
+%               Store the data of one round (opt.nColumn switches), into plotData
+                index = mod(i, opt.nColumn);
+                if index == 0
+                    plotData(:,opt.nColumn) = currentData';
+                else
+                    plotData(:,index) = currentData';
+                end
+
+
+%               Convergence criterion was adopted in each nColumn iteration
+%                   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
+                if fix(i/opt.nColumn) == i/(opt.nColumn)
+
+                    diffNorm = 0; stateNorm = 0;
+
+                    for k = 1:opt.nComponents
+                        diffNorm = diffNorm + norm( convergPrevious(:,k) - currentData{convergIndx}.outlet.concentration(:,k) );
+                        stateNorm = stateNorm + norm( currentData{convergIndx}.outlet.concentration(:,k) );
+                    end
+
+                    relativeDelta = diffNorm / stateNorm;
+
+                    if relativeDelta <= opt.tolIter
+                        break
+                    else
+                        convergPrevious = currentData{convergIndx}.outlet.concentration;
+                    end
+
+                end
+            end
+%-----------------------------------------------------------------------------------------
+
+
+%           Compute the performance index, such Purity and Productivity
+            Results = SMB.Purity_Productivity(plotData, opt);
+
+%           Construct your own Objective Function and calculate the value
+            objective = SMB.objectiveFunction(Results, opt);
+
+
+        end % simulatedMovinBed
 
         function params = getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet)
 %-----------------------------------------------------------------------------------------
@@ -320,8 +600,8 @@ classdef SMB < handle
 
 %             for j = 1:opt.nColumn
 % %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
-%                 params{ eval(['sequence' '.' string(j)]) }.initMobilCon = zeros(1,opt.nComponents);
-%                 params{ eval(['sequence' '.' string(j)]) }.initSolidCon = zeros(1,opt.nComponents);
+%                 params{sequence.(string(j)) }.initMobilCon = zeros(1,opt.nComponents);
+%                 params{sequence.(string(j)) }.initSolidCon = zeros(1,opt.nComponents);
 %             end
 
             if opt.nZone == 4
@@ -329,17 +609,17 @@ classdef SMB < handle
                 switch index
 
                     case {'D' 'M_D'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                     case {'E' 'M_E'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
                     case {'F' 'M_F'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
                     case {'R' 'M_R'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
 
                 end
 
@@ -348,20 +628,20 @@ classdef SMB < handle
                 switch index
 
                     case {'D' 'M_D'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                     case {'E1' 'M_E1'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
                     case {'E2' 'M_E2'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
                     case {'F' 'M_F'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
                     case {'R' 'M_R'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
 
                 end
 
@@ -515,6 +795,49 @@ classdef SMB < handle
 
         end % positionIndexing
 
+        function flag = interstVelocityCheck(interstVelocity, opt)
+%-----------------------------------------------------------------------------------------
+% This is the function that checks the existance of the negative velocity
+%
+% Parameters:
+% 		- opt. options
+%       - interstVelocity. The interstitial velocity in the SMB unit
+%
+% Returns:
+% 		- flag. flag = 1, there is negative velocity in the struct of interstVelocity 
+%-----------------------------------------------------------------------------------------
+
+
+            if opt.nZone == 4
+
+                velocity = [interstVelocity.recycle, interstVelocity.feed ...
+                    interstVelocity.raffinate, interstVelocity.desorbent, interstVelocity.extract];
+
+                flag = any(velocity <= 0);
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.desorbent) < 0;
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.extract) < 0;
+
+            elseif opt.nZone == 5
+
+                velocity = [interstVelocity.recycle, interstVelocity.feed ...
+                    interstVelocity.raffinate, interstVelocity.desorbent ...
+                    interstVelocity.extract1, interstVelocity.extract2];
+
+                flag = any(velocity <= 0);
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.desorbent) < 0;
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.extract1) < 0;
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2) < 0;
+
+            end
+
+
+        end % interstVelocityCheck
+
 
         function objective = objectiveFunction(Results, opt)
 %-----------------------------------------------------------------------------------------
@@ -530,17 +853,17 @@ classdef SMB < handle
 
             if opt.nZone == 4
 %               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+                penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
 %               (-) since in the optimizer, the defined program is of optimization of minimum.    
                 objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 5
 %               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 *opt.Penalty_factor ...
+                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
 %               (-) since in the optimizer, the defined program is of optimization of minimum.    
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
@@ -723,7 +1046,7 @@ classdef SMB < handle
 %       - Profile. Inlet time concentration, the initial conditions
 %       - initialState. The boundary conditions of the DPFR
 %       - opt. Options for the software
-% 
+%
 % Returns:
 %       - columnProfile. outlet time and corresponding concentration profile
 %               - time. The time points observed
@@ -814,11 +1137,11 @@ classdef SMB < handle
                     FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
                     ylabel('Concentration [Mol]', 'FontSize', 10);
                     if opt.nComponents == 2
-                        legend('comp 1', 'comp 2');
+                        legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                     elseif opt.nComponents == 3
-                        legend('comp 1', 'comp 2', 'comp 3');
+                        legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
                     elseif opt.nComponents == 4
-                        legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                        legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
                     end
 
                     set(FigSet, 'LineWidth', 2);
@@ -1178,34 +1501,36 @@ classdef SMB < handle
 
                         subplot(2,1,i);
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
-                        ylabel('Concentration [Mol]', 'FontSize', 10);
+                        switch i
+                            case 1
+                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 2
+                                ylabel({'Extract Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                        end
+                        xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
+                        xlabel(xString, 'FontSize', 10);
 
-                        if opt.nComponents == 2
-                            legend('comp 1', 'comp 2');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 3
-                            legend('comp 1', 'comp 2', 'comp 3');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 4
-                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                        if opt.nComponents == 2 && i == 1
+                            legend('comp 1', 'comp 2', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); set(FigSet(2),'Marker','*', 'MarkerSize',2);
+                        elseif opt.nComponents == 3 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2);
+                        elseif opt.nComponents == 4 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',2);
                         end
 
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
                         set(gca, 'ygrid', 'on');
-                        set(gca, 'XTick', size(y,1)/2);
+                        set(gca, 'XTick', opt.timePoints*(1:iter));
+                        set(gca, 'XTickLabel', (1:iter));
 
-                        switch i
-                            case 1
-                                set(gca, 'XTickLabel', {'Raffinate Port'});
-                            case 2
-                                set(gca, 'XTickLabel', {'Extract Port'});
-                        end
 
                         for j = 1: (iter-1)
                             line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
@@ -1213,7 +1538,7 @@ classdef SMB < handle
 
                     end
 
-                    suptitle('The evolution of the concentration from the Raffinate port and Extract port');
+                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
 
                 elseif opt.nZone == 5
 
@@ -1223,36 +1548,38 @@ classdef SMB < handle
 
                         subplot(3,1,i);
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
-                        ylabel('Concentration [Mol]', 'FontSize', 10);
+                        switch i
+                            case 1
+                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 2
+                                ylabel({'Extract_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 3
+                                ylabel({'Extract_1 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                        end
+                        xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
+                        xlabel(xString, 'FontSize', 10);
 
-                        if opt.nComponents == 2
-                            legend('comp 1', 'comp 2');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 3
-                            legend('comp 1', 'comp 2', 'comp 3');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 4
-                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                        if opt.nComponents == 2 && i == 1
+                            legend('comp 1', 'comp 2', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); set(FigSet(2),'Marker','*', 'MarkerSize',2);
+                        elseif opt.nComponents == 3 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2);
+                        elseif opt.nComponents == 4 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',2);
                         end
 
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
                         set(gca, 'ygrid', 'on');
-                        set(gca, 'XTick', size(y,1)/2);
+                        set(gca, 'XTick', opt.timePoints*(1:iter));
+                        set(gca, 'XTickLabel', (1:iter));
 
-                        switch i
-                            case 1
-                                set(gca, 'XTickLabel', {'Raffinate Port'});
-                            case 2
-                                set(gca, 'XTickLabel', {'Extract_2 Port'});
-                            case 3
-                                set(gca, 'XTickLabel', {'Extract_1 Port'});
-                        end
 
                         for j = 1: (iter-1)
                             line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
@@ -1260,7 +1587,7 @@ classdef SMB < handle
 
                     end
 
-                    suptitle('The evolution of the concentration from the Raffinate port and Extract ports');
+                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
 
                 end
 
