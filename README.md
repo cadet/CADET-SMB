@@ -47,8 +47,12 @@ So far, the standard SMB approach and the one-column analog approach are combine
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme.JPG)
 *Four-zone scheme and five-zone scheme*
+
+
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/cascade.JPG)
 *Cascade scheme*
+
+
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
 
@@ -57,8 +61,9 @@ So far, the standard SMB approach and the one-column analog approach are combine
 * By using operator-splitting, the true dynamics of the concentration profiles (also, trajectories) can be reproduced. Also using one-column analog, the convergence speed to the cyclic steady state (CSS) could be accelerated.
 
 * Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for dead volumes in pumps, tubing, and valves;
-![](https://github.com/modsim/CADET-SMB/blog/master/doc/dead_volume.JPG)
+![](https://github.com/modsim/CADET-SMB/blog/master/doc/dead_volumes.JPG)
 *The schematic of the dead volumes consideration*
+
 
 * In binary separation, the ModiCon process is also available;
 
