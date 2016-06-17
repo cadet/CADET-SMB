@@ -15,8 +15,9 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 % =============================================================================
 
 
-    valueAssign = struct('columnLength',ParSwarm(1), 'switch',ParSwarm(2), 'recycle',ParSwarm(3),...
-        'feed',ParSwarm(4), 'desorbent',ParSwarm(5), 'extract',ParSwarm(6));
+    valueAssign = struct('columnLength',ParSwarm(1), 'switch',ParSwarm(2),...
+        'recycle',ParSwarm(3),'feed',ParSwarm(4), 'desorbent',ParSwarm(5),...
+        'extract1',ParSwarm(6),'extract2',ParSwarm(7));
 
 %   The parameter setting for simulator
     opt.tolIter         = 1e-3;   % tolerance of the SMB stopping criterion
@@ -31,9 +32,9 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 %   The parameter setting for the SMB
     opt.switch          = valueAssign.switch;  % s % switching time 
     opt.timePoints      = 1000;         % the observed time-points
-    opt.Purity_extract1_limit  = 0.95;  % used for constructing constraints
-    opt.Purity_extract2_limit  = 0.69;  % used for constructing constraints
-    opt.Purity_raffinate_limit = 0.99;  % used for constructing constraints
+    opt.Purity_extract1_limit  = 0.9750;  % used for constructing constraints
+    opt.Purity_extract2_limit  = 0.6946;  % used for constructing constraints
+    opt.Purity_raffinate_limit = 0.9995;  % used for constructing constraints
     opt.Penalty_factor         = 10;    % penalty factor in penalty function
 
     opt.enableDebug = false; % set it false if you are using the optimizer
@@ -69,8 +70,8 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     flowRate.recycle    = valueAssign.recycle;      % m^3/s  
     flowRate.feed       = valueAssign.feed;         % m^3/s
     flowRate.desorbent  = valueAssign.desorbent;    % m^3/s
-    flowRate.extract1   = valueAssign.extract;      % m^3/s
-    flowRate.extract2   = 4.6367e-8;                % m^3/s
+    flowRate.extract1   = valueAssign.extract1;      % m^3/s
+    flowRate.extract2   = valueAssign.extract2;                % m^3/s
     flowRate.raffinate  = flowRate.desorbent - flowRate.extract1 - flowRate.extract2 + flowRate.feed;  % m^3/s
     opt.flowRate_extract1  = flowRate.extract1;
     opt.flowRate_extract2  = flowRate.extract2;

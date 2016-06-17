@@ -225,7 +225,7 @@ classdef SMB < handle
 %       - opt. Options
 %       - sequence. During switching, the structure used for storing the sequence of columns
 %       - alphabet. It is a character. It tells this subroutine to calculate the specified column 
-% 
+%
 % Returns:
 %   Preparation for next column simulation
 %       - column.inlet. The new inlet concentration of each column, which is
@@ -253,8 +253,8 @@ classdef SMB < handle
 %           Get the interstitial velocity of each column and boundary conditions
             params = SMB.getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet);
 
-            idx_i = eval( ['sequence' '.' alphabet] );     % the number of current column
-            idx_j = eval( ['sequence' '.' pre_alphabet] ); % the number of the column before
+            idx_i = sequence.(alphabet);     % the number of current column
+            idx_j = sequence.(pre_alphabet); % the number of the column before
 
 %           Update the intersitial velocity, boundary conditions
             column.params = params{idx_i};
@@ -265,10 +265,8 @@ classdef SMB < handle
                 case 'D' % node DESORBENT
 
                     %   C_i^in = Q_{i-1} * C_{i-1}^out / Q_i
-                    concentration = zeros(length(Feed.time), opt.nComponents);
-
-                    column.inlet.concentration = concentration .* params{idx_j}.interstitialVelocity...
-                        ./ params{idx_i}.interstitialVelocity; 
+                    column.inlet.concentration = currentData{idx_j}.outlet.concentration .* ...
+                        params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity; 
 
                 case 'F' % node FEED
 
@@ -303,9 +301,6 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
-%             global stringSet;
-%             string = char(stringSet(1:opt.nColumn));
-
             params = cell(1, opt.nColumn);
             for k = 1:opt.nColumn
 %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
@@ -313,28 +308,23 @@ classdef SMB < handle
                     zeros(1,opt.nComponents), 'interstitialVelocity', []);
             end
 
-%             for j = 1:opt.nColumn
-% %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
-%                 params{ eval(['sequence' '.' string(j)]) }.initMobilCon = zeros(1,opt.nComponents);
-%                 params{ eval(['sequence' '.' string(j)]) }.initSolidCon = zeros(1,opt.nComponents);
-%             end
 
             if opt.nZone == 4
 
                 switch index
 
                     case {'D' 'M_D'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                     case {'E' 'M_E'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
                     case {'F' 'M_F'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
                     case {'R' 'M_R'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
 
                 end
 
@@ -343,20 +333,20 @@ classdef SMB < handle
                 switch index
 
                     case {'D' 'M_D'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                     case {'E1' 'M_E1'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
                     case {'E2' 'M_E2'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
                     case {'F' 'M_F'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
                     case {'R' 'M_R'}
-                        params{eval(['sequence' '.' alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
-                        params{eval(['sequence' '.' pre_alphabet])}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
 
                 end
 
@@ -510,6 +500,49 @@ classdef SMB < handle
 
         end % positionIndexing
 
+        function flag = interstVelocityCheck(interstVelocity, opt)
+%-----------------------------------------------------------------------------------------
+% This is the function that checks the existance of the negative velocity
+%
+% Parameters:
+% 		- opt. options
+%       - interstVelocity. The interstitial velocity in the SMB unit
+%
+% Returns:
+% 		- flag. flag = 1, there is negative velocity in the struct of interstVelocity 
+%-----------------------------------------------------------------------------------------
+
+
+            if opt.nZone == 4
+
+                velocity = [interstVelocity.recycle, interstVelocity.feed ...
+                    interstVelocity.raffinate, interstVelocity.desorbent, interstVelocity.extract];
+
+                flag = any(velocity <= 0);
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.desorbent) < 0;
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.extract) < 0;
+
+            elseif opt.nZone == 5
+
+                velocity = [interstVelocity.recycle, interstVelocity.feed ...
+                    interstVelocity.raffinate, interstVelocity.desorbent ...
+                    interstVelocity.extract1, interstVelocity.extract2];
+
+                flag = any(velocity <= 0);
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.desorbent) < 0;
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.extract1) < 0;
+
+                flag = flag || (interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2) < 0;
+
+            end
+
+
+        end % interstVelocityCheck
+
 
         function objective = objectiveFunction(Results, opt)
 %-----------------------------------------------------------------------------------------
@@ -525,17 +558,17 @@ classdef SMB < handle
 
             if opt.nZone == 4
 %               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+                penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) *  100 * opt.Penalty_factor;
 
 %               (-) since in the optimizer, the defined program is of optimization of minimum.    
                 objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 5
 %               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * opt.Penalty_factor;
+                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
 %               (-) since in the optimizer, the defined program is of optimization of minimum.    
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
@@ -808,11 +841,11 @@ classdef SMB < handle
                 FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
                 ylabel('Concentration [Mol]', 'FontSize', 10);
                 if opt.nComponents == 2
-                    legend('comp 1', 'comp 2');
+                    legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                 elseif opt.nComponents == 3
-                    legend('comp 1', 'comp 2', 'comp 3');
+                    legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
                 elseif opt.nComponents == 4
-                    legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                    legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
                 end
 
                 set(FigSet, 'LineWidth', 2);
@@ -906,18 +939,25 @@ classdef SMB < handle
 
                         subplot(2,1,i);
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
-                        ylabel('Concentration [Mol]', 'FontSize', 10);
+                        switch i
+                            case 1
+                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 2
+                                ylabel({'Extract Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                        end
+                        xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
+                        xlabel(xString, 'FontSize', 10);
 
-                        if opt.nComponents == 2
-                            legend('comp 1', 'comp 2');
+                        if opt.nComponents == 2 && i == 1
+                            legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 3
-                            legend('comp 1', 'comp 2', 'comp 3');
+                        elseif opt.nComponents == 3 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
                                 set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
                                 set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 4
-                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                        elseif opt.nComponents == 4 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
                                 set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
                                 set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
@@ -926,14 +966,9 @@ classdef SMB < handle
 
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
                         set(gca, 'ygrid', 'on');
-                        set(gca, 'XTick', size(y,1)/2);
+                        set(gca, 'XTick', opt.timePoints*(1:iter));
+                        set(gca, 'XTickLabel', (1:iter));
 
-                        switch i
-                            case 1
-                                set(gca, 'XTickLabel', {'Raffinate Port'});
-                            case 2
-                                set(gca, 'XTickLabel', {'Extract Port'});
-                        end
 
                         for j = 1: (iter-1)
                             line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
@@ -941,7 +976,7 @@ classdef SMB < handle
 
                     end
 
-                    suptitle('The evolution of the concentration from the Raffinate port and Extract port');
+                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
 
                 elseif opt.nZone == 5
 
@@ -951,18 +986,27 @@ classdef SMB < handle
 
                         subplot(3,1,i);
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
-                        ylabel('Concentration [Mol]', 'FontSize', 10);
+                        switch i
+                            case 1
+                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 2
+                                ylabel({'Extract_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 3
+                                ylabel({'Extract_1 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                        end
+                        xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
+                        xlabel(xString, 'FontSize', 10);
 
-                        if opt.nComponents == 2
-                            legend('comp 1', 'comp 2');
+                        if opt.nComponents == 2 && i == 1
+                            legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 3
-                            legend('comp 1', 'comp 2', 'comp 3');
+                        elseif opt.nComponents == 3 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
                                 set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
                                 set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
-                        elseif opt.nComponents == 4
-                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4');
+                        elseif opt.nComponents == 4 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
                                 set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
                                 set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
@@ -971,16 +1015,9 @@ classdef SMB < handle
 
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
                         set(gca, 'ygrid', 'on');
-                        set(gca, 'XTick', size(y,1)/2);
+                        set(gca, 'XTick', opt.timePoints*(1:iter));
+                        set(gca, 'XTickLabel', (1:iter));
 
-                        switch i
-                            case 1
-                                set(gca, 'XTickLabel', {'Raffinate Port'});
-                            case 2
-                                set(gca, 'XTickLabel', {'Extract_2 Port'});
-                            case 3
-                                set(gca, 'XTickLabel', {'Extract_1 Port'});
-                        end
 
                         for j = 1: (iter-1)
                             line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
@@ -988,7 +1025,7 @@ classdef SMB < handle
 
                     end
 
-                    suptitle('The evolution of the concentration from the Raffinate port and Extract ports');
+                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
 
                 end
 
