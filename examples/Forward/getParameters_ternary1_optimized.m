@@ -18,7 +18,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   The parameter setting for simulator
     opt.tolIter         = 1e-4;  % tolerance of the SMB stopping criterion
     opt.nMaxIter        = 1000;  % the maximum iteration step in SMB
-    opt.nThreads        = 8;     % threads of CPU, up to your computer
+    opt.nThreads        = 4;     % threads of CPU, up to your computer
     opt.nCellsColumn    = 40;    % discretization number in one column
     opt.nCellsParticle  = 1;     % discretization number in one particle
     opt.ABSTOL          = 1e-10; % tolerance of CADET stopping criterion
@@ -26,7 +26,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.MAX_STEPS       = 5e6;   % the maximum iteration step in CADET
 
 %   The parameter setting for the SMB
-    opt.switch          = 264;   % s  % switching time
+    opt.switch          = 317.55;   % s  % switching time
     opt.timePoints      = 1000;  % the observed time-points
     opt.Purity_extract1_limit   = 0.95;  % used for constructing constraints
     opt.Purity_extract2_limit   = 0.65;  % used for constructing constraints
@@ -54,7 +54,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.diffusionParticleSurface  = [0.0, 0.0, 0.0];
 
 %   Geometry
-    opt.columnLength        = 15e-2;      % m
+    opt.columnLength        = 14.795e-2;      % m
     opt.columnDiameter      = 1.0e-2;     % m
     opt.particleRadius      = 30e-6/2;    % m % user-defined one in this case
     opt.porosityColumn      = 0.8;
@@ -63,12 +63,12 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
     crossArea = pi * (opt.columnDiameter/2)^2;
-    flowRate.recycle    = 2.9230e-7;      % m^3/s  
-    flowRate.feed       = 1.6667e-8;      % m^3/s
-    flowRate.raffinate  = 1.6817e-8;      % m^3/s
-    flowRate.desorbent  = 2.3412e-7;      % m^3/s
-    flowRate.extract1   = 1.8760e-7;      % m^3/s
-    flowRate.extract2   = 4.6367e-8;      % m^3/s
+    flowRate.recycle    = 2.87537e-7;      % m^3/s  
+    flowRate.feed       = 2.85453e-8;      % m^3/s
+    flowRate.raffinate  = 2.10000e-8;      % m^3/s
+    flowRate.desorbent  = 2.36275e-7;      % m^3/s
+    flowRate.extract1   = 2.00016e-7;      % m^3/s
+    flowRate.extract2   = 4.38041e-8;      % m^3/s
     opt.flowRate_extract1  = flowRate.extract1;
     opt.flowRate_extract2  = flowRate.extract2;
     opt.flowRate_raffinate = flowRate.raffinate;

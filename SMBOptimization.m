@@ -33,13 +33,20 @@ function SMBOptimization()
 % =============================================================================
 
 
+    global paramBound
+
 %   There are four optimization algorithms are availabe in this programme
     optimization_method = struct('Particle_Swarm_Optimization',[], 'Differential_Evolution',[],...
        'Metropolis_Adjusted_Differential_Evolution',[], 'Riemann_Manifold_Metropolis_Adjusted_Langevin',[],...
        'Deterministic_algorithm_fmincon',[]);
 
 %   The set of the parameters which are optimized
-    params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]);
+%     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]); % binary scenario
+    params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]); % ternary scenario
+
+%   the initial boundary of parameters: In the format of [x^1_min x^1_max; ...]
+    paramBound = [0.05 0.15; 250 350; 2.5e-7 3.8e-7; ...
+        1.5e-8 3.0e-8; 2.0e-7 3.5e-7; 2.0e-7 3.5e-7; 4.0e-8 5.5e-8];
 
 
 %   Select one method and make it true (correspondingly the rest methods false)
@@ -66,7 +73,7 @@ function SMBOptimization()
 
 %     elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
 %             && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin
-%         
+%
 %         Riemann_Manifold_Metropolis_Adjusted_Langevin(params);
 
     elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
@@ -76,8 +83,8 @@ function SMBOptimization()
 %           in which 6 decision variables are optimized.      
         initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
 
-        loBound = [0.20, 150, 8.0e-7, 0.9e-7, 0.7e-7, 1.0e-7];
-        upBound = [0.30, 230, 10e-7,  2.0e-7, 2.0e-7, 2.0e-7];
+        loBound = paramBound(:,1);
+        upBound = paramBound(:,2);
 
         options = optimoptions('fmincon', 'Algorithm', 'interior-point', 'Display', 'iter',...
             'TolX',1e-6,'TolCon',1e-6,'TolFun',1e-6,'MaxIter',500);

@@ -45,7 +45,9 @@ classdef OptAlgorithms < handle
                 XResult = exp(OptPopul(1, 1:opt.IndivSize));
                 YResult = OptPopul(opt.PopulSize+1, opt.IndivSize+1);
 
-                fprintf('Iter = %3d,   Minimum: %g,   Parameters:[%g| %g| %g| %g| %g| %g] \n',...
+%                 fprintf('Iter = %3d,   Minimum: %g,   Parameters:[ %g| %g| %g| %g| %g| %g ] \n',...
+%                     i, YResult, XResult);
+                fprintf('Iter = %3d,   Minimum: %g,   Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n',...
                     i, YResult, XResult);
 
 
@@ -104,16 +106,13 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
+            global paramBound
+
             opt = [];
 
             opt.PopulSize      = 20;
             opt.IndivSize      = length(fieldnames(params));
-            opt.IndivScope     = log ( [0.20    0.30;
-                                        150     230;
-                                        8.0e-7  10e-7;
-                                        0.9e-7  2.0e-7;
-                                        0.7e-7  2.0e-7;
-                                        1.0e-7  2.0e-7] );
+            opt.IndivScope     = log(paramBound);
             opt.loopCount      = 300;
 
 %           Check out the dimension of the set of parameters, and the boundary limiatation
@@ -299,7 +298,7 @@ classdef OptAlgorithms < handle
     end
 
 
-%   PSO    
+%   PSO
     methods (Static = true, Access = 'public') 
 
         function Particle_Swarm_Optimization(params)
@@ -313,7 +312,7 @@ classdef OptAlgorithms < handle
 %  best-known position but, is also guided toward the best-known positions
 %  in the search space, which are updated as better positions are found by
 %  other particles
-% 
+%
 %  Parameter:
 %        - params. It is the specified parameters from the main function.
 %        And let the main function informed that which parameters are need
@@ -344,7 +343,9 @@ classdef OptAlgorithms < handle
                 YResult = OptSwarm(options.swarmSize+1, options.particleSize+1);        
 
 
-                fprintf('Iter = %3d,  Minimum: %g,  Parameters:[ %g| %g| %g| %g| %g| %g ] \n'...
+%                 fprintf('Iter = %3d,  Minimum: %g,  Parameters:[ %g| %g| %g| %g| %g| %g ] \n'...
+%                     , k, YResult, XResult);
+                fprintf('Iter = %3d,  Minimum: %g,  Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n'...
                     , k, YResult, XResult);
 
 
@@ -410,6 +411,10 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
+            global paramBound
+
+            opt = [];
+
 %           The number of population of the swarm intellectual (SI)
             opt.swarmSize      = 20;
 
@@ -417,13 +422,7 @@ classdef OptAlgorithms < handle
             opt.particleSize   = length(fieldnames(params));
 
 %           the row represents the parameter, while the column denotes the upbound and lowerbound
-            opt.paramsRange    = log( [0.10    0.20;
-                                       220     300;
-                                       2.5e-7  3.8e-7;
-                                       0.9e-8  2.3e-8;
-                                       1.5e-7  2.8e-7;
-                                       1.0e-7  2.4e-7;
-                                       4.0e-8  5.5e-8] );   
+            opt.paramsRange    = log(paramBound);   
             opt.loopCount      = 300;
 
 %           check out the dimension of the set of parameters, and the boundary limitation
@@ -649,7 +648,7 @@ classdef OptAlgorithms < handle
                         ValTemp2 = OptSwarm(ParRow, ParCol+1);
                     else
                         ValTemp2 = OptSwarm(row-1, ParCol+1);
-                    end     
+                    end
 
                     if row == ParRow
                         ValTemp3 = OptSwarm(1, ParCol+1);
@@ -685,7 +684,7 @@ classdef OptAlgorithms < handle
             [minValue, row] = min(arrayfun(@(idx) OptSwarm(idx, ParCol+1), 1: ParRow));
 
             OptSwarm(ParRow+1, 1:ParCol) = OptSwarm(row,1:ParCol);
-            OptSwarm(ParRow+1, ParCol+1) = minValue; 
+            OptSwarm(ParRow+1, ParCol+1) = minValue;
 
         end
 
@@ -768,7 +767,7 @@ classdef OptAlgorithms < handle
 %                     warning('There is something wrong in the sigma evolution, since sigma square must be nonegtive');
 %                 end
 
-            end    
+            end
 %----------------------------------------------------------------------------------------- 
 
 
@@ -877,16 +876,13 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
+            global paramBound
+
             opt = [];
 
             opt.Nchain        = 20;
             opt.dimension     = length(fieldnames(params));
-            opt.bounds        = log ( [0.20    0.30;
-                                       150     230;
-                                       8.0e-7  10e-7;
-                                       0.9e-7  2.0e-7;
-                                       0.7e-7  2.0e-7;
-                                       1.0e-7  2.0e-7] )';
+            opt.bounds        = log(paramBound)';
             opt.nsamples      = 300; 
 
 
@@ -971,7 +967,8 @@ classdef OptAlgorithms < handle
             XResult = exp(OptPopul(1, 1:opt.dimension));
             YResult = OptPopul(opt.Nchain+1, opt.dimension+1);
 
-            fprintf('Minimum: %g,    Parameters:[ %g| %g| %g| %g| %g| %g ] \n', YResult, XResult);
+%             fprintf('Minimum: %g,    Parameters:[ %g| %g| %g| %g| %g| %g ] \n', YResult, XResult);
+            fprintf('Minimum: %g,    Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n', YResult, XResult);
 
 
 %           For each chain, it is accepted in terms of the Metropolis probability
@@ -982,7 +979,7 @@ classdef OptAlgorithms < handle
                 if any(proposal < opt.bounds(1,:)) || any(proposal > opt.bounds(2,:))
 
                     rho = 0;
-                else            
+                else
 
                     newSS = feval( @simulatedMovingBed, exp(proposal) );
                     SS    = states(j, opt.dimension+1);
@@ -1015,8 +1012,8 @@ classdef OptAlgorithms < handle
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 % -----------------------------------------------------------------------------
-    
-    
+
+
             R = opt.Nchain;
             C = opt.dimension;
             [minValue, row] = min(Population(:,opt.dimension+1));
