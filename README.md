@@ -6,7 +6,7 @@ CADET-SMB is a comprehensive simulator for analysis and design of simulated movi
 
 # Cascade approach
 
-This variant, cascade approach, is a branch of the master repository in relation to ternary separation. It is a quite intuitive approach, as two SMB units are sequentially connected. Actually, there is another method, five-zone scheme, that is also able to deal with the ternary separation scenario. Those two methods for ternary separation could be opted by the varying extent of the components. 
+This variant, cascade approach, is a branch of the master repository in relation to ternary separation. It is a quite intuitive approach, as two SMB units are sequentially connected. Actually, there is another method, five-zone scheme, that is also able to deal with the ternary separation scenario. Those two methods for ternary separation could be opted by the varying extent between components. 
 
 ![](https://github.com/modsim/CADET-SMB/blob/Cascade/doc/scheme.JPG)
 
