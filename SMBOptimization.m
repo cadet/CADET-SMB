@@ -33,8 +33,6 @@ function SMBOptimization()
 % =============================================================================
 
 
-    global paramBound
-
 %   There are four optimization algorithms are availabe in this programme
     optimization_method = struct('Particle_Swarm_Optimization',[], 'Differential_Evolution',[],...
        'Metropolis_Adjusted_Differential_Evolution',[], 'Riemann_Manifold_Metropolis_Adjusted_Langevin',[],...
@@ -43,15 +41,16 @@ function SMBOptimization()
 %   The set of the parameters which are optimized
 %     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]); % binary scenario
     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]); % ternary scenario
+    [opt, ~, ~] = getParameters( zeros(1,length(fieldnames(params))) );
 
 %   the initial boundary of parameters: In the format of [x^1_min x^1_max; ...]
-    paramBound = [0.05 0.15; 250 350; 2.5e-7 3.8e-7; ...
+    opt.paramBound = [0.05 0.15; 250 350; 2.5e-7 3.8e-7; ...
         1.5e-8 3.0e-8; 2.0e-7 3.5e-7; 2.0e-7 3.5e-7; 4.0e-8 5.5e-8];
 
 
 %   Select one method and make it true (correspondingly the rest methods false)
-    optimization_method.Differential_Evolution = false;
-    optimization_method.Particle_Swarm_Optimization = true;
+    optimization_method.Differential_Evolution = true;
+    optimization_method.Particle_Swarm_Optimization = false;
     optimization_method.Deterministic_algorithm_fmincon = false;
     optimization_method.Metropolis_Adjusted_Differential_Evolution = false;
 
@@ -59,22 +58,22 @@ function SMBOptimization()
     if isfield(optimization_method, 'Particle_Swarm_Optimization') ...
             && optimization_method.Particle_Swarm_Optimization
 
-        OptAlgorithms.Particle_Swarm_Optimization(params);
+        OptAlgorithms.Particle_Swarm_Optimization(opt, params);
 
     elseif isfield(optimization_method, 'Differential_Evolution') ...
             && optimization_method.Differential_Evolution
 
-        OptAlgorithms.Differential_Evolution(params);
+        OptAlgorithms.Differential_Evolution(opt, params);
 
     elseif isfield(optimization_method, 'Metropolis_Adjusted_Differential_Evolution') ...
             && optimization_method.Metropolis_Adjusted_Differential_Evolution
 
-        OptAlgorithms.Metropolis_Adjusted_Differential_Evolution(params);
+        OptAlgorithms.Metropolis_Adjusted_Differential_Evolution(opt, params);
 
 %     elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
 %             && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin
 %
-%         Riemann_Manifold_Metropolis_Adjusted_Langevin(params);
+%         Riemann_Manifold_Metropolis_Adjusted_Langevin(opt, params);
 
     elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
             && optimization_method.Deterministic_algorithm_fmincon
@@ -83,8 +82,8 @@ function SMBOptimization()
 %           in which 6 decision variables are optimized.      
         initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
 
-        loBound = paramBound(:,1);
-        upBound = paramBound(:,2);
+        loBound = opt.paramBound(:,1);
+        upBound = opt.paramBound(:,2);
 
         options = optimoptions('fmincon', 'Algorithm', 'interior-point', 'Display', 'iter',...
             'TolX',1e-6,'TolCon',1e-6,'TolFun',1e-6,'MaxIter',500);

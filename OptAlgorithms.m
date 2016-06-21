@@ -1,15 +1,16 @@
 
 classdef OptAlgorithms < handle
- % =============================================================================
+% =============================================================================
 % This is the class of the functions of optimization algorithms.
 %
 % =============================================================================   
 
-
+% Lower level algorithms, in charge of continuous decision variables optimization 
+% -----------------------------------------------------------------------------
 %   DE
     methods (Static = true, Access = 'public')
 
-        function Differential_Evolution(params)
+        function [XResult, YResult] = Differential_Evolution(algOpt, params)
 % -----------------------------------------------------------------------------
 % Differential Evolution algorithm (DE)
 %
@@ -23,12 +24,12 @@ classdef OptAlgorithms < handle
 %        And let the main function informed that which parameters are need
 %        to be optimized
 % -----------------------------------------------------------------------------
-
+    
 
             startTime = clock;
 
 %           Get the optimizer options
-            opt = OptAlgorithms.getOptions_DE(params);
+            opt = OptAlgorithms.getOptions_DE(algOpt, params);
 
 %           Initialization of the population
             [Population, OptPopul] = OptAlgorithms.InitPopulation(opt);
@@ -45,10 +46,13 @@ classdef OptAlgorithms < handle
                 XResult = exp(OptPopul(1, 1:opt.IndivSize));
                 YResult = OptPopul(opt.PopulSize+1, opt.IndivSize+1);
 
-%                 fprintf('Iter = %3d,   Minimum: %g,   Parameters:[ %g| %g| %g| %g| %g| %g ] \n',...
-%                     i, YResult, XResult);
-                fprintf('Iter = %3d,   Minimum: %g,   Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n',...
-                    i, YResult, XResult);
+                if algOpt.nZone == 4
+                    fprintf('Iter = %3d,   Minimum: %g,   Parameters:[ %g| %g| %g| %g| %g| %g ] \n',...
+                        i, YResult, XResult);
+                elseif algOpt.nZone == 5
+                    fprintf('Iter = %3d,   Minimum: %g,   Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n',...
+                        i, YResult, XResult);
+                end
 
 
 %               The convergence criterion: when the standard deviation is smaller
@@ -57,7 +61,7 @@ classdef OptAlgorithms < handle
 
                     delta = std(Population(:,1:opt.IndivSize)) ./ mean(Population(:,1:opt.IndivSize));
 
-                    if all(abs(delta) < 0.002) || i == opt.loopCount
+                    if all(abs(delta) < 0.01) || i == opt.loopCount
                         break
                     end
 
@@ -67,23 +71,24 @@ classdef OptAlgorithms < handle
             end
 %-----------------------------------------------------------------------------------------     
 
+            if algOpt.enableDebug
+%               Gather some useful information and store them
+                result.optTime        = etime(clock,startTime)/3600;
+                result.convergence    = delta;
+                result.correlation    = corrcoef(Population(:,1:opt.IndivSize));
+                result.PopulationSize = opt.PopulSize;
+                result.Iteration      = opt.loopCount;
+                result.Population     = Population;
+                result.xValue         = XResult;
+                result.yValue         = YResult;
 
-%           Gather some useful information and store them
-            result.optTime        = etime(clock,startTime)/3600;
-            result.convergence    = delta;
-            result.correlation    = corrcoef(Population(:,1:opt.IndivSize));
-            result.PopulationSize = opt.PopulSize;
-            result.Iteration      = opt.loopCount;
-            result.Population     = Population;
-            result.xValue         = XResult;
-            result.yValue         = YResult;
-
-            save(sprintf('result_%2d.mat',fix(rand*100)),'result');
-            fprintf('The results have been stored in the result.mat \n');
+                save(sprintf('result_%2d.mat',fix(rand*100)),'result');
+                fprintf('The results have been stored in the result.mat \n');
+            end
 
         end
 
-        function opt = getOptions_DE(params)
+        function opt = getOptions_DE(algOpt, params)
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
 %
@@ -106,14 +111,12 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
-            global paramBound
-
             opt = [];
 
             opt.PopulSize      = 20;
             opt.IndivSize      = length(fieldnames(params));
-            opt.IndivScope     = log(paramBound);
-            opt.loopCount      = 300;
+            opt.IndivScope     = log(algOpt.paramBound);
+            opt.loopCount      = 200;
 
 %           Check out the dimension of the set of parameters, and the boundary limiatation
             [row, col] = size(opt.IndivSize);
@@ -168,9 +171,15 @@ classdef OptAlgorithms < handle
 
 
 %           Simulation of the sampled points, using subroutine simulatedMovingBed
-            Population(:, opt.IndivSize+1) = arrayfun( @(idx) feval(@simulatedMovingBed, ...
-                exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize );    
+            Population(:, opt.IndivSize+1) = arrayfun( @(idx) feval(@SMB.simulatedMovingBed, ...
+                exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize ); 
 
+%           if the parallel toolbox is available
+%             value = zeros(1,opt.PopulSize); parameter = Population(1:opt.PopulSize, 1:opt.IndivSize);
+%             parfor i = 1:opt.PopulSize
+%                 value(i)= feval( @SMB.simulatedMovingBed, exp(parameter(i,:)) )
+%             end
+%             Population(:,opt.IndivSize+1) = value';
 
 %           The statistics of the population
             OptPopul = zeros(opt.PopulSize+1, opt.IndivSize+1);
@@ -195,7 +204,7 @@ classdef OptAlgorithms < handle
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 % -----------------------------------------------------------------------------
-
+    
 
             R = opt.PopulSize;
             C = opt.IndivSize;
@@ -277,7 +286,13 @@ classdef OptAlgorithms < handle
 
 
 %           Simulate the new population and compare their objective function values
-            tempValue(:, 1) = arrayfun(@(idx) feval( @simulatedMovingBed, exp(tempPop(idx, 1:C)) ), 1:R ); 
+            tempValue(:, 1) = arrayfun(@(idx) feval( @SMB.simulatedMovingBed, exp(tempPop(idx, 1:C)) ), 1:R );
+
+%           if the parallel toolbox is available
+%             parfor i = 1:R
+%                 tempValue(i,1)= feval( @SMB.simulatedMovingBed, exp(tempPop(i,:)) )
+%             end
+
 
             [row, ~] = find(tempValue < Population(:,C+1));
 
@@ -294,14 +309,13 @@ classdef OptAlgorithms < handle
 
 
         end 
+        
+    end % DE
 
-    end
-
-
-%   PSO
+%   PSO    
     methods (Static = true, Access = 'public') 
 
-        function Particle_Swarm_Optimization(params)
+        function [XResult, YResult] = Particle_Swarm_Optimization(algOpt, params)
 % -----------------------------------------------------------------------------
 % Particle Swarm Optimization algorithm (PSO)
 %
@@ -322,9 +336,8 @@ classdef OptAlgorithms < handle
 
             startTime = clock;
 
-
 %           Get the optimizer options
-            options = OptAlgorithms.getOptions_PSO(params);  
+            options = OptAlgorithms.getOptions_PSO(algOpt, params);
 
 %           Initialization of the population
             [ParSwarm, OptSwarm, ToplOptSwarm] = OptAlgorithms.InitSwarm(options);
@@ -343,10 +356,13 @@ classdef OptAlgorithms < handle
                 YResult = OptSwarm(options.swarmSize+1, options.particleSize+1);        
 
 
-%                 fprintf('Iter = %3d,  Minimum: %g,  Parameters:[ %g| %g| %g| %g| %g| %g ] \n'...
-%                     , k, YResult, XResult);
-                fprintf('Iter = %3d,  Minimum: %g,  Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n'...
+                if algOpt.nZone == 4
+                    fprintf('Iter = %3d,  Minimum: %g,  Parameters:[ %g| %g| %g| %g| %g| %g ] \n'...
                     , k, YResult, XResult);
+                elseif algOpt.nZone == 5
+                    fprintf('Iter = %3d,  Minimum: %g,  Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n'...
+                    , k, YResult, XResult);
+                end
 
 
 %               The convergence criterion: when the standard deviation is smaller
@@ -355,7 +371,7 @@ classdef OptAlgorithms < handle
 
                     delta = std(ParSwarm(:,1:options.particleSize)) ./ mean(ParSwarm(:,1:options.particleSize));
 
-                    if all(abs(delta) < 0.002) || k == options.loopCount
+                    if all(abs(delta) < 0.01) || k == options.loopCount
                         break
                     end
 
@@ -365,22 +381,24 @@ classdef OptAlgorithms < handle
             end
 %-----------------------------------------------------------------------------------------  
 
-%           Gather some useful information and store them
-            result.optTime        = etime(clock,startTime)/3600;
-            result.convergence    = delta;
-            result.correlation    = corrcoef(ParSwarm(:,1:options.particleSize));
-            result.PopulationSize = options.swarmSize;
-            result.Iteration      = options.loopCount;
-            result.Population     = ParSwarm;
-            result.xValue         = XResult;
-            result.yValue         = YResult;
+            if algOpt.enableDebug
+%                   Gather some useful information and store them
+                result.optTime        = etime(clock,startTime)/3600;
+                result.convergence    = delta;
+                result.correlation    = corrcoef(ParSwarm(:,1:options.particleSize));
+                result.PopulationSize = options.swarmSize;
+                result.Iteration      = options.loopCount;
+                result.Population     = ParSwarm;
+                result.xValue         = XResult;
+                result.yValue         = YResult;
 
-            save(sprintf('result_%2d.mat',fix(rand*100)),'result');
-            fprintf('The results have been stored in the result.mat \n');
+                save(sprintf('result_%2d.mat',fix(rand*100)),'result');
+                fprintf('The results have been stored in the result.mat \n');
+            end
 
         end
 
-        function opt = getOptions_PSO(params)
+        function opt = getOptions_PSO(algOpt, params)
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
 %
@@ -411,8 +429,6 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
-            global paramBound
-
             opt = [];
 
 %           The number of population of the swarm intellectual (SI)
@@ -422,8 +438,8 @@ classdef OptAlgorithms < handle
             opt.particleSize   = length(fieldnames(params));
 
 %           the row represents the parameter, while the column denotes the upbound and lowerbound
-            opt.paramsRange    = log(paramBound);   
-            opt.loopCount      = 300;
+            opt.paramsRange    = log(algOpt.paramBound);   
+            opt.loopCount      = 200;
 
 %           check out the dimension of the set of parameters, and the boundary limitation
             [row, col] = size(opt.particleSize);
@@ -447,7 +463,7 @@ classdef OptAlgorithms < handle
             opt.compValue      = 1e5;
 
         end
-
+    
         function [ParSwarm,OptSwarm,ToplOptSwarm] = InitSwarm(opt)
 % -----------------------------------------------------------------------------
 % The initilization of the population
@@ -495,7 +511,7 @@ classdef OptAlgorithms < handle
 
 
 %           Simulation of the sampled points, using subroutine simulatedMovingBed
-            ParSwarm(: ,2 * opt.particleSize + 1) = arrayfun( @(idx) feval(@simulatedMovingBed,...
+            ParSwarm(: ,2 * opt.particleSize + 1) = arrayfun( @(idx) feval(@SMB.simulatedMovingBed,...
                 exp(ParSwarm(idx, 1:opt.particleSize)) ), 1:opt.swarmSize );
 
 %           The statistics of the population
@@ -613,7 +629,7 @@ classdef OptAlgorithms < handle
 
 
 %               Simulation of the sampled points, using subroutine simulatedMovingBed
-                ParSwarm(row, 2*ParCol+1) = feval( @simulatedMovingBed, exp(ParSwarm(row, 1:ParCol)) );
+                ParSwarm(row, 2*ParCol+1) = feval( @SMB.simulatedMovingBed, exp(ParSwarm(row, 1:ParCol)) );
 
 %               if the updated position is better than the current position, the
 %               particle flies to the updated positon; otherwise, keep still in current position
@@ -648,7 +664,7 @@ classdef OptAlgorithms < handle
                         ValTemp2 = OptSwarm(ParRow, ParCol+1);
                     else
                         ValTemp2 = OptSwarm(row-1, ParCol+1);
-                    end
+                    end     
 
                     if row == ParRow
                         ValTemp3 = OptSwarm(1, ParCol+1);
@@ -684,17 +700,16 @@ classdef OptAlgorithms < handle
             [minValue, row] = min(arrayfun(@(idx) OptSwarm(idx, ParCol+1), 1: ParRow));
 
             OptSwarm(ParRow+1, 1:ParCol) = OptSwarm(row,1:ParCol);
-            OptSwarm(ParRow+1, ParCol+1) = minValue;
+            OptSwarm(ParRow+1, ParCol+1) = minValue; 
 
         end
-
-    end
-
+        
+    end % PSO
 
 %   MADE    
     methods (Static = true, Access = 'public')
 
-        function Metropolis_Adjusted_Differential_Evolution(params)
+        function [xValue, yValue] = Metropolis_Adjusted_Differential_Evolution(algOpt, params)
 % -----------------------------------------------------------------------------
 % Metropolis Adjusted Differential Evolution algorithm (MADE)
 %
@@ -713,12 +728,12 @@ classdef OptAlgorithms < handle
 %        And let the main function informed that which parameters are need
 %        to be optimized
 % -----------------------------------------------------------------------------
-
-
+    
+    
             startTime = clock;
 
 %           Get the sampler options
-            opt = OptAlgorithms.getOptions_MADE(params);
+            opt = OptAlgorithms.getOptions_MADE(algOpt, params);
 
 %           Initialization of the chains
             states = OptAlgorithms.initChains(opt);
@@ -739,7 +754,7 @@ classdef OptAlgorithms < handle
                 fprintf('Iter: %5d    average acceptance: %3d,    ', i, fix(acpt/(opt.Nchain*i)*100));
 
 
-                [states, acpt] = OptAlgorithms.MADE_sampler(states, sigmaSqu, acpt, opt);
+                [states, acpt] = OptAlgorithms.MADE_sampler(states, sigmaSqu, acpt, opt, algOpt);
 
 %               Append the newest states to the end of the 3-D matrix
                 chain(:,:,i) = states;
@@ -767,7 +782,7 @@ classdef OptAlgorithms < handle
 %                     warning('There is something wrong in the sigma evolution, since sigma square must be nonegtive');
 %                 end
 
-            end
+            end    
 %----------------------------------------------------------------------------------------- 
 
 
@@ -797,63 +812,67 @@ classdef OptAlgorithms < handle
             end
 
 
-%           Gather some useful information and store them
-            clear samplers
-            [yValue, row]         = min(result.Population(:,opt.dimension+1));
-            xValue                = result.Population(row,1:opt.dimension);  
-            result.optTime        = etime(clock,startTime) / 3600;
-            result.convergDiagno  = R;
-            result.correlation    = corrcoef(result.Population(:,1:opt.dimension));
-            result.NumChain       = opt.Nchain;
-            result.Ieteration     = indx;
-            result.acceptanceRate = fix( acpt / (opt.Nchain * indx) * 100 );
+            if algOpt.enbaleDebug
+%                   Gather some useful information and store them
+                clear samplers
+                [yValue, row]         = min(result.Population(:,opt.dimension+1));
+                xValue                = result.Population(row,1:opt.dimension);  
+                result.optTime        = etime(clock,startTime) / 3600;
+                result.convergDiagno  = R;
+                result.correlation    = corrcoef(result.Population(:,1:opt.dimension));
+                result.NumChain       = opt.Nchain;
+                result.Ieteration     = indx;
+                result.acceptanceRate = fix( acpt / (opt.Nchain * indx) * 100 );
 
-            result.chain          = chain;
-%             result.sigmaChain     = sigmaChain; 
-            result.xValue         = xValue; 
-            result.yValue         = yValue;
+                result.chain          = chain;
+%                     result.sigmaChain     = sigmaChain; 
+                result.xValue         = xValue; 
+                result.yValue         = yValue;
 
-            save(sprintf('result_%3d.mat', fix(rand*1000)), 'result');
-            fprintf('Markov chain simulation finished and the result saved as result.mat \n');    
+                save(sprintf('result_%3d.mat', fix(rand*1000)), 'result');
+                fprintf('Markov chain simulation finished and the result saved as result.mat \n');
+
 
 
 %           Figures plotting
-            figure(1);clf
-            for i = 1: opt.dimension
+                figure(1);clf
+                for i = 1: opt.dimension
 
-                subplot(opt.dimension,1,i,'Parent', figure(1));
+                    subplot(opt.dimension,1,i,'Parent', figure(1));
 
-                histfit(exp(result.Population(:,i)), 50, 'kernel');
+                    histfit(exp(result.Population(:,i)), 50, 'kernel');
 
-                xStr = sprintf('Parameter x%d', i);
-                yStr = sprintf('Frequency');
+                    xStr = sprintf('Parameter x%d', i);
+                    yStr = sprintf('Frequency');
 
-                xlabel(xStr, 'FontSize', 10);
-                ylabel(yStr, 'FontSize', 10);
-                set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-
-            end
-
-            figure(2);clf
-            for i = 1: opt.dimension
-                for j = i: opt.dimension
-
-                    subplot(opt.dimension, opt.dimension, j+(i-1)*opt.dimension, 'Parent', figure(2));
-
-                    scatter(exp(result.Population(:,j)), exp(result.Population(:,i)));
-
-                    xStr = sprintf('Parameter x%d', j);
-                    yStr = sprintf('Parameter x%d', i);
-
-                    xlabel(xStr, 'FontName', 'Times New Roman', 'FontSize', 10);
-                    ylabel(yStr, 'FontName', 'Times New Roman', 'FontSize', 10);
+                    xlabel(xStr, 'FontSize', 10);
+                    ylabel(yStr, 'FontSize', 10);
                     set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+
                 end
+
+                figure(2);clf
+                for i = 1: opt.dimension
+                    for j = i: opt.dimension
+
+                        subplot(opt.dimension, opt.dimension, j+(i-1)*opt.dimension, 'Parent', figure(2));
+
+                        scatter(exp(result.Population(:,j)), exp(result.Population(:,i)));
+
+                        xStr = sprintf('Parameter x%d', j);
+                        yStr = sprintf('Parameter x%d', i);
+
+                        xlabel(xStr, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        ylabel(yStr, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                    end
+                end
+
             end
-
+    
         end    
-
-        function opt = getOptions_MADE(params)
+   
+        function opt = getOptions_MADE(algOpt, params)
 % -----------------------------------------------------------------------------
 %  The parameters for the Optimizer 
 %
@@ -876,14 +895,12 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
-            global paramBound
-
             opt = [];
 
             opt.Nchain        = 20;
             opt.dimension     = length(fieldnames(params));
-            opt.bounds        = log(paramBound)';
-            opt.nsamples      = 300; 
+            opt.bounds        = log(algOpt.paramBound)';
+            opt.nsamples      = 200; 
 
 
 %           Check out the dimension of the set of parameters, and the boundary limitation
@@ -949,12 +966,12 @@ classdef OptAlgorithms < handle
 
 
         %   Simulation of the sampled points, using subroutine simulatedMovingBed    
-            initChain(:,opt.dimension+1) = arrayfun( @(idx) feval( @simulatedMovingBed, ...
+            initChain(:,opt.dimension+1) = arrayfun( @(idx) feval( @SMB.simulatedMovingBed, ...
                 exp( initChain(idx,1:opt.dimension)) ), 1: opt.Nchain);
 
         end
 
-        function [states, acpt] = MADE_sampler(states, sigmaSqu, acpt, opt)
+        function [states, acpt] = MADE_sampler(states, sigmaSqu, acpt, opt, algOpt)
 %-----------------------------------------------------------------------------------------
 %
 %-----------------------------------------------------------------------------------------
@@ -967,8 +984,11 @@ classdef OptAlgorithms < handle
             XResult = exp(OptPopul(1, 1:opt.dimension));
             YResult = OptPopul(opt.Nchain+1, opt.dimension+1);
 
-%             fprintf('Minimum: %g,    Parameters:[ %g| %g| %g| %g| %g| %g ] \n', YResult, XResult);
-            fprintf('Minimum: %g,    Parameters:[ %g| %g| %g| %g| %g| %g| %g ] \n', YResult, XResult);
+            if algOpt.nZone == 4
+                fprintf('Minimum: %g,    Parameters:[ %g| %g| %g| %g| %g| %g ] \n', YResult, XResult);
+            elseif algOpt.nZone == 5
+                fprintf('Minimum: %g,    Parameters:[ %g| %g| %g| %g| %g| %g| %g] \n', YResult, XResult);
+            end
 
 
 %           For each chain, it is accepted in terms of the Metropolis probability
@@ -979,9 +999,9 @@ classdef OptAlgorithms < handle
                 if any(proposal < opt.bounds(1,:)) || any(proposal > opt.bounds(2,:))
 
                     rho = 0;
-                else
+                else            
 
-                    newSS = feval( @simulatedMovingBed, exp(proposal) );
+                    newSS = feval( @SMB.simulatedMovingBed, exp(proposal) );
                     SS    = states(j, opt.dimension+1);
 
 %                     rho = exp( -0.5*(newSS - SS) / sigmaSqu(j));
@@ -1012,8 +1032,8 @@ classdef OptAlgorithms < handle
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 % -----------------------------------------------------------------------------
-
-
+    
+    
             R = opt.Nchain;
             C = opt.dimension;
             [minValue, row] = min(Population(:,opt.dimension+1));
@@ -1212,7 +1232,221 @@ classdef OptAlgorithms < handle
 
         end
         
-    end
+    end % MADE
+
+
+% Upper level algorithm, in charge of discrete structural optimization
+% -----------------------------------------------------------------------------
+    methods (Static = true, Access = 'public')
+
+        function structure = discreteInit(opt)
+% -----------------------------------------------------------------------------
+% Generating the initial population of structures
+%
+% Encoding: each node between two adjacent columns are denoted by a number sequently
+%           0 1 2 3 4 5 6 7 8 9 10 ...
+% Here 0 represents the desorbent port all the time. As it is a loop, we always need a starting point
+% And the sequence of ports are D E (ext_1 ext_2) F R constantly. The selective ranges of each pointer
+% (E,F,R) are shown as follows in the binary scenario:
+%           0 1 2 3 4 5 6 7 8 9 10 ...
+%           D 
+%             E < ------- > E      : extract_pool
+%               F < ------- > F    : feed_pool
+%                 R < ------- > R  : raffinate_pool
+% -----------------------------------------------------------------------------
+
+
+            nodeIndex = opt.nColumn -1 ;
+
+%           Preallocate of the structure matrix
+            structure = zeros(opt.structNumber,opt.nZone+1);
+
+            for i = 1:opt.structNumber
+
+                if opt.nZone == 4
+                    extract_pool = [1, nodeIndex-2];
+                    structure(i,2) = randi(extract_pool);
+
+                    feed_pool = [structure(i,2)+1, nodeIndex-1];
+                    structure(i,3) = randi(feed_pool);
+
+                    raffinate_pool = [structure(i,3)+1, nodeIndex];
+                    structure(i,4) = randi(raffinate_pool);
+
+                elseif opt.nZone == 5
+                    extract1_pool = [1, nodeIndex-3];
+                    structure(i,2) = randi(extract1_pool);
+
+                    extract2_pool = [structure(i,2)+1, nodeIndex-2];
+                    structure(i,3) = randi(extract2_pool);
+
+                    feed_pool = [structure(i,3)+1, nodeIndex-1];
+                    structure(i,4) = randi(feed_pool);
+
+                    raffinate_pool = [structure(i,4)+1, nodeIndex];
+                    structure(i,5) = randi(raffinate_pool);
+
+                end
+            end
+
+        end
+
+        function structID = structure2structID(opt,structure)
+% -----------------------------------------------------------------------------
+% This is the rountine that decode the structure into structID for simulation
+% 
+% For instance, the structure is [0, 3, 5, 9] in a binary situation with column amount 10
+% the structID is [3,2,4,1], there are three in the zone I, two in zone II, four in
+% zone III, one in zone IV
+% -----------------------------------------------------------------------------
+
+
+            structID = zeros(1, opt.nZone);
+
+            structID(1:opt.nZone-1) = structure(2:end) - structure(1:end-1);
+
+            structID(end) = opt.nColumn - structure(end);
+
+        end
+
+        function [theta, objective] = continuousUnitOptimization(opt, params, optimization_method)
+% -----------------------------------------------------------------------------
+        % This is the main function of the optimization of the Simulated Moving Bed
+        % The optimized parameters in this case are 
+        %       - columnLength 
+        %       - switchTime 
+        %       - flowRates_recycle 
+        %       - flowRate_feed
+        %       - flowRate_desorbent
+        %       - flowRate_extract
+        % 
+        %       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_E}
+        % 
+        % In the FIVE-ZONE, the optimized parameters are
+        %       - columnLength 
+        %       - switchTime 
+        %       - flowRates_recycle 
+        %       - flowRate_feed
+        %       - flowRate_desorbent
+        %       - flowRate_extract_1
+        %       - flowRate_extract_2
+        % 
+        %       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_{E1}, Q_{E2}}
+        %
+        % There are four types of algorithms are integrated into this code, either
+        % based on Heuristical theory or Deterministic theory, either optimization or sampling.
+        %       - Particle Swarm Optimizatio (PSO)
+        %       - Differential Evolution (DE)
+        %       - Metropolis Adjusted Differential Evolution (MADE)
+        %       - Riemann Manifold Metropolis Adjusted Langevin Algorithm (MLA)
+        % 
+% -----------------------------------------------------------------------------
+
+
+            if isfield(optimization_method, 'Particle_Swarm_Optimization') ...
+                    && optimization_method.Particle_Swarm_Optimization
+
+                [theta, objective] = OptAlgorithms.Particle_Swarm_Optimization(opt, params);
+
+            elseif isfield(optimization_method, 'Differential_Evolution') ...
+                    && optimization_method.Differential_Evolution
+
+                [theta, objective] = OptAlgorithms.Differential_Evolution(opt, params);
+
+            elseif isfield(optimization_method, 'Metropolis_Adjusted_Differential_Evolution') ...
+                    && optimization_method.Metropolis_Adjusted_Differential_Evolution
+
+                [theta, objective] = OptAlgorithms.Metropolis_Adjusted_Differential_Evolution(opt, params);
+
+%             elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
+%                     && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin
+% 
+%                 [theta, objective] = Riemann_Manifold_Metropolis_Adjusted_Langevin(opt, params);
+
+            elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
+                    && optimization_method.Deterministic_algorithm_fmincon
+
+%               This is the demonstration case for the binary separation under FOUR-ZONE, 
+%                   in which 6 decision variables are optimized.      
+                initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
+
+                loBound = opt.paramBound(:,1);
+                upBound = opt.paramBound(:,2);
+
+                options = optimoptions('fmincon', 'Algorithm', 'interior-point', 'Display', 'iter',...
+                    'TolX',1e-6,'TolCon',1e-6,'TolFun',1e-6,'MaxIter',500);
+
+                try
+                    [theta, objective, exitflag, output, ~, grad] = fmincon( @simulatedMovingBed, ...
+                        initParams, [],[],[],[], loBound, upBound, [], options);
+                catch exception
+                    disp('Errors in the MATLAB build-in optimizer: fmincon. \n Please check your input parameters and run again. \n');
+                    disp('The message from fmincon: %s \n', exception.message);
+                end
+
+
+            else
+
+                warning('The method you selected is not provided in this programme');
+
+            end
+
+        end
+
+        function mutant_struct = discreteMutation(opt, structure)
+% -----------------------------------------------------------------------------
+% This is the mutation part of the upper-level structure optimization algorithm
+% 
+% First of all, two random selected structures are prepared; 
+% Then the optimal structure until now is recorded;
+% Lastly, the mutant_struct = rand_struct_1 &+ rand_struct_2 &+ optima_struct
+% -----------------------------------------------------------------------------
+
+
+%           Record the optimal structure so far and select two random structures
+            rand_struct_1 = structure(randi(structNumber), 1:opt.nZone);
+            rand_struct_2 = structure(randi(structNumber), 1:opt.nZone);
+
+            [~, id] = min(structure(:,opt.nZone+1));
+            optima_struct = structure(id, 1:opt.nZone);
+
+%           Preallocate of the mutation structure
+            mutant_struct = zeros(1,nZone);
+
+            for i = 1:opt.nZone
+                if rand < 0.33
+                    mutant_struct(i) = rand_struct_1(i);
+                elseif (0.33 <= rand) && (rand<= 0.67)
+                    mutant_struct(i) = rand_struct_2(i);
+                else
+                    mutant_struct(i) = optima_struct(i);
+                end
+            end
+
+        end
+
+        function trial_struct = discreteCrossover(opt, structure, mutant_struct)
+% -----------------------------------------------------------------------------
+% The crossover part of the upper-level structure optimization algorithm
+%
+% The generation of a new trial structure is achieved by randomly combining the original
+% structure and mutation structure.
+% -----------------------------------------------------------------------------
+
+
+            trial_struct = zeros(1, opt.nZone);
+
+            for i = 1:opt.nZone
+                if rand < 0.5
+                    trial_struct(i) = structure(i);
+                else
+                    trial_struct(i) = mutant_struct(i);
+                end
+            end
+
+        end
+
+    end % upper level
 
 
 end
