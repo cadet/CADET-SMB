@@ -1,4 +1,4 @@
-function objective = simulatedMovingBed(varargin)
+function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
 % =============================================================================
 % This is the main function which is charge of switching to reach the
@@ -68,10 +68,14 @@ function objective = simulatedMovingBed(varargin)
 
     tTotal = tic;
 
-    [opt, interstVelocity, Feed] = getParameters(varargin{:});
+    if iter == 1
+        [opt, interstVelocity, Feed] = getParameters_unit_1(varargin{:});
+    elseif iter == 2
+        [opt, interstVelocity, Feed] = getParameters_unit_2(varargin{:});
+    end
 
 %   Check the interstitial velocity, if anyone was negative, stop the simulation
-%       and assign a very big objective function value to this column configuration.
+%   and assign a very big objective function value to this column configuration.
     flag = SMB.interstVelocityCheck(interstVelocity, opt);
     if flag == 1
         objective = 1e3;  
@@ -82,17 +86,17 @@ function objective = simulatedMovingBed(varargin)
     currentData  = cell(1, opt.nColumn);
     columnNumber = cell(1, opt.nColumn);
 
-    for k = 1:opt.nColumn
-        currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
-        currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
-        currentData{k}.lastState = [];
+	for k = 1:opt.nColumn
+		currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
+		currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
+		currentData{k}.lastState = [];
 
-        if opt.enable_DPFR
-            currentData{k}.lastState_DPFR = cell(1, 2);
-            currentData{k}.lastState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
-            currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
-        end
-    end
+		if opt.enable_DPFR
+			currentData{k}.lastState_DPFR = cell(1, 2);
+			currentData{k}.lastState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
+			currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
+		end
+	end
 
 %   Number the columns for the sake of plotting
     for k = 1:opt.nColumn
@@ -103,7 +107,7 @@ function objective = simulatedMovingBed(varargin)
         end
     end
 
-%   Construct the string in order to tell simulator the calculation sequence
+% 	Construct the string in order to tell simulator the calculation sequence
     stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
                  'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'...
                  'a1' 'b1' 'c1' 'd1' 'e1' 'f1' 'g1' 'h1' 'i1' 'j1' 'k1' 'l1' 'm1'...
@@ -122,29 +126,29 @@ function objective = simulatedMovingBed(varargin)
     sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
 
     string = char(stringSet(1:opt.nColumn));
-
-%   Specify the column for the convergence checking
+ 
+% 	Specify the column for the convergence checking
     if opt.nZone == 4
-        convergIndx = sum(opt.structID(1:2));
-    elseif opt.nZone == 5
-        convergIndx = sum(opt.structID(1:3));
+    	convergIndx = sum(opt.structID(1:2));
+	elseif opt.nZone == 5
+		convergIndx = sum(opt.structID(1:3));
     end
 
 %   Preallocation
 %   The dimension of plotData (columnNumber x switches)
-%           t_s   2*t_s  3*t_s  4*t_s
-%           {1}    {1}    {1}    {1}
-%           {2}    {2}    {2}    {2}
-%           {3}    {3}    {3}    {3}
-%           {4}    {4}    {4}    {4}
+%          t_s   2*t_s  3*t_s  4*t_s
+%          {1}    {1}    {1}    {1}
+%          {2}    {2}    {2}    {2}
+%          {3}    {3}    {3}    {3}
+%          {4}    {4}    {4}    {4}
     plotData = cell(opt.nColumn,opt.nColumn);
 
 %   The data for plotting dynamic trajectory
-    if opt.nZone == 4
-        dyncData = cell(2, opt.nMaxIter);
-    elseif opt.nZone == 5
-        dyncData = cell(3, opt.nMaxIter);
-    end
+	if opt.nZone == 4
+		dyncData = cell(2, opt.nMaxIter);
+	elseif opt.nZone == 5
+		dyncData = cell(3, opt.nMaxIter);
+	end
 
 %   convergPrevious is used for stopping criterion
     convergPrevious = currentData{convergIndx}.outlet.concentration;
@@ -155,7 +159,7 @@ function objective = simulatedMovingBed(varargin)
 
 %   if num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
 %       num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
-    string = circshift(string, 0); 
+    string = circshift(string, 4); 
     startingPointIndex = SMB.stringIndexing(opt, string(1));
 
 %   After switching, dummyProfile is used to transfer concentration profile of last column
@@ -174,9 +178,17 @@ function objective = simulatedMovingBed(varargin)
 %       Switching the ports, in the countercurrent manner of fluid
         sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
+%       Load the feed inlets of second sub-unit from the outlets of first sub-unit
+        if iter == 2
+            for ii = 1:opt.nComponents
+                load('intermediateFeedConc.mat');
+                Feed.concentration(1:end, ii) = intermediateFeedConc{i}(:,ii);
+            end
+        end
+
 %       The simulation of columns within a SMB unit by the sequence, 
 %           say, 'a', 'b', 'c', 'd' in four-column cases
-        for k = string' %1:opt.nColumn
+        for k = string'
 
             column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, k);
 
@@ -185,7 +197,7 @@ function objective = simulatedMovingBed(varargin)
                 % The CSTR before the current column
                 column.inlet = SMB.CSTR(column.inlet, column, opt);
 
-                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, iter, varargin{:});
 
                 % The CSTR after the current column
                 outletProfile = SMB.CSTR(outletProfile, column, opt);
@@ -195,7 +207,7 @@ function objective = simulatedMovingBed(varargin)
                 % The DPFR before the current column
                 [column.inlet, lastState_DPFR_pre] = SMB.DPFR(column.inlet, column.initialState_DPFR{1}, opt);
 
-                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, iter, varargin{:});
 
                 % The DPFR after the current column
                 [outletProfile, lastState_DPFR_pos] = SMB.DPFR(outletProfile, column.initialState_DPFR{2}, opt);
@@ -204,7 +216,7 @@ function objective = simulatedMovingBed(varargin)
 
             else
 
-                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, iter, varargin{:});
 
             end
 
@@ -258,6 +270,13 @@ function objective = simulatedMovingBed(varargin)
             SMB.plotFigures(opt, plotData);
 
             if relativeDelta <= opt.tolIter
+                if iter == 1 || strcmp(intermediate_feed, 'raffinate')
+                    intermediateFeedConc = dyncData(1, 1:i);
+                    save('intermediateFeedConc.mat', 'intermediateFeedConc');
+                elseif iter == 1 && strcmp(intermediate_feed, 'extract')
+                    intermediateFeedConc = dyncData(2, 1:i);
+                    save('intermediateFeedConc.mat', 'intermediateFeedConc');
+                end
                 break
             else
                 convergPrevious = currentData{convergIndx}.outlet.concentration;

@@ -72,7 +72,7 @@ function SMBOptimization()
 
 %     elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
 %             && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin
-%         
+%
 %         Riemann_Manifold_Metropolis_Adjusted_Langevin(opt, params);
 
     elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
