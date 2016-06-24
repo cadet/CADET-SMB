@@ -26,8 +26,9 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.MAX_STEPS       = 5e6;   % the maximum iteration step in CADET
 
 %   The parameter setting for the SMB
-    opt.switch          = 264;   % s  % switching time
-    opt.timePoints      = 1000;  % the observed time-points
+    opt.nInterval       = 20;
+    opt.switch          = 264/opt.nInterval;   % s  % switching time
+    opt.timePoints      = 1000/opt.nInterval;  % the observed time-points
     opt.Purity_extract1_limit   = 0.95;  % used for constructing constraints
     opt.Purity_extract2_limit   = 0.65;  % used for constructing constraints
     opt.Purity_raffinate_limit  = 0.99;  % used for constructing constraints

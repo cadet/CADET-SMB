@@ -15,9 +15,8 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 % =============================================================================
 
 
-    valueAssign = struct('columnLength',ParSwarm(1), 'switch',ParSwarm(2),...
-        'recycle',ParSwarm(3),'feed',ParSwarm(4), 'desorbent',ParSwarm(5),...
-        'extract',ParSwarm(6));
+    valueAssign = struct('columnLength',ParSwarm(1), 'switch',ParSwarm(2), 'recycle',ParSwarm(3),...
+        'feed',ParSwarm(4), 'desorbent',ParSwarm(5), 'extract',ParSwarm(6));
 
 %   The parameter setting for simulator
     opt.tolIter         = 1e-3;   % tolerance of the SMB stopping criterion
@@ -32,8 +31,8 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 %   The parameter setting for the SMB
     opt.switch          = valueAssign.switch;  % switching time 
     opt.timePoints      = 1000;         % the observed time-points
-    opt.Purity_extract_limit   = 0.9964;  % used for constructing constraints
-    opt.Purity_raffinate_limit = 0.9975;  % used for constructing constraints
+    opt.Purity_extract_limit   = 0.99;  % used for constructing constraints
+    opt.Purity_raffinate_limit = 0.99;  % used for constructing constraints
     opt.Penalty_factor         = 10;    % penalty factor in penalty function
 
     opt.enableDebug = false; % set it false if you are using the optimizer
@@ -91,23 +90,6 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     for i = 1:opt.nComponents
         Feed.concentration(1:end,i) = (concentrationFeed(i) / opt.molMass(i));
     end
-
-% -----------------------------------------------------------------------------
-%   Capable of placing a CSTR or DPFR apparatues before and after the calculated column
-
-%   Continuous Stirred Tank Reactor
-    opt.enable_CSTR = false;
-    opt.CSTR_length = 0.01;
-
-%   Dispersive Plug Flow Reactor
-    opt.enable_DPFR = false;
-
-    opt.DPFR_length = 0.0016;
-    opt.DPFR_nCells = 50;
-
-    opt.DPFR_velocity   = 0.00315;
-    opt.DPFR_dispersion = 2.5e-30;
-
 
 end
 % =============================================================================

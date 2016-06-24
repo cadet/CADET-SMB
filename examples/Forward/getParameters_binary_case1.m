@@ -26,8 +26,9 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.MAX_STEPS       = 5e6;
 
 %   The parameter setting for the SMB
-    opt.switch          = 180;
-    opt.timePoints      = 1000;
+    opt.nInterval       = 20;
+    opt.switch          = 180/opt.nInterval;
+    opt.timePoints      = 1000/opt.nInterval;
     opt.Purity_extract_limit    = 0.99;
     opt.Purity_raffinate_limit  = 0.99;
     opt.Penalty_factor          = 10;
