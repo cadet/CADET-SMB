@@ -15,7 +15,7 @@ It does not matter what the simulation sequence is, if only the cyclic steady st
 
 Operator splitting is a kind of mathematical terminology. By utilizing splitting of the simulations of columns in a SMB unit into several time sections, we could approach the real flow pattern as what has presented in the above figure. The definition of the time section is t_s/n, where n is the amount of time sections. 
 
-![](https://github.com/modsim/CADET-SMB/blob/Dynamic_SMB/doc/operator-splitting.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/Dynamic_SMB/doc/operator_splitting.JPG)
 
 *Brief demonstration*
 
