@@ -77,6 +77,8 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
+    SMB.intervalAmountCheck(opt, interstVelocity);
+
     concentrationFeed 	= [0.5, 0.5];   % g/m^3 [concentration_compA, concentration_compB]
     opt.molMass         = [180.16, 180.16];
     opt.yLim            = max(concentrationFeed ./ opt.molMass);

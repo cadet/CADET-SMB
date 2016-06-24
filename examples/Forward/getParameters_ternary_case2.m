@@ -82,6 +82,8 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);      % m/s
     interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);      % m/s
 
+    SMB.intervalAmountCheck(opt, interstVelocity);
+
     concentrationFeed 	= [1.0, 1.0, 1.0];    % g/m^3 [concentration_compA, concentration_compB]
     opt.molMass         = [309.401, 309.401, 309.401]; % The molar mass of each components
     opt.yLim            = max(concentrationFeed ./ opt.molMass) * 1.1; % the magnitude for plotting
