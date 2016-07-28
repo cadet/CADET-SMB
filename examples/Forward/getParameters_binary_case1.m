@@ -1,5 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 1, a four-column demonstration case
+%   Case 1, a 4-zone four-column case for binary separation
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation
