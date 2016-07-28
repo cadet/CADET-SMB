@@ -1,5 +1,4 @@
 function [opt, interstVelocity, Feed] = getParameters_unit_2(varargin)
-%   Case 2, a eight-column demonstration case
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
