@@ -1,5 +1,5 @@
-function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 1, a 4-zone four-column case for binary separation
+function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
+%   Case #1, a 4-zone case for column configuration optimization
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation
@@ -15,28 +15,32 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 % =============================================================================
 
 
+    valueAssign = struct('columnLength',ParSwarm(1), 'switch',ParSwarm(2),...
+        'recycle',ParSwarm(3),'feed',ParSwarm(4), 'desorbent',ParSwarm(5),...
+        'extract',ParSwarm(6));
+
 %   The parameter setting for simulator
-    opt.tolIter         = 1e-4;
-    opt.nMaxIter        = 1000;
-    opt.nThreads        = 8;
-    opt.nCellsColumn    = 40;
-    opt.nCellsParticle  = 1;
-    opt.ABSTOL          = 1e-10;
-    opt.INIT_STEP_SIZE  = 1e-14;
-    opt.MAX_STEPS       = 5e6;
+    opt.tolIter         = 1e-3;   % tolerance of the SMB stopping criterion
+    opt.nMaxIter        = 1000;   % the maximum iteration step in SMB
+    opt.nThreads        = 8;      % threads of CPU, up to your computer
+    opt.nCellsColumn    = 30;     % discretization number in one column
+    opt.nCellsParticle  = 1;      % discretization number in one particle
+    opt.ABSTOL          = 1e-9;   % tolerance of CADET stopping criterion
+    opt.INIT_STEP_SIZE  = 1e-14;  % refer your to CADET manual
+    opt.MAX_STEPS       = 5e6;    % the maximum iteration step in CADET
 
 %   The parameter setting for the SMB
-    opt.nInterval       = 20;
-    opt.switch          = 180/opt.nInterval;
-    opt.timePoints      = 1000/opt.nInterval;
-    opt.Purity_extract_limit    = 0.99;
-    opt.Purity_raffinate_limit  = 0.99;
-    opt.Penalty_factor          = 10;
+    opt.switch          = valueAssign.switch;  % switching time 
+    opt.timePoints      = 1000;         % the observed time-points
+    opt.Purity_extract_limit   = 0.9964;  % used for constructing constraints
+    opt.Purity_raffinate_limit = 0.9975;  % used for constructing constraints
+    opt.Penalty_factor         = 10;    % penalty factor in penalty function
 
-    opt.enableDebug = true;
-    opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
-    opt.nColumn     = 4;
-    opt.structID    = [1 1 1 1]; % the column configuration which is used for structure optimization
+    opt.enableDebug = false; % set it false if you are using the optimizer
+    opt.nZone   = 4;
+    opt.nColumn = 6; % The amount of columns are known
+    opt.structNumber = 20;
+%     opt.structID = [1 1 1 1]; % the opt.structID is unknown
 
 %   Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';
@@ -47,13 +51,13 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.comp_ext_ID = 2; % the target component withdrawn from the extract ports
 
 %   Transport
-    opt.dispersionColumn          = 3.8148e-20;     %
-    opt.filmDiffusion             = [100 100];      % unknown 
-    opt.diffusionParticle         = [1.6e4 1.6e4];  % unknown
+    opt.dispersionColumn          = 3.8148e-20;     % D_{ax}
+    opt.filmDiffusion             = [100 100];      % K_{eff} 
+    opt.diffusionParticle         = [1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0];
 
 %   Geometry
-    opt.columnLength        = 0.25;      % m
+    opt.columnLength        = valueAssign.columnLength;      % m
     opt.columnDiameter      = 0.02;      % m
     opt.particleRadius      = 0.0005;    % m % user-defined one in this case
     opt.porosityColumn      = 0.83;
@@ -61,12 +65,12 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
-    crossArea = pi * (opt.columnDiameter/2)^2;   % m^2
-    flowRate.recycle    = 9.62e-7;      % m^3/s  
-    flowRate.feed       = 0.98e-7;      % m^3/s
-    flowRate.raffinate  = 1.40e-7;      % m^3/s
-    flowRate.desorbent  = 1.96e-7;      % m^3/s
-    flowRate.extract    = 1.54e-7;      % m^3/s
+    crossArea = pi * (opt.columnDiameter/2)^2;      % m^2
+    flowRate.recycle    = valueAssign.recycle;      % m^3/s  
+    flowRate.feed       = valueAssign.feed;         % m^3/s
+    flowRate.desorbent  = valueAssign.desorbent;    % m^3/s
+    flowRate.extract    = valueAssign.extract;      % m^3/s
+    flowRate.raffinate  = flowRate.desorbent - flowRate.extract + flowRate.feed;        % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -78,10 +82,10 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
     concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
-    opt.molMass         = [180.16, 180.16];
-    opt.yLim            = max(concentrationFeed ./ opt.molMass);
+    opt.molMass         = [180.16, 180.16]; % The molar mass of each components
+    opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
 
-%   Feed concentration setup
+%   Feed concentration setup   
     Feed.time = linspace(0, opt.switch, opt.timePoints);
     Feed.concentration = zeros(length(Feed.time), opt.nComponents);
 

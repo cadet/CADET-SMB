@@ -563,6 +563,7 @@ classdef SMB < handle
 
         end % interstVelocityCheck
 
+
         function objective = objectiveFunction(Results, opt)
 %-----------------------------------------------------------------------------------------
 % The objective function for the optimizers
@@ -655,7 +656,6 @@ classdef SMB < handle
 
                 Results = struct('Purity_extract', Purity_extract, 'Purity_raffinate', Purity_raffinate, ...
                     'Productivity_extract', Productivity_extract, 'Productivity_raffinate', Productivity_raffinate);
-                Results.Data = plotData;
 
 
             elseif opt.nZone == 5
@@ -700,12 +700,10 @@ classdef SMB < handle
                 Results = struct('Purity_extract1', Purity_extract1, 'Purity_extract2', Purity_extract2,...
                     'Purity_raffinate', Purity_raffinate, 'Productivity_extract1', Productivity_extract1,...
                     'Productivity_extract2', Productivity_extract2, 'Productivity_raffinate', Productivity_raffinate);
-                Results.Data = plotData;
 
             end
 
         end % Purity_Productivity
-
 
         function columnSpline = CSTR(Profile, column, opt)
 % -----------------------------------------------------------------------------
@@ -826,6 +824,61 @@ classdef SMB < handle
 
         end % DPFR
 
+
+        function concDataConvertToASCII(plotData, opt)
+%----------------------------------------------------------------------------------------
+% This is a fucntion that converts the struct data in Matlab into ASCII format
+%
+% Parameters:
+%       - plotData. The data that stores the concentration profile information of all the
+%       columns. After conversion, the plotData will be divided into nColumn separate *.dat files
+%       - opt. The option that might be used
+%----------------------------------------------------------------------------------------
+
+
+            for j = 1:opt.nColumn
+                y = plotData{j,1}.outlet.concentration;
+
+                for k =2:opt.nColumn
+                    y = [y; plotData{j,k}.outlet.concentration];
+                end
+
+                save(sprintf('profile_column_%03d.dat', j), 'y' ,'-ascii');
+            end
+
+        end % concDataConvertToASCII
+
+        function trajDataConvertToASCII(dyncData, opt)
+%----------------------------------------------------------------------------------------
+% This is a fucntion that converts the struct data in Matlab into ASCII format
+%
+% Parameters:
+%       - dyncData. The data that stores the trajectory informtion
+%       - opt. The option that might be used
+%----------------------------------------------------------------------------------------
+
+
+            % Find the index of non-empty cell
+            for i = 1:length(dyncData)
+                if isempty(dyncData{1, i})
+                    len = i-1;
+                    break
+                else
+                    len = i;
+                end
+            end
+
+            y = [];
+            for k = 1:opt.nComponents
+
+                temp = cat(1, dyncData{k, 1:len});
+                y = [y temp];
+
+            end
+
+            save('trajectory.dat', 'y' ,'-ascii');
+
+        end % trajDataConvertToASCII
 
         function plotFigures(opt, plotData)
 %-----------------------------------------------------------------------------------------
