@@ -1,5 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 4, a four-column demonstration case which has adopt the ModiCon tech
+%   Case 1, a 4-zone four-column case which adopts the ModiCon modification
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation

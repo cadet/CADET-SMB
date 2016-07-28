@@ -30,13 +30,13 @@ classdef SMB < handle
                 if nargin < 3
                     lastState = [];
                     if nargin < 2
-                        error('secColumn: There are no enough inputs for carrying out Simulator in CADET');
+                        error('SMB.secColumn: There are no enough inputs for carrying out Simulator in CADET \n');
                     end
                 end
             end
 
             if isempty(params.initMobilCon) && isempty(params.initSolidCon) && isempty(lastState)
-                error('secColumn: There are no Initial / Boundary Conditions for the Simulator');
+                error('SMB.secColumn: There are no Initial / Boundary Conditions for the Simulator \n');
             end
 
 %           Get parameters options
@@ -78,7 +78,7 @@ classdef SMB < handle
 
             elseif strcmp(opt.BindingModel, 'StericMassAction')
 
-                error('%s: it is not available yet.', opt.BindingModel);
+                error('%s: it is not available yet \n', opt.BindingModel);
 
             end
 
@@ -144,7 +144,7 @@ classdef SMB < handle
                 result = sim.simulate();
             catch e
                 % Something went wrong
-                error('CADET:simulationFailed', 'Check your settings and try again.\n%s',e.message);
+                error('CADET:simulationFailed', 'Check your settings and try again. \n%s',e.message);
             end
 
 %           Extract the outlet profile
@@ -236,7 +236,11 @@ classdef SMB < handle
 % -----------------------------------------------------------------------------
 
 
-            global stringSet;
+            global stringSet Feed2;
+
+            if nargin < 6
+                error('SMB.massConservation: There are no enough arguments \n');
+            end
 
 %           Time points
             column.inlet.time = linspace(0, opt.switch, opt.timePoints);
@@ -262,18 +266,26 @@ classdef SMB < handle
 %           Calculate concentration of the column due to its position in the SMB unit
             switch index
 
-                case 'D' % node DESORBENT
+                case {'D','D1','D2'} % node DESORBENT
 
                     %   C_i^in = Q_{i-1} * C_{i-1}^out / Q_i
                     column.inlet.concentration = currentData{idx_j}.outlet.concentration .* ...
                         params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity; 
 
-                case 'F' % node FEED
+                case {'F','F1'} % node FEED1
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
-                        params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                        params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed1) ...
                         ./ params{idx_i}.interstitialVelocity; 
+
+                case 'F2' % node FEED2
+
+                    %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
+                    column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
+                        params{idx_j}.interstitialVelocity + Feed2.concentration .* interstVelocity.feed2) ...
+                        ./ params{idx_i}.interstitialVelocity; 
+
 
                 otherwise % node EXTRACT; RAFFINATE; MIDDLE
 
@@ -301,13 +313,16 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
+            if nargin < 6
+                error('SMB.getParams: There are no enough arguments \n');
+            end
+
             params = cell(1, opt.nColumn);
             for k = 1:opt.nColumn
 %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
                 params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
                     zeros(1,opt.nComponents), 'interstitialVelocity', []);
             end
-
 
             if opt.nZone == 4
 
@@ -350,6 +365,37 @@ classdef SMB < handle
 
                 end
 
+            elseif opt.nZone == 8
+
+                switch index
+
+                    case {'D1' 'M_D1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1;
+                    case {'E1' 'M_E1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                    case {'F1' 'M_F1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                    case {'R1' 'M_R1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1;
+                    case {'D2' 'M_D2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1 + interstVelocity.desorbent2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1;
+                    case {'E2' 'M_E2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2 - interstVelocity.feed2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1 + interstVelocity.desorbent2;
+                    case {'F2' 'M_F2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2 - interstVelocity.feed2;
+                    case {'R2' 'M_R2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2;
+
+                end
+
             end
 
         end % getParams
@@ -370,6 +416,10 @@ classdef SMB < handle
 
 
             global stringSet;
+
+            if nargin < 2
+                error('SMB.stringIndexing: There are no enough arguments \n');
+            end
 
             string = stringSet(1:opt.nColumn);
 
@@ -455,6 +505,66 @@ classdef SMB < handle
 
                 end
 
+            elseif opt.nZone == 8
+
+                if any( strcmp(alphabet, stringBlock{1}) )
+                    if strcmp(alphabet, stringBlock{1}(1))
+                        index = 'D1';
+                    else
+                        index = 'M_D1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{2}) )
+                    if strcmp(alphabet, stringBlock{2}(1))
+                        index = 'E1';
+                    else
+                        index = 'M_E1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{3}) )
+                    if strcmp(alphabet, stringBlock{3}(1))
+                        index = 'F1';
+                    else
+                        index = 'M_F1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{4}) )
+                    if strcmp(alphabet, stringBlock{4}(1))
+                        index = 'R1';
+                    else
+                        index = 'M_R1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{5}) )
+                    if strcmp(alphabet, stringBlock{5}(1))
+                        index = 'D2';
+                    else
+                        index = 'M_D2';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{6}) )
+                    if strcmp(alphabet, stringBlock{6}(1))
+                        index = 'E2';
+                    else
+                        index = 'M_E2';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{7}) )
+                    if strcmp(alphabet, stringBlock{7}(1))
+                        index = 'F2';
+                    else
+                        index = 'M_F2';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{8}) )
+                    if strcmp(alphabet, stringBlock{8}(1))
+                        index = 'R2';
+                    else
+                        index = 'M_R2';
+                    end
+
+                end
+
             end
 
         end % stringIndexing
@@ -494,7 +604,13 @@ classdef SMB < handle
 
                 obj.position_ext1 = numberBlock{1}(end); % Desorbent node
                 obj.position_ext2 = numberBlock{2}(end); % Extract_1 node
-                obj.position_raf = numberBlock{4}(end);  % Feed node
+                obj.position_raf  = numberBlock{4}(end); % Feed node
+
+            elseif opt.nZone == 8
+
+                obj.position_ext1 = numberBlock{1}(end); % Desorbent1 node
+                obj.position_ext2 = numberBlock{5}(end); % Desorbent2 node
+                obj.position_raf2 = numberBlock{7}(end); % Feed2 node
 
             end
 
@@ -512,6 +628,10 @@ classdef SMB < handle
 % 		- flag. flag = 1, there is negative velocity in the struct of interstVelocity 
 %-----------------------------------------------------------------------------------------
 
+
+            if nargin < 2
+                error('SMB.interstVelocity: There are no enough arguments \n');
+            end
 
             if opt.nZone == 4
 
@@ -538,6 +658,21 @@ classdef SMB < handle
 
                 flag = flag || (interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2) < 0;
 
+            elseif opt.nZone == 8
+
+                velocity = [interstVelocity.recycle, interstVelocity.desorbent1 ...
+                    interstVelocity.extract1, interstVelocity.feed1 ...
+                    interstVelocity.raffinate1, interstVelocity.desorbent2 ...
+                    interstVelocity.extract2, interstVelocity.raffinate2];
+
+                flag = any(velocity <= 0);
+
+%                 flag = flag || (interstVelocity.recycle - interstVelocity.desorbent) < 0;
+% 
+%                 flag = flag || (interstVelocity.recycle - interstVelocity.extract1) < 0;
+% 
+%                 flag = flag || (interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2) < 0;
+
             end
 
 
@@ -556,12 +691,16 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
+            if nargin < 2
+                error('SMB.objectiveFunction: There are no enough arguments \n');
+            end
+
             if opt.nZone == 4
 %               Construct the Penalty Function for the objective function
                 penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * 100 * opt.Penalty_factor ...
-                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) *  100 * opt.Penalty_factor;
+                    + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 5
@@ -570,10 +709,19 @@ classdef SMB < handle
                     + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
-            end
 
+            elseif opt.nZone == 8
+%               Construct the Penalty Function for the objective function
+                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate2 - opt.Purity_raffinate2_limit, 0) ) * 100 * opt.Penalty_factor;
+
+%               (-) since in the optimizer, the defined program is of optimization of minimum
+                objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate2) + penalty;
+
+            end
 
             if opt.enableDebug
                 fprintf('**** The objective value:  %g \n', objective);
@@ -595,6 +743,10 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
+            if nargin < 2
+                error('SMB.Purity_Productivity: There are no enough arguments \n');
+            end
+
 %           Get the position of the withdrawn ports to calculate the purity and productivity
             obj = SMB.positionIndexing(opt);
 
@@ -603,7 +755,7 @@ classdef SMB < handle
 
             if opt.nZone == 4
 
-%               using column 1 to calculate the integral of purity, plotData{1,x}
+%               Column 1 is used to calculate the integral of purity, plotData{1,x}
                 position_ext = obj.position_ext; position_raf = obj.position_raf;
 
 %               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
@@ -636,7 +788,6 @@ classdef SMB < handle
 
                 Results = struct('Purity_extract', Purity_extract, 'Purity_raffinate', Purity_raffinate, ...
                     'Productivity_extract', Productivity_extract, 'Productivity_raffinate', Productivity_raffinate);
-                Results.Data = plotData;
 
 
             elseif opt.nZone == 5
@@ -681,12 +832,54 @@ classdef SMB < handle
                 Results = struct('Purity_extract1', Purity_extract1, 'Purity_extract2', Purity_extract2,...
                     'Purity_raffinate', Purity_raffinate, 'Productivity_extract1', Productivity_extract1,...
                     'Productivity_extract2', Productivity_extract2, 'Productivity_raffinate', Productivity_raffinate);
-                Results.Data = plotData;
+
+
+            elseif opt.nZone == 8
+
+                position_ext1 = obj.position_ext1; position_ext2 = obj.position_ext2; position_raf2 = obj.position_raf2;
+
+%               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+                sum_ext1 = 0; sum_ext2 = 0; sum_raf2 = 0;
+                for k = 1:opt.nComponents
+                    sum_ext1 = sum_ext1 + trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,k));
+                    sum_ext2 = sum_ext2 + trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,k));
+                    sum_raf2 = sum_raf2 + trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,k));
+                end
+
+%               Extract ports
+                Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) / sum_ext1;
+                Purity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID)) / sum_ext2;
+
+%               Raffinate ports
+                Purity_raffinate2 = trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,opt.comp_raf2_ID)) / sum_raf2;
+
+%               per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
+                Productivity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID))...
+                    * opt.molMass(opt.comp_ext1_ID) * opt.flowRate_extract1 / Nominator;
+
+                Productivity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID))...
+                    * opt.molMass(opt.comp_ext2_ID) * opt.flowRate_extract2 / Nominator;
+
+                Productivity_raffinate2 = trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,opt.comp_raf2_ID))...
+                    * opt.molMass(opt.comp_raf2_ID) * opt.flowRate_raffinate2 / Nominator;
+
+
+                if opt.enableDebug
+                    fprintf('Purity (Extract1): %g %% \n', Purity_extract1 * 100);
+                    fprintf('Purity (Extract2): %g %% \n', Purity_extract2 * 100);
+                    fprintf('Purity (Raffinate2): %g %% \n', Purity_raffinate2 * 100)
+                    fprintf('Productivity (Extract1) in each switching time: %g g/m^3 \n', Productivity_extract1);
+                    fprintf('Productivity (Extract2) in each switching time: %g g/m^3 \n', Productivity_extract2);
+                    fprintf('Productivity (Raffinate2) in each switching time: %g g/m^3 \n', Productivity_raffinate2);
+                end
+
+                Results = struct('Purity_extract1', Purity_extract1, 'Purity_extract2', Purity_extract2,...
+                    'Purity_raffinate2', Purity_raffinate2, 'Productivity_extract1', Productivity_extract1,...
+                    'Productivity_extract2', Productivity_extract2, 'Productivity_raffinate2', Productivity_raffinate2);
 
             end
 
         end % Purity_Productivity
-
 
         function columnSpline = CSTR(Profile, column, opt)
 % -----------------------------------------------------------------------------
@@ -704,6 +897,10 @@ classdef SMB < handle
 %               points
 % -----------------------------------------------------------------------------
 
+
+            if nargin < 3
+                error('SMB.CSTR: There are no enough arguments \n');
+            end
 
             for i = 1:opt.nComponents
 
@@ -751,7 +948,7 @@ classdef SMB < handle
 %       - Profile. Inlet time concentration, the initial conditions
 %       - initialState. The boundary conditions of the DPFR
 %       - opt. Options for the software
-% 
+%
 % Returns:
 %       - columnProfile. outlet time and corresponding concentration profile
 %               - time. The time points observed
@@ -761,6 +958,10 @@ classdef SMB < handle
 %       calculation
 % -----------------------------------------------------------------------------
 
+
+            if nargin < 3
+                error('SMB.DPFR: There are no enough arguments \n');
+            end
 
             lastState = zeros(opt.nComponents, opt.DPFR_nCells);
 
@@ -808,6 +1009,67 @@ classdef SMB < handle
         end % DPFR
 
 
+        function concDataConvertToASCII(currentData, opt)
+%----------------------------------------------------------------------------------------
+% This is a fucntion that converts the struct data in Matlab into ASCII format
+%
+% Parameters:
+%       - plotData. The data that stores the concentration profile information of all the
+%       columns. After conversion, the plotData will be divided into nColumn separate *.dat files
+%       - opt. The option that might be used
+%----------------------------------------------------------------------------------------
+
+
+            if nargin < 2
+                error('SMB.concDataConvertToASCII: There are no enough arguments \n');
+            end
+
+            y = currentData{opt.nColumn}.outlet.concentration;
+
+            for k = opt.nColumn-1:-1:1
+                y = [y; currentData{k}.outlet.concentration];
+            end
+
+            save('profile_column.dat', 'y' ,'-ascii');
+
+        end % concDataConvertToASCII
+
+        function trajDataConvertToASCII(dyncData, opt)
+%----------------------------------------------------------------------------------------
+% This is a fucntion that converts the struct data in Matlab into ASCII format
+%
+% Parameters:
+%       - dyncData. The data that stores the trajectory informtion
+%       - opt. The option that might be used
+%----------------------------------------------------------------------------------------
+
+
+            if nargin < 2
+                error('SMB.trajDataConvertToASCII: There are no enough arguments \n');
+            end
+
+            % Find the index of non-empty cell
+            for i = 1:length(dyncData)
+                if isempty(dyncData{1, i})
+                    len = i-1;
+                    break
+                else
+                    len = i;
+                end
+            end
+
+            y = [];
+            for k = 1:opt.nComponents
+
+                temp = cat(1, dyncData{k, 1:len});
+                y = [y temp];
+
+            end
+
+            save('trajectory.dat', 'y' ,'-ascii');
+
+        end % trajDataConvertToASCII
+
         function plotFigures(opt, plotData)
 %-----------------------------------------------------------------------------------------
 % This is the plot function 
@@ -820,13 +1082,7 @@ classdef SMB < handle
 
 
             if nargin < 2
-                disp('Error in plotFigures: there are no enough input data for the function');
-            else
-                if isempty(opt)
-                    disp('Error in plotFigures: the options of the parameters are missing');
-                elseif isempty(plotData)
-                    disp('Error in plotFigures: the data for figures plotting are missing');
-                end
+                error('SMB.plotFigures: There are no enough arguments \n');
             end
 
             if opt.enableDebug
@@ -901,7 +1157,21 @@ classdef SMB < handle
 
                     end
 
-                end % if opt.nZone == 4 / opt.nZone == 5
+                elseif opt.nZone == 8
+
+                    if opt.nColumn == 8 && all( eq(opt.structID, [1 1 1 1 1 1 1 1]) )
+
+                        set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
+
+                    elseif opt.nColumn == 16 && all( eq(opt.structID, [2 2 2 2 2 2 2 2]) )
+
+                        set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
+                        set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
+
+                    end
+
+                end % if opt.nZone
 
                 for i = 1: (opt.nColumn-1)
                     line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
@@ -918,14 +1188,8 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
-            if nargin < 2
-                disp('Error: there are no enough input data for the function, plotFigures');
-            else
-                if isempty(opt)
-                    disp('Error in plotFigures: the options of the parameters are missing');
-                elseif isempty(dyncData)
-                    disp('Error in plotFigures: the data for figures plotting are missing');
-                end
+            if nargin < 3
+                error('SMB.plotDynamic: There are no enough arguments \n');
             end
 
             if opt.enableDebug
@@ -950,18 +1214,18 @@ classdef SMB < handle
 
                         if opt.nComponents == 2 && i == 1
                             legend('comp 1', 'comp 2', 'Location', 'NorthWest');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); set(FigSet(2),'Marker','*', 'MarkerSize',2);
                         elseif opt.nComponents == 3 && i == 1
                             legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2);
                         elseif opt.nComponents == 4 && i == 1
                             legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',2);
                         end
 
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
@@ -999,18 +1263,64 @@ classdef SMB < handle
 
                         if opt.nComponents == 2 && i == 1
                             legend('comp 1', 'comp 2', 'Location', 'NorthWest');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); set(FigSet(2),'Marker','*', 'MarkerSize',3.5);
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); set(FigSet(2),'Marker','*', 'MarkerSize',2);
                         elseif opt.nComponents == 3 && i == 1
                             legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5);
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2);
                         elseif opt.nComponents == 4 && i == 1
                             legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
-                            set(FigSet(1),'Marker','^', 'MarkerSize',3.5); ...
-                                set(FigSet(2),'Marker','*', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','s', 'MarkerSize',3.5); ...
-                                set(FigSet(3),'Marker','+', 'MarkerSize',3.5);
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',2);
+                        end
+
+                        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        set(gca, 'ygrid', 'on');
+                        set(gca, 'XTick', opt.timePoints*(1:iter));
+                        set(gca, 'XTickLabel', (1:iter));
+
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                        end
+
+                    end
+
+                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
+
+                elseif opt.nZone == 8
+
+                     for i = 1:3
+
+                        y = cat(1, dyncData{i,:});
+
+                        subplot(3,1,i);
+                        FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
+                        switch i
+                            case 1
+                                ylabel({'Raffinate_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 2
+                                ylabel({'Extract_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 3
+                                ylabel({'Extract_1 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                        end
+                        xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
+                        xlabel(xString, 'FontSize', 10);
+
+                        if opt.nComponents == 3 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2);
+                        elseif opt.nComponents == 4 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',2);
                         end
 
                         set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
