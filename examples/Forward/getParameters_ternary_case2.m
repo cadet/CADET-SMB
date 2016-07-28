@@ -1,5 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 5, five-clumn demenstration case for ternary separation
+%   Case 2, a 5-zone ten-column case for ternary separation
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation

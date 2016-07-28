@@ -1,5 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
-%   Case 5, a five-column demonstration case for ternary separation
+%   Case #, a case for column configuration optimization
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation

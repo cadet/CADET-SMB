@@ -21,7 +21,7 @@ classdef SMB < handle
 % 
 % Returns:
 %       - outletProfile. outlet time and corresponding concentration profile
-%       - lastState. Record the last STATE which is used as the boundary condition 
+%       - lastState. Record the last STATE which is used as the boundary condition
 % -----------------------------------------------------------------------------
 
 
@@ -30,13 +30,13 @@ classdef SMB < handle
                 if nargin < 3
                     lastState = [];
                     if nargin < 2
-                        error('secColumn: There are no enough inputs for carrying out Simulator in CADET');
+                        error('SMB.secColumn: There are no enough inputs for carrying out Simulator in CADET \n');
                     end
                 end
             end
 
             if isempty(params.initMobilCon) && isempty(params.initSolidCon) && isempty(lastState)
-                error('secColumn: There are no Initial / Boundary Conditions for the Simulator');
+                error('SMB.secColumn: There are no Initial / Boundary Conditions for the Simulator \n');
             end
 
 %           Get parameters options
@@ -78,7 +78,7 @@ classdef SMB < handle
 
             elseif strcmp(opt.BindingModel, 'StericMassAction')
 
-                error('%s: it is not available yet.', opt.BindingModel);
+                error('%s: it is not available yet \n', opt.BindingModel);
 
             end
 
@@ -144,7 +144,7 @@ classdef SMB < handle
                 result = sim.simulate();
             catch e
                 % Something went wrong
-                error('CADET:simulationFailed', 'Check your settings and try again.\n%s',e.message);
+                error('CADET:simulationFailed', 'Check your settings and try again. \n%s',e.message);
             end
 
 %           Extract the outlet profile
@@ -225,7 +225,7 @@ classdef SMB < handle
 %       - opt. Options
 %       - sequence. During switching, the structure used for storing the sequence of columns
 %       - alphabet. It is a character. It tells this subroutine to calculate the specified column 
-% 
+%
 % Returns:
 %   Preparation for next column simulation
 %       - column.inlet. The new inlet concentration of each column, which is
@@ -236,7 +236,11 @@ classdef SMB < handle
 % -----------------------------------------------------------------------------
 
 
-            global stringSet dummyProfile startingPointIndex;
+            global stringSet dummyProfile startingPointIndex Feed2;
+
+            if nargin < 6
+                error('SMB.massConservation: There are no enough arguments \n');
+            end
 
 %           Time points
             column.inlet.time = linspace(0, opt.switch, opt.timePoints);
@@ -267,7 +271,7 @@ classdef SMB < handle
 %           Calculate concentration of the column due to its position in the SMB unit
             switch index
 
-                case 'D' % node DESORBENT
+                case {'D','D1','D2'} % node DESORBENT
 
                     %   C_i^in = Q_{i-1} * C_{i-1}^out / Q_i
                     if ~strcmp(startingPointIndex, index)
@@ -278,16 +282,29 @@ classdef SMB < handle
                             params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity;
                     end
 
-                case 'F' % node FEED
+                case {'F','F1'} % node FEED1
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     if ~strcmp(startingPointIndex, index)
                         column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
-                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed1) ...
                             ./ params{idx_i}.interstitialVelocity;
                     else
                         column.inlet.concentration = (dummyProfile.concentration .* ...
-                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed1) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    end
+
+                case 'F2' % node FEED2
+
+                    %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
+                    if ~strcmp(startingPointIndex, index)
+                        column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
+                            params{idx_j}.interstitialVelocity + Feed2.concentration .* interstVelocity.feed2) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    else
+                        column.inlet.concentration = (dummyProfile.concentration .* ...
+                            params{idx_j}.interstitialVelocity + Feed2.concentration .* interstVelocity.feed2) ...
                             ./ params{idx_i}.interstitialVelocity;
                     end
 
@@ -299,7 +316,6 @@ classdef SMB < handle
                     else
                         column.inlet.concentration = dummyProfile.concentration;
                     end
-
 
             end
 
@@ -370,45 +386,7 @@ classdef SMB < handle
 % =============================================================================
 
 
-            global string stringSet structID dummyProfile startingPointIndex;
-
-            [opt, interstVelocity, Feed] = getParameters(varargin{:});
-            if ~isfield(opt, 'structID')
-                opt.structID = structID;
-            end
-
-%           Check the interstitial velocity, if anyone was negative, stop the simulation
-%           and assign a very big objective function value to this column configuration.
-            flag = SMB.interstVelocityCheck(interstVelocity, opt);
-            if flag == 1
-                objective = 1e3;  
-                return;  
-            end
-
-%           Initialize the starting points, currentData
-            currentData  = cell(1, opt.nColumn);
-            columnNumber = cell(1, opt.nColumn);
-
-            for k = 1:opt.nColumn
-                currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
-                currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
-                currentData{k}.lastState = [];
-
-                if opt.enable_DPFR
-                    currentData{k}.lastState_DPFR = cell(1, 2);
-                    currentData{k}.lastState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
-                    currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
-                end
-            end
-
-%           Number the columns for the sake of plotting
-            for k = 1:opt.nColumn
-                if k == 1
-                    columnNumber{1} = opt.nColumn;
-                else
-                    columnNumber{k} = k-1;
-                end
-            end
+            global string stringSet structID dummyProfile startingPointIndex Feed2;
 
 %           Construct the string in order to tell simulator the calculation sequence
             stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
@@ -422,22 +400,85 @@ classdef SMB < handle
                          'aa' 'bb' 'cc' 'dd' 'ee' 'ff' 'gg' 'hh' 'ii' 'jj' 'kk' 'll' 'mm'...
                          'nn' 'oo' 'pp' 'qq' 'rr' 'ss' 'tt' 'uu' 'vv' 'ww' 'xx' 'yy' 'zz'};
 
+            [opt, interstVelocity, Feed] = getParameters(varargin{:});
+
+%           Check the interstitial velocity, if anyone was negative, stop the simulation
+%             and assign a very big objective function value to this column configuration.
+            flag = SMB.interstVelocityCheck(interstVelocity, opt);
+            if flag == 1
+                objective = 1e3;  
+                return;  
+            end
+
+            if ~isfield(opt, 'structID')
+                opt.structID = structID;
+            end
+
+            if opt.enable_CSTR && opt.enable_DPFR
+                error('It is not allowed have both the CSTR and DPFR in the simulation \n');
+            end
+
             if opt.nColumn > length(stringSet)
-                error('The simulation of %3g-column case in %3g-zone is not finished so far', opt.nColumn, opt.nZone);
+                error('The simulation of %3g-column case in %3g-zone is not finished so far \n', opt.nColumn, opt.nZone);
+            end
+
+
+%           Preallocation
+%----------------------------------------------------------------------------------------
+            string = char(stringSet(1:opt.nColumn));
+
+%           If num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
+%               num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
+%           In the 8-zone scenario, it should be careful in choosing the starting node
+%               as it is impossible to start from Feed2 node at the outset. 
+            string = circshift(string, 0); 
+            startingPointIndex = SMB.stringIndexing(opt, string(1));
+
+%           Initialize the starting points, currentData
+            currentData  = cell(1, opt.nColumn);
+            for k = 1:opt.nColumn
+                currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
+                currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents); 
+                currentData{k}.lastState = [];
+
+                if opt.enable_DPFR
+                    currentData{k}.lastState_DPFR = cell(1, 2);
+                    currentData{k}.lastState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
+                    currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
+                end
+            end
+
+            columnNumber = cell(1, opt.nColumn);
+%           Number the columns for the sake of plotting
+            for k = 1:opt.nColumn
+                if k == 1
+                    columnNumber{1} = opt.nColumn;
+                else
+                    columnNumber{k} = k-1;
+                end
             end
 
             sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
 
-            string = char(stringSet(1:opt.nColumn));
-
 %           Specify the column for the convergence checking
+%           Usually, the column after the Feed node is adopted
             if opt.nZone == 4
                 convergIndx = sum(opt.structID(1:2));
             elseif opt.nZone == 5
                 convergIndx = sum(opt.structID(1:3));
+            elseif opt.nZone == 8
+                convergIndx = sum(opt.structID(1:6));
+            else
+                fprintf('Please choose the correct zone configuration');
             end
 
-%           Preallocation
+%           convergPrevious is used for stopping criterion
+            convergPrevious = currentData{convergIndx}.outlet.concentration;
+
+%           After switching, dummyProfile is used to transfer concentration profile of last column
+%               to the inlet port of the first column
+            dummyProfile    = currentData{sequence.(string(end))}.outlet;
+
 %           The dimension of plotData (columnNumber x switches)
 %               t_s   2*t_s  3*t_s  4*t_s
 %               {1}    {1}    {1}    {1}
@@ -447,30 +488,18 @@ classdef SMB < handle
             plotData = cell(opt.nColumn,opt.nColumn);
 
 %           The data for plotting dynamic trajectory
+%           The row represents the number of withdrawn ports
             if opt.nZone == 4
                 dyncData = cell(2, opt.nMaxIter);
             elseif opt.nZone == 5
                 dyncData = cell(3, opt.nMaxIter);
+            elseif opt.nZone == 8
+                dyncData = cell(3, opt.nMaxIter);
             end
+%----------------------------------------------------------------------------------------
 
-%           convergPrevious is used for stopping criterion
-            convergPrevious = currentData{convergIndx}.outlet.concentration;
-
-            if opt.enable_CSTR && opt.enable_DPFR
-                error('It is not allowed have both the CSTR and DPFR in the simulation \n');
-            end
-
-%           if num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
-%           num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
-            string = circshift(string, 4); 
-            startingPointIndex = SMB.stringIndexing(opt, string(1));
-
-%           After switching, dummyProfile is used to transfer concentration profile of last column
-%           to the inlet port of the first column
-            dummyProfile = currentData{sequence.(string(end))}.outlet;
-
-
-%-----------------------------------------------------------------------------------------
+%   Simulations
+%----------------------------------------------------------------------------------------
 %           Main loop
             for i = 1:opt.nMaxIter
 
@@ -478,8 +507,8 @@ classdef SMB < handle
                 sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
 %               The simulation of columns within a SMB unit by the sequence, 
-%               say, 'a', 'b', 'c', 'd' in four-column cases
-                for k = string' %1:opt.nColumn
+%                   say, 'a', 'b', 'c', 'd' in four-column cases (desorbent node)
+                for k = string'
 
                     column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, k);
 
@@ -511,20 +540,33 @@ classdef SMB < handle
 
                     end
 
-                    if strcmp(k, string(end))
+                    % Store the concentration profile, in which it is used as the profile of Feed_2 inlet
+                    % The concentration profile of column string(end) is also stored as the dummyProfile 
+                    % because of a technical problem
+                    if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
+                        Feed2 = outletProfile;
+                    elseif strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
+                        Feed2 = outletProfile;
+                    elseif strcmp(k, string(end))
                         dummyProfile = outletProfile;
                     end
+
                     currentData{sequence.(k)}.outlet     = outletProfile;
                     currentData{sequence.(k)}.lastState  = lastState;
 
                 end
 
+                % The collection of the dyncData for the trajectory plotting
                 if opt.nZone == 4
                     dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3)))))}.outlet.concentration;
                     dyncData{2, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
                 elseif opt.nZone == 5
                     dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:4)))))}.outlet.concentration;
                     dyncData{2, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:2)))))}.outlet.concentration;
+                    dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+                elseif opt.nZone == 8
+                    dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:7)))))}.outlet.concentration;
+                    dyncData{2, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:5)))))}.outlet.concentration;
                     dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
                 end
 
@@ -559,9 +601,10 @@ classdef SMB < handle
 
                 end
             end
-%-----------------------------------------------------------------------------------------
+%----------------------------------------------------------------------------------------
 
-
+%   Post-process
+%----------------------------------------------------------------------------------------
 %           Compute the performance index, such Purity and Productivity
             Results = SMB.Purity_Productivity(plotData, opt);
 
@@ -588,8 +631,9 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
-%             global stringSet;
-%             string = char(stringSet(1:opt.nColumn));
+            if nargin < 6
+                error('SMB.getParams: There are no enough arguments \n');
+            end
 
             params = cell(1, opt.nColumn);
             for k = 1:opt.nColumn
@@ -597,12 +641,6 @@ classdef SMB < handle
                 params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
                     zeros(1,opt.nComponents), 'interstitialVelocity', []);
             end
-
-%             for j = 1:opt.nColumn
-% %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
-%                 params{sequence.(string(j)) }.initMobilCon = zeros(1,opt.nComponents);
-%                 params{sequence.(string(j)) }.initSolidCon = zeros(1,opt.nComponents);
-%             end
 
             if opt.nZone == 4
 
@@ -645,6 +683,37 @@ classdef SMB < handle
 
                 end
 
+            elseif opt.nZone == 8
+
+                switch index
+
+                    case {'D1' 'M_D1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1;
+                    case {'E1' 'M_E1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                    case {'F1' 'M_F1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                    case {'R1' 'M_R1'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1;
+                    case {'D2' 'M_D2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1 + interstVelocity.desorbent2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1;
+                    case {'E2' 'M_E2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2 - interstVelocity.feed2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1 + interstVelocity.desorbent2;
+                    case {'F2' 'M_F2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2 - interstVelocity.feed2;
+                    case {'R2' 'M_R2'}
+                        params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1;
+                        params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2;
+
+                end
+
             end
 
         end % getParams
@@ -665,6 +734,10 @@ classdef SMB < handle
 
 
             global stringSet;
+
+            if nargin < 2
+                error('SMB.stringIndexing: There are no enough arguments \n');
+            end
 
             string = stringSet(1:opt.nColumn);
 
@@ -750,6 +823,66 @@ classdef SMB < handle
 
                 end
 
+            elseif opt.nZone == 8
+
+                if any( strcmp(alphabet, stringBlock{1}) )
+                    if strcmp(alphabet, stringBlock{1}(1))
+                        index = 'D1';
+                    else
+                        index = 'M_D1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{2}) )
+                    if strcmp(alphabet, stringBlock{2}(1))
+                        index = 'E1';
+                    else
+                        index = 'M_E1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{3}) )
+                    if strcmp(alphabet, stringBlock{3}(1))
+                        index = 'F1';
+                    else
+                        index = 'M_F1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{4}) )
+                    if strcmp(alphabet, stringBlock{4}(1))
+                        index = 'R1';
+                    else
+                        index = 'M_R1';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{5}) )
+                    if strcmp(alphabet, stringBlock{5}(1))
+                        index = 'D2';
+                    else
+                        index = 'M_D2';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{6}) )
+                    if strcmp(alphabet, stringBlock{6}(1))
+                        index = 'E2';
+                    else
+                        index = 'M_E2';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{7}) )
+                    if strcmp(alphabet, stringBlock{7}(1))
+                        index = 'F2';
+                    else
+                        index = 'M_F2';
+                    end
+
+                elseif any( strcmp(alphabet, stringBlock{8}) )
+                    if strcmp(alphabet, stringBlock{8}(1))
+                        index = 'R2';
+                    else
+                        index = 'M_R2';
+                    end
+
+                end
+
             end
 
         end % stringIndexing
@@ -789,7 +922,13 @@ classdef SMB < handle
 
                 obj.position_ext1 = numberBlock{1}(end); % Desorbent node
                 obj.position_ext2 = numberBlock{2}(end); % Extract_1 node
-                obj.position_raf = numberBlock{4}(end);  % Feed node
+                obj.position_raf  = numberBlock{4}(end); % Feed node
+
+            elseif opt.nZone == 8
+
+                obj.position_ext1 = numberBlock{1}(end); % Desorbent1 node
+                obj.position_ext2 = numberBlock{5}(end); % Desorbent2 node
+                obj.position_raf2 = numberBlock{7}(end); % Feed2 node
 
             end
 
@@ -807,6 +946,10 @@ classdef SMB < handle
 % 		- flag. flag = 1, there is negative velocity in the struct of interstVelocity 
 %-----------------------------------------------------------------------------------------
 
+
+            if nargin < 2
+                error('SMB.interstVelocity: There are no enough arguments \n');
+            end
 
             if opt.nZone == 4
 
@@ -833,6 +976,21 @@ classdef SMB < handle
 
                 flag = flag || (interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2) < 0;
 
+            elseif opt.nZone == 8
+
+                velocity = [interstVelocity.recycle, interstVelocity.desorbent1 ...
+                    interstVelocity.extract1, interstVelocity.feed1 ...
+                    interstVelocity.raffinate1, interstVelocity.desorbent2 ...
+                    interstVelocity.extract2, interstVelocity.raffinate2];
+
+                flag = any(velocity <= 0);
+
+%                 flag = flag || (interstVelocity.recycle - interstVelocity.desorbent) < 0;
+% 
+%                 flag = flag || (interstVelocity.recycle - interstVelocity.extract1) < 0;
+% 
+%                 flag = flag || (interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2) < 0;
+
             end
 
 
@@ -851,24 +1009,37 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
+            if nargin < 2
+                error('SMB.objectiveFunction: There are no enough arguments \n');
+            end
+
             if opt.nZone == 4
 %               Construct the Penalty Function for the objective function
                 penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 5
 %               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 *opt.Penalty_factor ...
+                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
-            end
 
+            elseif opt.nZone == 8
+%               Construct the Penalty Function for the objective function
+                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
+                    + abs( min(Results.Purity_raffinate2 - opt.Purity_raffinate2_limit, 0) ) * 100 * opt.Penalty_factor;
+
+%               (-) since in the optimizer, the defined program is of optimization of minimum
+                objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate2) + penalty;
+
+            end
 
             if opt.enableDebug
                 fprintf('**** The objective value:  %g \n', objective);
@@ -890,6 +1061,10 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
+            if nargin < 2
+                error('SMB.Purity_Productivity: There are no enough arguments \n');
+            end
+
 %           Get the position of the withdrawn ports to calculate the purity and productivity
             obj = SMB.positionIndexing(opt);
 
@@ -898,7 +1073,7 @@ classdef SMB < handle
 
             if opt.nZone == 4
 
-%               using column 1 to calculate the integral of purity, plotData{1,x}
+%               Column 1 is used to calculate the integral of purity, plotData{1,x}
                 position_ext = obj.position_ext; position_raf = obj.position_raf;
 
 %               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
@@ -931,7 +1106,6 @@ classdef SMB < handle
 
                 Results = struct('Purity_extract', Purity_extract, 'Purity_raffinate', Purity_raffinate, ...
                     'Productivity_extract', Productivity_extract, 'Productivity_raffinate', Productivity_raffinate);
-                Results.Data = plotData;
 
 
             elseif opt.nZone == 5
@@ -976,12 +1150,54 @@ classdef SMB < handle
                 Results = struct('Purity_extract1', Purity_extract1, 'Purity_extract2', Purity_extract2,...
                     'Purity_raffinate', Purity_raffinate, 'Productivity_extract1', Productivity_extract1,...
                     'Productivity_extract2', Productivity_extract2, 'Productivity_raffinate', Productivity_raffinate);
-                Results.Data = plotData;
+
+
+            elseif opt.nZone == 8
+
+                position_ext1 = obj.position_ext1; position_ext2 = obj.position_ext2; position_raf2 = obj.position_raf2;
+
+%               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+                sum_ext1 = 0; sum_ext2 = 0; sum_raf2 = 0;
+                for k = 1:opt.nComponents
+                    sum_ext1 = sum_ext1 + trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,k));
+                    sum_ext2 = sum_ext2 + trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,k));
+                    sum_raf2 = sum_raf2 + trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,k));
+                end
+
+%               Extract ports
+                Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) / sum_ext1;
+                Purity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID)) / sum_ext2;
+
+%               Raffinate ports
+                Purity_raffinate2 = trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,opt.comp_raf2_ID)) / sum_raf2;
+
+%               per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
+                Productivity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID))...
+                    * opt.molMass(opt.comp_ext1_ID) * opt.flowRate_extract1 / Nominator;
+
+                Productivity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID))...
+                    * opt.molMass(opt.comp_ext2_ID) * opt.flowRate_extract2 / Nominator;
+
+                Productivity_raffinate2 = trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,opt.comp_raf2_ID))...
+                    * opt.molMass(opt.comp_raf2_ID) * opt.flowRate_raffinate2 / Nominator;
+
+
+                if opt.enableDebug
+                    fprintf('Purity (Extract1): %g %% \n', Purity_extract1 * 100);
+                    fprintf('Purity (Extract2): %g %% \n', Purity_extract2 * 100);
+                    fprintf('Purity (Raffinate2): %g %% \n', Purity_raffinate2 * 100)
+                    fprintf('Productivity (Extract1) in each switching time: %g g/m^3 \n', Productivity_extract1);
+                    fprintf('Productivity (Extract2) in each switching time: %g g/m^3 \n', Productivity_extract2);
+                    fprintf('Productivity (Raffinate2) in each switching time: %g g/m^3 \n', Productivity_raffinate2);
+                end
+
+                Results = struct('Purity_extract1', Purity_extract1, 'Purity_extract2', Purity_extract2,...
+                    'Purity_raffinate2', Purity_raffinate2, 'Productivity_extract1', Productivity_extract1,...
+                    'Productivity_extract2', Productivity_extract2, 'Productivity_raffinate2', Productivity_raffinate2);
 
             end
 
         end % Purity_Productivity
-
 
         function columnSpline = CSTR(Profile, column, opt)
 % -----------------------------------------------------------------------------
@@ -999,6 +1215,10 @@ classdef SMB < handle
 %               points
 % -----------------------------------------------------------------------------
 
+
+            if nargin < 3
+                error('SMB.CSTR: There are no enough arguments \n');
+            end
 
             for i = 1:opt.nComponents
 
@@ -1057,6 +1277,10 @@ classdef SMB < handle
 % -----------------------------------------------------------------------------
 
 
+            if nargin < 3
+                error('SMB.DPFR: There are no enough arguments \n');
+            end
+
             lastState = zeros(opt.nComponents, opt.DPFR_nCells);
 
 			delta_h = opt.DPFR_length / opt.DPFR_nCells;
@@ -1103,6 +1327,69 @@ classdef SMB < handle
         end % DPFR
 
 
+        function concDataConvertToASCII(plotData, opt)
+%----------------------------------------------------------------------------------------
+% This is a fucntion that converts the struct data in Matlab into ASCII format
+%
+% Parameters:
+%       - plotData. The data that stores the concentration profile information of all the
+%       columns. After conversion, the plotData will be divided into nColumn separate *.dat files
+%       - opt. The option that might be used
+%----------------------------------------------------------------------------------------
+
+
+            if nargin < 2
+                error('SMB.concDataConvertToASCII: There are no enough arguments \n');
+            end
+
+            for j = 1:opt.nColumn
+                y = plotData{j,1}.outlet.concentration;
+
+                for k =2:opt.nColumn
+                    y = [y; plotData{j,k}.outlet.concentration];
+                end
+
+                save(sprintf('profile_column_%03d.dat', j), 'y' ,'-ascii');
+            end
+
+        end % concDataConvertToASCII
+
+        function trajDataConvertToASCII(dyncData, opt)
+%----------------------------------------------------------------------------------------
+% This is a fucntion that converts the struct data in Matlab into ASCII format
+%
+% Parameters:
+%       - dyncData. The data that stores the trajectory informtion
+%       - opt. The option that might be used
+%----------------------------------------------------------------------------------------
+
+
+            if nargin < 2
+                error('SMB.trajDataConvertToASCII: There are no enough arguments \n');
+            end
+
+            % Find the index of non-empty cell
+            for i = 1:length(dyncData)
+                if isempty(dyncData{1, i})
+                    len = i-1;
+                    break
+                else
+                    len = i;
+                end
+            end
+
+            y = [];
+            for k = 1:opt.nComponents
+
+                temp = cat(1, dyncData{k, 1:len});
+                y = [y temp];
+
+            end
+
+            save('trajectory.dat', 'y' ,'-ascii');
+
+        end % trajDataConvertToASCII
+
         function plotFigures(opt, plotData)
 %-----------------------------------------------------------------------------------------
 % This is the plot function 
@@ -1115,13 +1402,7 @@ classdef SMB < handle
 
 
             if nargin < 2
-                disp('Error in plotFigures: there are no enough input data for the function');
-            else
-                if isempty(opt)
-                    disp('Error in plotFigures: the options of the parameters are missing');
-                elseif isempty(plotData)
-                    disp('Error in plotFigures: the data for figures plotting are missing');
-                end
+                error('SMB.plotFigures: There are no enough arguments \n');
             end
 
             if opt.enableDebug
@@ -1460,7 +1741,71 @@ classdef SMB < handle
 
                         end
 
-                    end % if opt.nZone == 4 / opt.nZone == 5
+                    elseif opt.nZone == 8
+
+                        if opt.nColumn == 8 && all( eq(opt.structID, [1 1 1 1 1 1 1 1]) )
+
+                            set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
+                            switch j
+                                case 1
+                                    set(gca, 'XTickLabel', {'Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II'});
+                                case 2
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III'});
+                                case 3
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV'});
+                                case 4
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V'});
+                                case 5
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI'});
+                                case 6
+                                    set(gca, 'XTickLabel', {'Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII'});
+                                case 7
+                                    set(gca, 'XTickLabel', {'Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII'});
+                                case 8
+                                    set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        elseif opt.nColumn == 16 && all( eq(opt.structID, [2 2 2 2 2 2 2 2]) )
+
+                            set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
+                            switch j
+                                case 1
+                                    set(gca, 'XTickLabel', {'Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                                case 2
+                                    set(gca, 'XTickLabel', {'Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II'});
+                                case 3
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II'});
+                                case 4
+                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone II'});
+                                case 5
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III'});
+                                case 6
+                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV'});
+                                case 7
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV'});
+                                case 8
+                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V'});
+                                case 9
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone I','Zone VIII','Zone VII','Zone VI','Zone V'});
+                                case 10
+                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI'});
+                                case 11
+                                    set(gca, 'XTickLabel', {'Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone II','Zone I','Zone VIII','Zone VII','Zone VI'});
+                                case 12
+                                    set(gca, 'XTickLabel', {'Zone VI','Zone V','Zone IV','Zone II','Zone II','Zone I','Zone VIII','Zone VII'});
+                                case 13
+                                    set(gca, 'XTickLabel', {'Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone III','Zone II','Zone I','Zone VIII','Zone VII'});
+                                case 14
+                                    set(gca, 'XTickLabel', {'Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII'});
+                                case 15
+                                    set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone IV','Zone III','Zone II','Zone I','Zone VIII'});
+                                case 16
+                                    set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
+                            end
+
+                        end
+
+                    end % if opt.nZone
 
                     for i = 1: (opt.nColumn-1)
                         line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
@@ -1479,20 +1824,13 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
-            if nargin < 2
-                disp('Error: there are no enough input data for the function, plotFigures');
-            else
-                if isempty(opt)
-                    disp('Error in plotFigures: the options of the parameters are missing');
-                elseif isempty(dyncData)
-                    disp('Error in plotFigures: the data for figures plotting are missing');
-                end
+            if nargin < 3
+                error('SMB.plotDynamic: There are no enough arguments \n');
             end
 
             if opt.enableDebug
 
                 figure(100);clf
-
                 if opt.nZone == 4
 
                     for i = 1:2
@@ -1563,6 +1901,52 @@ classdef SMB < handle
                             legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',2); set(FigSet(2),'Marker','*', 'MarkerSize',2);
                         elseif opt.nComponents == 3 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2);
+                        elseif opt.nComponents == 4 && i == 1
+                            legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
+                            set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
+                                set(FigSet(2),'Marker','*', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','s', 'MarkerSize',2); ...
+                                set(FigSet(3),'Marker','+', 'MarkerSize',2);
+                        end
+
+                        set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                        set(gca, 'ygrid', 'on');
+                        set(gca, 'XTick', opt.timePoints*(1:iter));
+                        set(gca, 'XTickLabel', (1:iter));
+
+
+                        for j = 1: (iter-1)
+                            line([j*opt.timePoints, j*opt.timePoints],[0,opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                        end
+
+                    end
+
+                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
+
+                elseif opt.nZone == 8
+
+                     for i = 1:3
+
+                        y = cat(1, dyncData{i,:});
+
+                        subplot(3,1,i);
+                        FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
+                        switch i
+                            case 1
+                                ylabel({'Raffinate_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 2
+                                ylabel({'Extract_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                            case 3
+                                ylabel({'Extract_1 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                        end
+                        xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
+                        xlabel(xString, 'FontSize', 10);
+
+                        if opt.nComponents == 3 && i == 1
                             legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
                             set(FigSet(1),'Marker','^', 'MarkerSize',2); ...
                                 set(FigSet(2),'Marker','*', 'MarkerSize',2); ...

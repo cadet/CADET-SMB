@@ -1,5 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
-%   Case 1, a four-column demonstration case
+%   Case #1, a 4-zone case for column configuration optimization
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation
