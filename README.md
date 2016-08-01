@@ -35,10 +35,11 @@ The recycle pattern could be briefly illustrated by the following two figures.
 
 * Binary separation is available using four-zone scheme;
 
-* Ternary separation can be achieved by using integrated five-zone scheme;
+* Ternary separation can be achieved by using integrated five-zone scheme or eight-zone scheme;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
 
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, 4-4-4-4-4;
 

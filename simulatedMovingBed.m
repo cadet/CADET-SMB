@@ -282,12 +282,9 @@ function objective = simulatedMovingBed(varargin)
     objective = SMB.objectiveFunction(Results, opt);
 
     tTotal = toc(tTotal);
-    if opt.enableDebug
-        fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
-    end
-
 %   Store the final data into DATA.mat file in the mode of forward simulation
     if opt.enableDebug
+        fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
         SMB.concDataConvertToASCII(currentData, opt);
         SMB.trajDataConvertToASCII(dyncData, opt);
         save(sprintf('Performance_%03d.mat',fix(rand*100)),'Results');
