@@ -22,11 +22,11 @@ Binary separation scenarios have been widely concerned in SMB chromatographic pr
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/Numerical_computing.JPG)
 
-Specifically, there are two major types, overall four methods that are involved in the numerical computing part. They are standard SMB approach, one-column analog approach, operator-splitting approach, advanced operator-splitting approach(@Eric, or some other name?) respectively. Additionally, the corresponding code of the four methods can be found in the homonymous GitHub branch.
+Specifically, there are two major types, overall four methods that are involved in the numerical computing part. They are standard SMB approach, one-column analog approach, operator-splitting approach, advanced operator-splitting approach respectively. Additionally, the corresponding code of the four methods can be found in the homonymous GitHub branch.
 
 It is trivial to brief the standard SMB approach here. The details are shown in the documentation file. The one-column analog approach is derived from the works of Nadia Abunasser and Phillip Wankat, Jose Mota and Joao Araujo, which is aimed to speed up convergence to the cyclic steady state (CSS) from the point of the view of the simulation. It is also regarded as an attractive alternative to the standard SMB approach, notably in the optimization situations. It is necessary to emphasize that in this branch (CSS), more attentions are paid to the convergence speed. In the following branch (trajectory), concentration dynamics will be concerned.
 
-Although in standard SMB approache and one-column analog approach the same correct CSS is converged, both of them cannot recur the actual dynamics of the concentration profiles that monitored at raffinate and extract ports (afterwards, I will just call these dynamics trajectories). It results from the concentration tracking manner, as in chromatography one can only detect the concentrations at the outlet end of the columns rather than immediate tracking. So the simulation sequence of a SMB unit is sequential, in reality it is actually simultaneous. Via operator-splitting approach in which the simulations of the columns are split into several time section intervals, the goal of obtaining correct trajectories is achieved. However in the operator-splitting approach, a big amount of time sections are required to eliminate the errors that are introduced into the system. In the advanced operator-splitting approach, the column at the very beginning of the simulations is simulated twice to compose both "true" column state and column outlet concentration profile. Hence we can approach the true trajectories by using operator-splitting and advanced operator-splitting approaches. Apparently, operator-splitting is more time-consuming than the advanced operator-splitting approach. There is a piece of evidence to back the statement that the true trajectories are obtained, by starting from different simulation starting points (e.g. feed, raffinate, extract, desorbent) the obtained trajectories coincide well with each other. In other words, the trajectory is unique. 
+Although in standard SMB approach and one-column analog approach the same correct CSS is converged, both of them cannot recur the actual dynamics of the concentration profiles that monitored at raffinate and extract ports (afterwards, I will just call these dynamics trajectories). It results from the concentration tracking manner, as in chromatography one can only detect the concentrations at the outlet end of the columns rather than immediate tracking. So the simulation sequence of a SMB unit is sequential, in reality it is actually simultaneous. Via operator-splitting approach in which the simulations of the columns are split into several time section intervals, the goal of obtaining correct trajectories is achieved. However in the operator-splitting approach, a big amount of time sections are required to eliminate the errors that are introduced into the system. In the advanced operator-splitting approach, the column at the very beginning of the simulations is simulated twice to compose both "true" column state and column outlet concentration profile. Hence we can approach the true trajectories by using operator-splitting and advanced operator-splitting approaches. Apparently, operator-splitting is more time-consuming than the advanced operator-splitting approach. There is a piece of evidence to back the statement that the true trajectories are obtained, by starting from different simulation starting points (e.g. feed, raffinate, extract, desorbent) the obtained trajectories coincide well with each other. In other words, the trajectory is unique. 
 
 
 ## Inverse problems
@@ -43,18 +43,24 @@ So far, the standard SMB approach and the one-column analog approach are combine
 
 * Binary separation is available using four-zone scheme; ternary components in binary separation are also possible;
 
-* Ternary separation can be achieved by using integrated five-zone scheme or cascade scheme; quaternary components in ternary separation are possible;
+* Ternary separation can be achieved by using integrated five-zone scheme, eight-zone scheme, or cascade scheme; quaternary components in ternary separation are possible;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme.JPG)
 *Four-zone scheme and five-zone scheme*
 
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_8.JPG)
+*Eight-zone scheme with internal raffinate and internal extract*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/cascade.JPG)
 *Cascade scheme*
 
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
+*Chromatogram with four-zone and five-zone scheme*
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
+*Chromatogram with eight-zone scheme*
 
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
 
