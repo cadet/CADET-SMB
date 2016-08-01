@@ -37,10 +37,11 @@ The introduced errors can be eliminated by increasing the amount of the time sec
 
 # Features
 
-* Binary separation is available using four-zone scheme; Ternary separation can be achieved by using either integrated five-zone scheme or cascade scheme;
+* Binary separation is available using four-zone scheme; Ternary separation can be achieved by using either integrated five-zone scheme, eight-zone scheme, or cascade scheme;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
 
 * In separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, 4-4-4-4-4;
 
