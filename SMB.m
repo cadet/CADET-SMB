@@ -869,7 +869,9 @@ classdef SMB < handle
             end
 
             y = [];
-            for k = 1:opt.nComponents
+            % nComp represents the number of outlet ports
+            if opt.nZone == 4, nComp = 2; else nComp = 3; end
+            for k = 1:nComp
 
                 temp = cat(1, dyncData{k, 1:len});
                 y = [y temp];

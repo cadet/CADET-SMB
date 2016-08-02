@@ -230,6 +230,7 @@ function objective = simulatedMovingBed(varargin)
 
                 end
 
+
                 % The concentration profile of column string(end) is stored as the dummyProfile
                 % because of a technical problem
                 if strcmp(k, string(end)) && j == opt.nInterval
@@ -242,6 +243,7 @@ function objective = simulatedMovingBed(varargin)
                 tempData{sequence.(k)}.concentration{j} = outletProfile.concentration;
 
             end
+
 
             % The collection of the dyncData for the trajectory plotting
             if opt.nZone == 4
