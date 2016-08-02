@@ -272,7 +272,14 @@ classdef SMB < handle
                     column.inlet.concentration = currentData{idx_j}.outlet.concentration .* ...
                         params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity; 
 
-                case {'F','F1'} % node FEED1
+                case 'F' % node FEED of four-zone and five-zone
+
+                    %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
+                    column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
+                        params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                        ./ params{idx_i}.interstitialVelocity; 
+
+				case 'F1' % node FEED1 of eight-zone
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
@@ -1059,7 +1066,9 @@ classdef SMB < handle
             end
 
             y = [];
-            for k = 1:opt.nComponents
+            % nComp represents the number of outlet ports
+            if opt.nZone == 4, nComp = 2; else nComp = 3; end
+            for k = 1:nComp
 
                 temp = cat(1, dyncData{k, 1:len});
                 y = [y temp];
