@@ -226,14 +226,19 @@ function objective = simulatedMovingBed(varargin)
 
             end
 
+
             % Store the concentration profile, in which it is used as the profile of Feed_2 inlet
+            if opt.nZone == 8
+                if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
+                    Feed2 = outletProfile;
+                elseif strcmp('extract', opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
+                    Feed2 = outletProfile;
+                end
+            end
+
             % The concentration profile of column string(end) is also stored as the dummyProfile 
             % because of a technical problem
-            if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
-                Feed2 = outletProfile;
-            elseif strcmp('extract', opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
-                Feed2 = outletProfile;
-            elseif strcmp(k, string(end))
+            if strcmp(k, string(end))
                 dummyProfile = outletProfile;
             end
 
@@ -241,6 +246,7 @@ function objective = simulatedMovingBed(varargin)
             currentData{sequence.(k)}.lastState  = lastState;
 
         end
+
 
         % The collection of the dyncData for the trajectory plotting
         if opt.nZone == 4

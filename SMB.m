@@ -282,7 +282,20 @@ classdef SMB < handle
                             params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity;
                     end
 
-                case {'F','F1'} % node FEED1
+                case 'F' % node FEED in four-zone and five zone
+
+                    %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
+                    if ~strcmp(startingPointIndex, index)
+                        column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    else
+                        column.inlet.concentration = (dummyProfile.concentration .* ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    end
+
+                case 'F1' % node FEED1 in eight-zone
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     if ~strcmp(startingPointIndex, index)
@@ -295,7 +308,7 @@ classdef SMB < handle
                             ./ params{idx_i}.interstitialVelocity;
                     end
 
-                case 'F2' % node FEED2
+                case 'F2' % node FEED2 in eight-zone
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     if ~strcmp(startingPointIndex, index)
@@ -540,14 +553,19 @@ classdef SMB < handle
 
                     end
 
+
                     % Store the concentration profile, in which it is used as the profile of Feed_2 inlet
+                    if opt.nZone == 8
+                        if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
+                            Feed2 = outletProfile;
+                        elseif strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
+                            Feed2 = outletProfile;
+                        end
+                    end
+
                     % The concentration profile of column string(end) is also stored as the dummyProfile 
                     % because of a technical problem
-                    if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
-                        Feed2 = outletProfile;
-                    elseif strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
-                        Feed2 = outletProfile;
-                    elseif strcmp(k, string(end))
+                    if strcmp(k, string(end))
                         dummyProfile = outletProfile;
                     end
 
@@ -555,6 +573,7 @@ classdef SMB < handle
                     currentData{sequence.(k)}.lastState  = lastState;
 
                 end
+
 
                 % The collection of the dyncData for the trajectory plotting
                 if opt.nZone == 4
@@ -569,7 +588,6 @@ classdef SMB < handle
                     dyncData{2, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:5)))))}.outlet.concentration;
                     dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
                 end
-
 
 %               Store the data of one round (opt.nColumn switches), into plotData
                 index = mod(i, opt.nColumn);
@@ -1379,7 +1397,10 @@ classdef SMB < handle
             end
 
             y = [];
-            for k = 1:opt.nComponents
+
+            % nComp represents the outlet ports in the SMB unit
+            if opt.nZone == 4, nComp = 2; else nComp = 3; end
+            for k = 1:nComp
 
                 temp = cat(1, dyncData{k, 1:len});
                 y = [y temp];
