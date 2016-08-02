@@ -241,21 +241,24 @@ function objective = simulatedMovingBed(varargin)
 
                 end
 
-                % For the very first column, only the outletProfile, rather than the column state, is stored
-                currentData{sequence.(k)}.outlet = outletProfile;
+
+                % Store the concentration profile, in which it is used as the profile of Feed_2 inlet
+                if opt.nZone == 8
+                    if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
+                        Feed2 = outletProfile;
+                    elseif strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
+                        Feed2 = outletProfile;
+                    end
+                end
+
+                % The concentration profile of column string(end) is also stored as the dummyProfile 
+                % because of a technical problem
                 if ~strcmp(k, string(1))
                     currentData{sequence.(k)}.lastState  = lastState;
                 end
 
-                % Store the concentration profile, in which it is used as the profile of Feed_2 inlet
-                % The concentration profile of column string(end) is also stored as the dummyProfile 
-                % because of a technical problem
-                if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
-                    Feed2 = outletProfile;
-                elseif strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
-                    Feed2 = outletProfile;
-                end
-
+                % For the very first column, only the outletProfile, rather than the column state, is stored
+                currentData{sequence.(k)}.outlet = outletProfile;
                 tempData{sequence.(k)}.concentration{j} = outletProfile.concentration;
 
             end
@@ -347,12 +350,9 @@ function objective = simulatedMovingBed(varargin)
     objective = SMB.objectiveFunction(Results, opt);
 
     tTotal = toc(tTotal);
-    if opt.enableDebug
-        fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
-    end
-
 %   Store the final data into DATA.mat file in the mode of forward simulation
     if opt.enableDebug
+        fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
         SMB.concDataConvertToASCII(plotData, opt);
         SMB.trajDataConvertToASCII(dyncData, opt);
         save(sprintf('Performance_%03d.mat',fix(rand*100)),'Results');

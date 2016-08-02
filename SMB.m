@@ -282,7 +282,20 @@ classdef SMB < handle
                             params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity;
                     end
 
-                case {'F','F1'} % node FEED1
+                case 'F' % node FEED of four-zone and five-zone
+
+                    %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
+                    if ~strcmp(startingPointIndex, index)
+                        column.inlet.concentration = (currentData{idx_j}.outlet.concentration .* ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    else
+                        column.inlet.concentration = (dummyProfile.concentration{j_interval} .* ...
+                            params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                            ./ params{idx_i}.interstitialVelocity;
+                    end
+
+				case 'F1' % node FEED1 of eight-zone
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     if ~strcmp(startingPointIndex, index)
@@ -295,7 +308,7 @@ classdef SMB < handle
                             ./ params{idx_i}.interstitialVelocity;
                     end
 
-                case 'F2' % node FEED2
+                case 'F2' % node FEED2 of eight-zone
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     if ~strcmp(startingPointIndex, index)
@@ -760,6 +773,10 @@ classdef SMB < handle
                 error('Please set the opt.nInterval in the getParameters larger than %4d \n', minimalInterval);
             end
 
+%            if mod(opt.timePoints, opt.nInterval) ~= 0
+%                error('Please make the timePoints be divisible to the nInterval \n');
+%            end
+
         end % intervalAmountCheck
 
 
@@ -810,7 +827,14 @@ classdef SMB < handle
                     dummyProfile.concentration = dummyProfile.concentration .* ...
                         params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity;
 
-                case {'F','F1'} % node FEED1
+                case 'F' % node FEED of four-zone and five-zone
+
+                    %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
+                    dummyProfile.concentration = (dummyProfile.concentration .* ...
+                        params{idx_j}.interstitialVelocity + Feed.concentration .* interstVelocity.feed) ...
+                        ./ params{idx_i}.interstitialVelocity;  
+
+                case 'F1' % node FEED1 of eight-zone
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     dummyProfile.concentration = (dummyProfile.concentration .* ...
@@ -1219,7 +1243,9 @@ classdef SMB < handle
             end
 
             y = [];
-            for k = 1:opt.nComponents
+            % nComp represents the number of outlet ports
+            if opt.nZone == 4, nComp = 2; else nComp =3; end
+            for k = 1:nComp
 
                 temp = cat(1, dyncData{k, 1:len});
                 y = [y temp];
