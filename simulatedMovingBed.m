@@ -238,6 +238,7 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
         end
 
+
         % The collection of the dyncData for the trajectory plotting
         if opt.nZone == 4
             dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3)))))}.outlet.concentration;
@@ -306,12 +307,9 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
     objective = SMB.objectiveFunction(Results, opt);
 
     tTotal = toc(tTotal);
-    if opt.enableDebug
-        fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
-    end
-
 %   Store the final data into DATA.mat file in the mode of forward simulation
     if opt.enableDebug
+        fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
         SMB.concDataConvertToASCII(plotData, opt, iter);
         SMB.trajDataConvertToASCII(dyncData, iter);
         save(sprintf('Performance_%03d.mat',fix(rand*100)),'Results');
