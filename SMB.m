@@ -419,7 +419,7 @@ classdef SMB < handle
 %             and assign a very big objective function value to this column configuration.
             flag = SMB.interstVelocityCheck(interstVelocity, opt);
             if flag == 1
-                objective = 1e3;  
+                objective = 1e5;  
                 return;  
             end
 

@@ -28,59 +28,81 @@ function SMBOptimization()
 %       - Particle Swarm Optimizatio (PSO)
 %       - Differential Evolution (DE)
 %       - Metropolis Adjusted Differential Evolution (MADE)
-%       - Riemann Manifold Metropolis Adjusted Langevin Algorithm (MLA)
-% 
+%       - Metropolis Adjusted Langevin Algorithm (MALA)
+%           defined on the Riemann geometry with parallel tempering (PRML)
 % =============================================================================
 
 
-%   There are four optimization algorithms availabe in this programme
+    % There are four optimization algorithms availabe in this programme
     optimization_method = struct('Particle_Swarm_Optimization',[], 'Differential_Evolution',[],...
        'Metropolis_Adjusted_Differential_Evolution',[], 'Riemann_Manifold_Metropolis_Adjusted_Langevin',[],...
-       'Deterministic_algorithm_fmincon',[]);
+       'Markov_Chain_Monte_Carlo',[], 'Deterministic_algorithm_fmincon',[]);
 
-%   The set of the parameters which are optimized
+    % The set of the parameters which are optimized
 %     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]); % binary scenario 
     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]); % ternary scenario
+
     [opt,~,~] = getParameters( zeros(1,length(fieldnames(params))) );
+    % The initial boundary of parameters: In the format of [x^1_min x^1_max; ...]
+    opt.paramBound = [0.05 0.15; 250 350; 2.5e-7 3.8e-7; 1.5e-8 3.0e-8; 2.0e-7 3.5e-7; 2.0e-7 3.5e-7; 4.0e-8 5.5e-8];
 
-%   the initial boundary of parameters: In the format of [x^1_min x^1_max; ...]
-    opt.paramBound = [0.05 0.15; 250 350; 2.5e-7 3.8e-7; ...
-        1.5e-8 3.0e-8; 2.0e-7 3.5e-7; 2.0e-7 3.5e-7; 4.0e-8 5.5e-8];
+    % Check the consistence of the initial boundary condition and the parameter amount
+    OptAlgorithms.checkOptDimension(opt, length(fieldnames(params)));
 
 
-%   Select one method and make it true (correspondingly the rest methods false)
-    optimization_method.Differential_Evolution = true;
+    % Select one method and make it true (correspondingly the rest methods false)
+    optimization_method.Differential_Evolution = false;
     optimization_method.Particle_Swarm_Optimization = false;
     optimization_method.Deterministic_algorithm_fmincon = false;
+    optimization_method.Markov_Chain_Monte_Carlo = true;
     optimization_method.Metropolis_Adjusted_Differential_Evolution = false;
 
 
     if isfield(optimization_method, 'Particle_Swarm_Optimization') ...
             && optimization_method.Particle_Swarm_Optimization
 
-        OptAlgorithms.Particle_Swarm_Optimization(opt, params);
+        [xValue, yValue] = OptAlgorithms.Particle_Swarm_Optimization(opt, params);
+
+        fprintf('----------------  Minimum: %10.3g  ---------------- \n', yValue);
+        fprintf('%10.3g | ', xValue);
+        fprintf('\n------------------------------------------------------ \n');
 
     elseif isfield(optimization_method, 'Differential_Evolution') ...
             && optimization_method.Differential_Evolution
 
-        OptAlgorithms.Differential_Evolution(opt, params);
+        [xValue, yValue] = OptAlgorithms.Differential_Evolution(opt, params);
+
+        fprintf('----------------  Minimum: %10.3g  ---------------- \n', yValue);
+        fprintf('%10.3g | ', xValue);
+        fprintf('\n------------------------------------------------------ \n');
 
     elseif isfield(optimization_method, 'Metropolis_Adjusted_Differential_Evolution') ...
             && optimization_method.Metropolis_Adjusted_Differential_Evolution
 
-        OptAlgorithms.Metropolis_Adjusted_Differential_Evolution(opt, params);
+        [xValue, yValue] = OptAlgorithms.Metropolis_Adjusted_Differential_Evolution(opt, params);
 
-%     elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
-%             && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin
-%         
-%         Riemann_Manifold_Metropolis_Adjusted_Langevin(opt, params);
+        fprintf('----------------  Minimum: %10.3g  ---------------- \n', yValue);
+        fprintf('%10.3g | ', xValue);
+        fprintf('\n------------------------------------------------------ \n');
+
+    elseif isfield(optimization_method, 'Markov_Chain_Monte_Carlo') ...
+            && optimization_method.Markov_Chain_Monte_Carlo
+
+        [xValue, yValue] = OptAlgorithms.Markov_Chain_Monte_Carlo(opt, params);
+
+        fprintf('----------------  Minimum: %10.3g  ---------------- \n', yValue);
+        fprintf('%10.3g | ', xValue);
+        fprintf('\n------------------------------------------------------ \n');
 
     elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
             && optimization_method.Deterministic_algorithm_fmincon
  
-%       This is the demonstration case for the binary separation under FOUR-ZONE, 
-%           in which 6 decision variables are optimized.      
+        % This is the demonstration case for the binary separation under FOUR-ZONE, 
+        %    in which 6 decision variables are optimized.
         initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
+
+        % Check the consistence of the initial boundary condition and the parameter amount
+        OptAlgorithm.checkOptDimension(opt, length(initParams));
 
         loBound = opt.paramBound(:,1);
         upBound = opt.paramBound(:,2);
@@ -89,18 +111,20 @@ function SMBOptimization()
             'TolX',1e-6,'TolCon',1e-6,'TolFun',1e-6,'MaxIter',500);
 
         try
-            [SMBparams, fval, exitflag, output, ~, grad] = fmincon( @simulatedMovingBed, ...
+            [xValue, yValue, exitflag, output, ~, grad] = fmincon( @SMB.simulatedMovingBed, ...
                 initParams, [],[],[],[], loBound, upBound, [], options);
         catch exception
             disp('Errors in the MATLAB build-in optimizer: fmincon. \n Please check your input parameters and run again. \n');
             disp('The message from fmincon: %s \n', exception.message);
         end
 
-        fprintf('Minimum: %g,   Parameters:[%g| %g| %g| %g| %g| %g] \n', fval, SMBparams);
+        fprintf('----------------  Minimum: %10.3g  ---------------- \n', yValue);
+        fprintf('%10.3g | ', xValue);
+        fprintf('\n------------------------------------------------------ \n');
 
     else
 
-        warning('The method you selected is not provided in this programme');
+        error('The method you selected is not provided in this programme \n');
 
     end
 
