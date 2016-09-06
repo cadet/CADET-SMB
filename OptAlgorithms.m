@@ -748,7 +748,11 @@ classdef OptAlgorithms < handle
                 [~, S, V] = svd(Jac);
 
                 % Truncated SVD
-                S = diag(S);
+                if opt.Nparams == 1
+                    S = S(1);
+                else
+                    S = diag(S);
+                end
                 S(S < 1e-3) = 1e-3;
 
                 % Fisher information matrix
@@ -918,7 +922,7 @@ classdef OptAlgorithms < handle
             result.Iteration       = maxIter;
             result.criterion       = criterion;
             result.accepted        = fix(accepted/maxIter * 100);
-            result.xValue          = exp(xValue);
+            result.xValue          = xValue;
             result.yValue          = yValue;
 
             save(sprintf('result_%3d.mat', fix(rand*1000)), 'result');
@@ -1229,6 +1233,8 @@ classdef OptAlgorithms < handle
             eval(sprintf('chainData(1:idx, :) = [];'));
             Population = chainData;
 
+            save('population.dat', 'Population', '-ascii', '-append');
+
         end
 
 	end % MCMC
@@ -1237,7 +1243,7 @@ classdef OptAlgorithms < handle
 %   PRML
     methods (Static = true, Access = 'public')
 
-        function [xValue, yValue] = Parallel_Riemann_Metroplis_Adjusted_Langevin(obj, params)
+        function [xValue, yValue] = Parallel_Riemann_Metropolis_Adjusted_Langevin(obj, params)
 %------------------------------------------------------------------------------ 
 % Riemannian manifold Metropolis adjusted Langevin with parallel tempering (PRML)
 %
@@ -1345,7 +1351,7 @@ classdef OptAlgorithms < handle
                 end
 
                 for k = 1:opt.Nchain
-                    sigmaSqu(k)  = 1 ./ OptAlgorithms.GammarDistribution(1, 1, (n0 + opt.nObserv)/2, ...
+                    sigmaSqu(k)  = 1 ./ OptAlgorithms.GammarDistribution(1, 1, (n0 + opt.nDataPoint)/2, ...
                         2 / (n0 * sigmaSqu0(k) + sumSquare(k)));
 %                    sigmaChain(i,k) = sigmaSqu(k)';
                 end
@@ -1485,7 +1491,7 @@ classdef OptAlgorithms < handle
                 MetricTensor{j}.G     = Beta(j) .* (Jac' * (1/SigmaSqu) * Jac);
                 MetricTensor{j}.GradL = - Jac' * Res / SigmaSqu;
                 if rank(MetricTensor{j}.G) ~= opt.Nparams
-                    invG = pinv(MetricTensor{j}.G + eye(opt.Nparams)*1e-7);
+                    invG = pinv(MetricTensor{j}.G + eye(opt.Nparams)*1e-10);
                 else
                     invG = inv(MetricTensor{j}.G);
                 end
@@ -1495,8 +1501,8 @@ classdef OptAlgorithms < handle
                 if p == 0
                     MetricTensor{j}.sqrtInvG = R;
                 else
-                    [U,S,V] = svd( MetricTensor{j}.invG );
-                    S = diag(S); S(S<1e-5) = 1e-5;
+                    [U,S,V] = svd( invG );
+                    S = diag(S); S(S<1e-10) = 1e-10;
                     MetricTensor{j}.sqrtInvG = U * diag(sqrt(S)) * V';
                 end
 
@@ -1556,7 +1562,7 @@ classdef OptAlgorithms < handle
                     MetricTensor{j}.G     = Beta(j) .* (newJac' * (1/sigmaSqu(j)) * newJac);
                     MetricTensor{j}.GradL = -newJac' * newRes / sigmaSqu(j);
                     if rank(MetricTensor{j}.G) ~= opt.Nparams
-                        invG = pinv(MetricTensor{j}.G + eye(opt.Nparams)*1e-7);
+                        invG = pinv(MetricTensor{j}.G + eye(opt.Nparams)*1e-10);
                     else
                         invG = inv(MetricTensor{j}.G);
                     end
@@ -1566,8 +1572,8 @@ classdef OptAlgorithms < handle
                     if p == 0
                         MetricTensor{j}.sqrtInvG = R;
                     else
-                        [U,S,V] = svd( MetricTensor{j}.invG );
-                        S = diag(S); S(S<1e-5) = 1e-5;
+                        [U,S,V] = svd( invG );
+                        S = diag(S); S(S<1e-10) = 1e-10;
                         MetricTensor{j}.sqrtInvG = U * diag(sqrt(S)) * V';
                     end
 
@@ -1701,7 +1707,7 @@ classdef OptAlgorithms < handle
                 Population = [Population; eval(sprintf('chainData_%d', k))];
             end
 
-            save('population.dat', 'Population', '-ascii');
+            save('population.dat', 'Population', '-ascii', '-append');
 
         end
 
@@ -2225,6 +2231,7 @@ classdef OptAlgorithms < handle
                 Population = [Population; eval(sprintf('chainData_%d', k))];
             end
 
+            save('population.dat', 'Population', '-ascii', '-append');
         end
 
         function FigurePlot(Population, opt)
