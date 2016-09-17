@@ -780,7 +780,7 @@ classdef SMB < handle
         end % intervalAmountCheck
 
 
-        function lastState = dummySimulation(sequence, interstVelocity, Feed, dummyProfile, initialState, alphabet, opt)
+        function lastState = observerSimulation(sequence, interstVelocity, Feed, dummyProfile, initialState, alphabet, opt)
 %----------------------------------------------------------------------------------------
 % dummy column simulation
 % In order to obtain the actual column state of the very first column, a dummy simulation
@@ -803,7 +803,7 @@ classdef SMB < handle
             global stringSet Feed2;
 
             if nargin < 7
-                error('SMB.dummySimulation: There are no enough arguments \n');
+                error('SMB.observerSimulation: There are no enough arguments \n');
             end
 
             index = SMB.stringIndexing(opt, alphabet);
@@ -859,7 +859,7 @@ classdef SMB < handle
             [~, lastState] = SMB.secColumn(dummyProfile, params{idx_i}, initialState);
 
 
-        end % dummySimulation
+        end % observerSimulation
 
         function objective = objectiveFunction(Results, opt)
 %-----------------------------------------------------------------------------------------

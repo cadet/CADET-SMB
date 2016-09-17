@@ -265,7 +265,7 @@ function objective = simulatedMovingBed(varargin)
 
 
             % Simulate the very first column again to update the actual column state, correspondingly the outletProfile is omitted
-            currentData{sequence.(string(1))}.lastState = SMB.dummySimulation(sequence, interstVelocity, Feed, ...
+            currentData{sequence.(string(1))}.lastState = SMB.observerSimulation(sequence, interstVelocity, Feed, ...
                 currentData{sequence.(string(end))}.outlet, currentData{sequence.(string(1))}.lastState, string(1), opt);
 
 
