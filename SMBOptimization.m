@@ -35,7 +35,7 @@ function SMBOptimization()
 
     % There are four optimization algorithms availabe in this programme
     optimization_method = struct('Particle_Swarm_Optimization',[], 'Differential_Evolution',[],...
-       'Metropolis_Adjusted_Differential_Evolution',[], 'Riemann_Manifold_Metropolis_Adjusted_Langevin',[],...
+       'Metropolis_Adjusted_Differential_Evolution',[], 'Parallel_Riemann_Metropolis_Adjusted_Langevin',[],...
        'Markov_Chain_Monte_Carlo',[], 'Deterministic_algorithm_fmincon',[]);
 
     % The set of the parameters which are optimized
@@ -102,7 +102,7 @@ function SMBOptimization()
         initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
 
         % Check the consistence of the initial boundary condition and the parameter amount
-        OptAlgorithm.checkOptDimension(opt, length(initParams));
+        OptAlgorithms.checkOptDimension(opt, length(initParams));
 
         loBound = opt.paramBound(:,1);
         upBound = opt.paramBound(:,2);
