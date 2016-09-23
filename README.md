@@ -14,7 +14,7 @@ Code features are organized into network setup, numerical methods, and inverse p
 
 ## Network setup
 
-[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/Network_setup.JPG)
+[//](https://github.com/modsim/CADET-SMB/blob/master/doc/Network_setup.JPG)
 
 SMB chromatography has originally been developed for binary (two components) separations. This is typically achieved using four distinct zones with one or more column each. Later, SMB variants have been developed for ternary (three components) separations. Two major strategies can be distinguished, both of which have advantages and disadvantages: a) sequential cascade of two conventional SMB units with eight zones in total, and b) integrated SMB units with eight or down to five zones. Moreover, CADET-SMB can be set-up with arbitrary column configurations, e.g., for simulating multicolumn countercurrent solvent gradient purification (MCSGP).
 
