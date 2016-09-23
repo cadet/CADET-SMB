@@ -16,7 +16,7 @@ Code features are organized into network setup, numerical methods, and inverse p
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/Network_setup.JPG)
 
-Binary separation scenarios have been widely concerned in SMB chromatographic processes. In general, the typically four zone network setup (hence four-zone scheme) is, and merely, used for binary separations. However, the necessity of performing ternary separation has been raised. In ternary separation scenarios, two strategies can be opted. The first strategy is the cascade strategy, in which two separate SMB units are connected sequentially. The second strategy is an integrated SMB unit with five zones (hence five-zone scheme). Since both of them have advantages and disadvantages. So the main selecting criterion between those two network setups is the varying extent of affinity degree of the components to the solid beads. Moreover, arbitrary column configurations could be coped with rather than, say, 1-1-1-1 or 2-2-2-2-2. By the way, the code of the cascade scheme can be separately found in the Cascade branch of the GitHub.
+SMB chromatography has originally been developed for binary (two components) separations. This is typically achieved using four distinct zones with one or more column each. Later, SMB variants have been developed for ternary (three components) separations. Two major strategies can be distinguished, both of which have advantages and disadvantages: a) sequential cascade of two copnventional SMB units with 8 zones in total, and b) integrated SMB unit with five zones. Moreover, CADET-SMB can be set-up with arbitrary column configurations, e.g., for simulating multicolumn countercurrent solvent gradient purification (MCSGP).
 
 ## Numerical methods
 
