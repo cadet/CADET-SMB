@@ -28,9 +28,7 @@ CADET-SMB provides two classes of numerical solution approaches: a) fixed point 
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/Inverse_problems.JPG)
 
-Optimization of the CADET-SMB includes two parts, the optimization of decision variables and the optimization of the column configurations. The optimization of the column configuration part is still in development, so it is not presented yet. Regarding the optimization part of the decision variables, once the column configuration (it can be an arbitrary one, e.g. 1-2-3-1 or 2-1-3-2-4) is confirmed whenever by the structural optimization algorithm or mentally decision, the processing parameters (e.g. flow rates in different zones, switch time, column length) can be optimized with the user-defined objective function, which might aims to improve the productivity, or purity, or operation costs. As for the optimization algorithm, there are four options, a MATLAB build-in deterministic algorithm, the particle swarm optimization (PSO), the differential evolution (DE), and the Metropolis adjusted differential evolution (MADE). 
-
-So far, the standard SMB approach and the one-column analog approach are combined with the optimization functionality, whereas the operator-splitting approach and the advanced operator-splitting approach are not. As the major goal of these two approaches is to approach the true trajectory.
+In SMB chromatography, both the operating conditions (column dimensions, flow rates, switch times) and the the column configuration (network topology) can be optimized, leading to a mixed-integer optimization problem. However, optimization of the (discrete) column donfiguration is not yet implemented in CADET-SMB. For any given network topology, the operating conditions can be optimized with repect to user-specified objectives, e.g., purity, yield, cost. As these objectives are to be optimized in CSS, only the FPI approach is supported. Available search strategies include standard MATLAB functionality, particle swarm optimization (PSO), differential evolution (DE), and Metropolis adjusted differential evolution (MADE).
 
 ## Feature list
 
