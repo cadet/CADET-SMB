@@ -14,25 +14,25 @@ Code features are organized into network setup, numerical methods, and inverse p
 
 ## Network setup
 
-[//]:(https://github.com/modsim/CADET-SMB/blob/master/doc/Network_setup.JPG)
+[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/Network_setup.JPG)
 
 SMB chromatography has originally been developed for binary (two components) separations. This is typically achieved using four distinct zones with one or more column each. Later, SMB variants have been developed for ternary (three components) separations. Two major strategies can be distinguished, both of which have advantages and disadvantages: a) sequential cascade of two conventional SMB units with eight zones in total, and b) integrated SMB units with eight or down to five zones. Moreover, CADET-SMB can be set-up with arbitrary column configurations, e.g., for simulating multicolumn countercurrent solvent gradient purification (MCSGP).
 
 ## Numerical methods
 
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/Numerical_computing.JPG)
+[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/Numerical_computing.JPG)
 
 CADET-SMB provides two classes of numerical solution approaches: a) fixed point iteration (FPI) for computing the cyclic steady state (CSS) of an SMB unit, and b) operator splitting (OSP) for computing the dynamic trajectory (DTR) from any initial system state into the CSS. Two variants are implemented for each approach, standard versions (STD-FPI, STD-OPS) and alternatives with significantly improved numerical efficience, namely fixed point iteration for the one-column analog (OCA-FPI) and lag-aware operator splitting (LAW-OPS). The improved perfornamce of these numerical methods can be particularly useful in optimization settings. Details on all four approaches can be found in the documentation.
 
 ## Inverse problems
 
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/Inverse_problems.JPG)
+[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/Inverse_problems.JPG)
 
 In SMB chromatography, both the operating conditions (column dimensions, flow rates, switch times) and the the column configuration (network topology) can be optimized, leading to a mixed-integer optimization problem. However, optimization of the (discrete) column donfiguration is not yet implemented in CADET-SMB. For any given network topology, the operating conditions can be optimized with repect to user-specified objectives, e.g., purity, yield, cost. As these objectives are to be optimized in CSS, only the FPI approach is supported. Available search strategies include standard MATLAB functionality, particle swarm optimization (PSO), differential evolution (DE), and Metropolis adjusted differential evolution (MADE).
 
 ## Detailed feature list
 
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/diagram.JPG)
+[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/diagram.JPG)
 
 * Binary separation is available using the four-zone scheme (a third component can be present in binary separation);
 
