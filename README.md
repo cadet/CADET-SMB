@@ -30,19 +30,19 @@ CADET-SMB provides two classes of numerical solution approaches: a) fixed point 
 
 In SMB chromatography, both the operating conditions (column dimensions, flow rates, switch times) and the the column configuration (network topology) can be optimized, leading to a mixed-integer optimization problem. However, optimization of the (discrete) column donfiguration is not yet implemented in CADET-SMB. For any given network topology, the operating conditions can be optimized with repect to user-specified objectives, e.g., purity, yield, cost. As these objectives are to be optimized in CSS, only the FPI approach is supported. Available search strategies include standard MATLAB functionality, particle swarm optimization (PSO), differential evolution (DE), and Metropolis adjusted differential evolution (MADE).
 
-## Feature list
+## Detailed feature list
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/diagram.JPG)
 
-* Binary separation is available using four-zone scheme; ternary components in binary separation are also possible;
+* Binary separation is available using the four-zone scheme (a third component can be present in binary separation);
 
-* Ternary separation can be achieved by using integrated five-zone scheme, eight-zone scheme, or cascade scheme; quaternary components in ternary separation are possible;
+* Ternary separation is available using the cascade scheme, the integrated eight zone or five zone schemes (a fourth component can be present in ternary separation);
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme.JPG)
-*Four-zone scheme and five-zone scheme*
+*Four-zone scheme for binary separation and integrated five zone scheme for ternary separation*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_8.JPG)
-*Eight-zone scheme with internal raffinate and internal extract*
+*integrated eight zone scheme for ternary separation with internal raffinate and extract*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/cascade.JPG)
 *Cascade scheme*
