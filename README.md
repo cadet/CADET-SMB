@@ -6,11 +6,11 @@ CADET-SMB is a comprehensive simulator for analysis and design of simulated movi
 
 # Introduction
 
-There are various practical modes of carrying out industrial purification by preparative chromatography. The most straightforward and frequently used one is the cyclic batch elution chromatography, simulations of that have been provided in the CADET framework (https://github.com/modsim/CADET). Another important mode is the counter-current chromatography, in which the fluid phase and the solid phase flow through the column in opposite directions. Since the continuous true moving bed (TMB) process is technically hard to implement, the periodically simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
+There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied, and an efficient simulator is provided in the CADET framework (https://github.com/modsim/CADET). In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically very hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
 
 # Features
 
-The introduction of features is divided into three parts, network setup, numerical computing, and inverse problem respectively. Correspondingly comprehensive diagrams will be provided to help you pinpoint the simulation approaches you intended, as there are several different methods that are integrated into the CADET-SMB for the sake of distinct simulation objects.
+Code features are organized into network setup, numerical methods, and inverse problems.
 
 ## Network setup
 
@@ -18,7 +18,7 @@ The introduction of features is divided into three parts, network setup, numeric
 
 Binary separation scenarios have been widely concerned in SMB chromatographic processes. In general, the typically four zone network setup (hence four-zone scheme) is, and merely, used for binary separations. However, the necessity of performing ternary separation has been raised. In ternary separation scenarios, two strategies can be opted. The first strategy is the cascade strategy, in which two separate SMB units are connected sequentially. The second strategy is an integrated SMB unit with five zones (hence five-zone scheme). Since both of them have advantages and disadvantages. So the main selecting criterion between those two network setups is the varying extent of affinity degree of the components to the solid beads. Moreover, arbitrary column configurations could be coped with rather than, say, 1-1-1-1 or 2-2-2-2-2. By the way, the code of the cascade scheme can be separately found in the Cascade branch of the GitHub.
 
-## Numerical computing
+## Numerical methods
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/Numerical_computing.JPG)
 
