@@ -34,9 +34,9 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 
 [//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/diagram.JPG)
 
-* Binary separation is available using the four-zone scheme (a third component can be present in binary separation);
+* Binary separation is available using the four-zone scheme;
 
-* Ternary separation is available using the cascade scheme, the integrated eight zone or five zone schemes (a fourth component can be present in ternary separation);
+* Ternary separation is available using the cascade scheme, the integrated eight zone or five zone schemes;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme.JPG)
 *Four zone scheme for binary separation and integrated five zone scheme for ternary separation*
