@@ -6,54 +6,61 @@ CADET-SMB is a comprehensive simulator for analysis and design of simulated movi
 
 # Introduction
 
-There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied, and an efficient simulator is provided in the CADET framework (https://github.com/modsim/CADET). In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically very hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
+There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied, and an efficient simulator is provided in the CADET framework (https://github.com/modsim/CADET). In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
 
 # Features
 
 Code features are organized into network setup, numerical methods, and inverse problems.
 
-## Network setup
+## Network topology
 
-[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/Network_setup.JPG)
-
-SMB chromatography has originally been developed for binary (two components) separations. This is typically achieved using four distinct zones with one or more column each. Later, SMB variants have been developed for ternary (three components) separations. Two major strategies can be distinguished, both of which have advantages and disadvantages: a) sequential cascade of two conventional SMB units with eight zones in total, and b) integrated SMB units with eight or down to five zones. Moreover, CADET-SMB can be set-up with arbitrary column configurations, e.g., for simulating multicolumn countercurrent solvent gradient purification (MCSGP).
+SMB chromatography has originally been developed for binary (two components) separations. This is typically achieved by using four distinct zones with one or more columns each. Later, SMB variants have been developed for ternary (three components) separations. Two major strategies can be distinguished, both of which have advantages and disadvantages: a) sequential cascade of two conventional SMB units with eight zones in total, and b) integrated SMB units with eight or down to five zones. Moreover, CADET-SMB can be set-up with arbitrary column configurations, e.g., for simulating multicolumn counter-current solvent gradient purification (MCSGP).
 
 ## Numerical methods
 
-[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/Numerical_computing.JPG)
-
-CADET-SMB provides two classes of numerical solution approaches: a) fixed point iteration (FPI) for computing the cyclic steady state (CSS) of an SMB unit, and b) operator splitting (OSP) for computing the dynamic trajectory (DTR) from any initial system state into the CSS. Two variants are implemented for each approach, standard versions (STD-FPI, STD-OPS) and alternatives with significantly improved numerical efficience, namely fixed point iteration for the one-column analog (OCA-FPI) and lag-aware operator splitting (LAW-OPS). The improved perfornamce of these numerical methods can be particularly useful in optimization settings. Details on all four approaches can be found in the documentation.
+CADET-SMB provides two classes of numerical solution approaches: a) fixed point iteration (FPI) for computing the cyclic steady state (CSS) of an SMB unit, and b) operator splitting (OSP) for computing the dynamic trajectory (DTR) from any initial system state into the CSS. Two variants are implemented for each approach, standard versions (STD-FPI, STD-OPS) and alternatives with significantly improved numerical efficiency, namely fixed point iteration for the one-column analog (OCA-FPI) and lag-aware operator splitting (LAW-OPS). The improved performance of these numerical methods can be particularly useful in optimization settings. Details on all four approaches can be found in the documentation.
 
 ## Inverse problems
 
-[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/Inverse_problems.JPG)
-
-In SMB chromatography, both the operating conditions (column dimensions, flow rates, switch times) and the the column configuration (network topology) can be optimized, leading to a mixed-integer optimization problem. However, optimization of the (discrete) column donfiguration is not yet implemented in CADET-SMB. For any given network topology, the operating conditions can be optimized with repect to user-specified objectives, e.g., purity, yield, cost. As these objectives are to be optimized in CSS, only the FPI approach is supported. Available search strategies include standard MATLAB functionality, particle swarm optimization (PSO), differential evolution (DE), and Metropolis adjusted differential evolution (MADE).
+In SMB chromatography, both the operating conditions (column dimensions, flow rates, switch times) and the column configurations (network topology) can be optimized, leading to a mixed-integer nonlinear programming problem. However, optimization of the (discrete) column configuration is not yet implemented in CADET-SMB. For any given network topology, the operating conditions can be optimized with respect to user-specified objectives, e.g., purity, yield, cost. As these objectives are to be optimized in CSS, only the FPI approach is supported. Available search strategies include standard MATLAB functionality, particle swarm optimization (PSO), differential evolution (DE), Markov Chain Monte Carlo (DRAM version) and Metropolis adjusted differential evolution (MADE).
 
 ## Detailed feature list
 
-[//]: (https://github.com/modsim/CADET-SMB/blob/master/doc/diagram.JPG)
-
 * Binary separation is available using the four-zone scheme;
 
-* Ternary separation is available using the cascade scheme, the integrated eight zone or five zone schemes;
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
 
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme.JPG)
-*Four zone scheme for binary separation and integrated five zone scheme for ternary separation*
-
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_8.JPG)
-*integrated eight zone scheme for ternary separation with internal raffinate and extract ports*
-
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/cascade.JPG)
-*Cascade scheme*
-
+*Four zone scheme for binary separations*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
-*Chromatogram with four-zone and five-zone scheme*
+
+*The chromatogram of the four-zone SMB*
+
+* Ternary separation is available using the cascade scheme, the integrated eight-zone or five-zone schemes;
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_cascade.JPG)
+
+*Cascade scheme for ternary separations*
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_cascade.JPG)
+
+*The respective chromatograms of the cascade system*
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_8.JPG)
+
+*Eight-zone scheme for ternary separations*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
-*Chromatogram with eight-zone scheme*
+
+*The chromatogram of the eight-zone scheme*
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_5.JPG)
+
+*integrated five zone scheme for ternary separations*
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
+
+*The chromatogram of the eight-zone scheme*
 
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
 
@@ -82,7 +89,7 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 # Dependency and Platforms
 
 * Matlab(R2010b or higher);
-* CADET (version 2.3.2 or later);
+* CADET (version 2.3.2);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 # Tutorial and Instructions
