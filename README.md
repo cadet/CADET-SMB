@@ -55,7 +55,9 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 * By using operator-splitting, the true dynamics of the concentration profiles (also, trajectories) can be reproduced. Also using one-column analog, the convergence speed to the cyclic steady state (CSS) could be accelerated.
 
 * Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for dead volumes in pumps, tubing, and valves;
+
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/dead_volumes.JPG)
+
 *The schematic of the dead volumes consideration*
 
 
