@@ -29,38 +29,26 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 * Binary separation is available using the four-zone scheme;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
-
-*Four zone scheme for binary separations*
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
 
-*The chromatogram of the four-zone SMB*
+*Four zone scheme for binary separations and the chromatogram of the four-zone SMB*
 
 * Ternary separation is available using the cascade scheme, the integrated eight-zone or five-zone schemes;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_cascade.JPG)
-
-*Cascade scheme for ternary separations*
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_cascade.JPG)
 
-*The respective chromatograms of the cascade system*
+*Cascade scheme for ternary separations and the respective chromatograms of the cascade system*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_8.JPG)
-
-*Eight-zone scheme for ternary separations*
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
 
-*The chromatogram of the eight-zone scheme*
+*Eight-zone scheme for ternary separations and the chromatogram of the eight-zone scheme*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_5.JPG)
-
-*integrated five zone scheme for ternary separations*
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
 
-*The chromatogram of the eight-zone scheme*
+*integrated five zone scheme for ternary separations and the chromatogram of the eight-zone scheme*
 
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
 
