@@ -18,7 +18,7 @@ SMB chromatography has originally been developed for binary (two components) sep
 
 ## Numerical methods
 
-CADET-SMB provides two classes of numerical solution approaches: a) fixed point iteration (FPI) for computing the cyclic steady state (CSS) of an SMB unit, and b) operator splitting (OSP) for computing the dynamic trajectory (DTR) from any initial system state into the CSS. Two variants are implemented for each approach, standard versions (STD-FPI, STD-OPS) and alternatives with significantly improved numerical efficiency, namely fixed point iteration for the one-column analog (OCA-FPI) and lag-aware operator splitting (LAW-OPS). The improved performance of these numerical methods can be particularly useful in optimization settings. Details on all four approaches can be found in the documentation.
+CADET-SMB provides two classes of numerical solution approaches: a) fixed point iteration (FPI) for computing the cyclic steady state (CSS) of an SMB unit, and b) operator splitting (OSP) for computing the dynamic trajectory (DTR) from any initial system state into the CSS. Two variants are implemented for each approach, standard versions (STD-FPI, STD-OSP) and alternatives with significantly improved numerical efficiency, namely fixed point iteration for the one-column analog (OCA-FPI) and lag-aware operator splitting (LAW-OSP). The improved performance of these numerical methods can be particularly useful in optimization settings. Details on all four approaches can be found in the documentation.
 
 ## Inverse problems
 
@@ -48,7 +48,7 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_5.JPG)
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
 
-*integrated five zone scheme for ternary separations and the chromatogram of the eight-zone scheme*
+*Five zone scheme for ternary separations and the chromatogram of the five-zone scheme*
 
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
 
