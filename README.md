@@ -21,7 +21,6 @@ In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. 
 * Binary separation is available using four-zone scheme; 
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
 
 *Four zone scheme for binary separations and the chromatogram of the four-zone SMB*
@@ -29,19 +28,16 @@ In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. 
 * Ternary separation is available by using the cascade scheme, the integrated five-zone or eight-zone schemes;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_cascade.JPG)
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_cascade.JPG)
 
 *Cascade scheme for ternary separations and the respective chromatograms of the cascade system*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_8.JPG)
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
 
 *Eight-zone scheme for ternary separations and the chromatogram of the eight-zone scheme*
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_5.JPG)
-
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
 
 *Five-zone scheme for ternary separations and the chromatogram of the five-zone scheme*
@@ -51,7 +47,6 @@ In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. 
 * We provide not only the CSS information like what have shown above, as well as the trajectory information by using LAW-OPS method.
 
 ![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_extract.JPG)
-
 ![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_raffinate.JPG)
 
 *The trajectories from LAW-OPS. Left side is from extract port, right side is from raffinate port*
