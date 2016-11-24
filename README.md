@@ -4,61 +4,67 @@
 
 CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. 
 
-# Advanced operator-splitting approach
+# Introduction
+There are various practical modes of preparative chromatography. Cyclic bath elution chromatography is most frequently applied. In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
 
-This variant, advanced operator-splitting approach, is a developed version of the operator-splitting approach which is on the branch of the Dynamic_SMB of the GitHub repository. In those two operator-splitting approaches, we intend to approach the real flow pattern of the SMB unit such that the actual convergence trajectories are able to be obtain. Due to technical problems, we can not track the internal composition profile (the immediate concentration) in each column during processing, instead we only detect the concentration profile at the end of each column. Thus the simulation sequence in both standard_SMB and one-column analog approach is sequential, although clockwise in standard_SMB while counter-clockwise in one-column analog. However, the actually simulation sequence in reality should be simultaneous, like which is presented in following figure.
+# Branch: LAW-OPS
+For more general introduction, please see the main branch, in which we introduce the standard version of fixed point iteration (STD-FPI) method. 
 
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/sequence.JPG)
+In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. The underlying idea to have this method is that only the chromatograms under cyclic steady state (CSS) are provided in previous literatures, rather than the whole trajectories from starting time to the CSS. This is resulted from the "lag" problem in conventionally SMB simulations. Thus LAW-OPS is proposed to overcome this issue. 
 
-It does not matter what the simulation sequence is, if only the cyclic steady state (CSS) is concerned in the simulations. Since both standard_SMB approach and one-column analog approach converge to the same CSS, though, via the different convergence dynamics (hereafter, I will just call the convergence dynamics the trajectory). However, if the actual trajectories, rather than the CSS, are concerned, neither standard_SMB approach or one-column analog approach can afford any more extra information. 
+![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/flow_pattern.JPG)
 
-We need to resort to new approaches. The operator-splitting technique is used to overcome the sequential simulation order in both standard_SMB approach and the one-column analog approach. Operator splitting is a kind of mathematical terminology. By utilizing splitting of the simulations of columns in a SMB unit into several time sections, we could approach the real flow pattern as what has presented in the above figure. The definition of the time section is t_s/n, where n is the amount of time sections. 
+*The outlet of the cell 1 in previous columns should be transferred immediately to inlet of the cell 1 in latter columns*
 
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/operator_splitting.JPG)
+# Detailed feature list
 
-*Brief demonstration*
+* Binary separation is available using four-zone scheme; 
 
-And in the Dynamic_SMB branch of the GitHub, one of the variants of operator-splitting approaches has been proposed. The documentation of the fundamentals have been made in its doc.pdf, so there is no redundant illustrations here any more. However it possesses a drawback that some errors are introduced into the simulations. A new idea is proposed to neglect this drawback. The underlying idea here is that the very first column (or the starting simulation point) is always be simulated twice, and with some tricks to obtain both the true column state and the true outlet profile. 
-
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/advanced.JPG)
-
-*schematic_1*
-
-The attention is paid to the very first column, say, column in the zone I, during one switch time processing, see Fig.(schematic_1). At the very beginning, as there is no knowledge regarding the inlet profile of the column in one time section. Without losing the generality, the empty concentration profile is assumed. After one time section simulations, the actual inlet profile of the very first column is known which is gained from the outlet of the column in zone IV.
-
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/schematic.JPG)
-
-*schematic_2*
-
-It is worth mentioning that the column state after the simulation of the very first column within first time section is not reserved, instead only the outlet profile from such simulation is collected, see the part of Fig.(schematic_2) with assumed inlet profile. Because with the assumed inlet profile (also incorrect), the column is contaminated with the incorrect inlets. As seen from the Fig.(schematic_2), the original column state consists of both true s1 and s2 parts. With injecting the assumed inlet profile of t_s/n time units, the approximate s1 state is pushed out and replaced with s2 and wrong parts. However, the concentration pushed out is correct. So only the outlet concentration of the simulation within one time section is stored rather the column state. 
-
-After one loop time section simulations, the true outlet profile of the column in zone IV is known, as shown in Fig.(schematic_1). If the cyclic steady state is arrived, this is the actual inlet profile of the column in zone I in next t_s switch interval. Then using the non-preserved column state and the "actual" column inlet profile, the column state that has not been reserved is updated, see the part of Fig.(schematic_2) with true inlet profile. The originally true column state, s1 and s2, is updated with also true s2 and s3 column state. It is the so-called saying that simulating the very first column twice in each time section. 
-
-Similarly, in the simulations of the second time section, it still starts with the assumed empty inlet profile and correct column state (only after twice computing of the very first column), and at the end of the second time section, the very first column is updated with the true column state as mentioned before.
-
-
-
-# Features
-
-* Binary separation is available using four-zone scheme; Ternary separation can be achieved by using either integrated five-zone scheme, eight-zone, or cascade scheme;
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
+
+*Four zone scheme for binary separations and the chromatogram of the four-zone SMB*
+
+* Ternary separation is available by using the cascade scheme, the integrated five-zone or eight-zone schemes;
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_cascade.JPG)
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_cascade.JPG)
+
+*Cascade scheme for ternary separations and the respective chromatograms of the cascade system*
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_8.JPG)
+
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
 
-* In separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, 4-4-4-4-4;
+*Eight-zone scheme for ternary separations and the chromatogram of the eight-zone scheme*
 
-* It not only converges to the same cyclic steady state (CSS) with the naive standard_SMB approach and one-column analog approach, but also the actual convergence dynamics;
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_5.JPG)
 
-* It is also less time-consuming than the operator-splitting approach that is shown in the Dynamic_SMB branch.
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
 
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/time_comparison.JPG)
+*Five-zone scheme for ternary separations and the chromatogram of the five-zone scheme*
+
+* In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, 4-4-4-4-4;
+
+* We provide not only the CSS information like what have shown above, as well as the trajectory information by using LAW-OPS method.
+
+![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_extract.JPG)
+
+![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_raffinate.JPG)
+
+*The trajectories from LAW-OPS. Left side is from extract port, right side is from raffinate port*
 
 * Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for dead volumes in pumps, tubing, and valves;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/dead_volumes.JPG)
 
 * MATLAB interface allows to monitor the dynamic characteristics of each column in the SMB unit;
+
+* Optimization of decision variables for improving, e.g., productivity, purity, operating costs;
+
+* Parameter estimation from experimental data will be implemented in future versions;
 
 * Column models include transport dispersive model, equilibrium dispersive model, and general rate model;
 
@@ -70,7 +76,7 @@ Similarly, in the simulations of the second time section, it still starts with t
 # Dependency and Platforms
 
 * Matlab (R2010b or higher);
-* CADET (version 2.3.2 or later);
+* CADET (version 2.3.2);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 
