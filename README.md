@@ -38,18 +38,15 @@ In this branch, we introduce the cascade of two four-zone SMB in a row using STD
 * Further features of the CADET framework can be found at https://github.com/modsim/CADET.
 
 # Dependency and Platforms
-
 * Matlab(R2010b or higher);
 * CADET (version 2.3.2);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 # Tutorial and Instructions
-
 First, download the CADET software from https://github.com/modsim/CADET-SMB/releases, as CADET-SMB is based on the CADET simulator.
 Then, download the latest release of CADET-SMB from https://github.com/modsim/CADET-SMB/releases.
 
 ## Installation of the CADET
-
 * download the latest release for your platform;
 * unzip the archive to your destination directory;
 * start MATLAB;
@@ -57,7 +54,6 @@ Then, download the latest release of CADET-SMB from https://github.com/modsim/CA
 * Try one of the examples (e.g., examples/forward/loadWashElution.m) to check if everything works.
  
 ## Installation of the CADET-SMB,
-
 * create a directory, simulatedMovingBed, in your unzipped CADET directory;
 * unzip the CADET-SMB archive to the simulatedMovingBed directory;
 * Change the working directory to the simulatedMovingBed directory and run isSMBupdateAvailable.m script (Along side checking the existence of the newest version, it also attach the current path the MATLAB path); 
@@ -65,7 +61,6 @@ Then, download the latest release of CADET-SMB from https://github.com/modsim/CA
 * To test an optimization, copy any getParameter_something script from the examples/Optimization folder to the simulatedMovingBed folder and also change the name to getParameters.m; then run SMBOptimization.m.
 
 # Demonstration 
-
 Several examples are provided in the repository. 
 
 * The four-column case for binary separation is taken from the paper http://dx.doi.org/10.1016/j.compchemeng.2006.06.013;
@@ -80,9 +75,7 @@ By the way, the demonstration cases can directly be run by coping them from the 
 * How to adopt other isotherm models?
 
 # Documentation 
-
 For more details of the CADET-SMB software, see the file doc.pdf in the repository.
 
 # Further Development 
-
 CADET-SMB is actively developed. Hence, breaking changes and extensive restructuring may occur in any commit and release. For non-developers it is recommended to upgrade from release to release instead of always working with the most recent commit.
