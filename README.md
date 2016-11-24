@@ -11,7 +11,7 @@ For more general introduction, please see the main branch, in which we introduce
 
 In this branch, we introduce the one-column analog fixed-point iteration (OCA-FPI) method. The underlying idea of this method is that the convergence to the cyclic steady state could be accelerated by merely using single column analog. The analog is developed by studying an arbitrary selected column in a SMB unit through a complete circulation and then, replacing the remaining columns with tanks (or plug-flows) of appropriate volume to provide the necessary recycle streams.
   
-![](https://github.com/modsim/CADET-SMB/blob/One-column_analog/doc/recycle_pattern.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/OCA-FPI/doc/recycle_pattern.JPG)
 
 *The scheme of the one-column analog*
 
