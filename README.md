@@ -7,9 +7,9 @@ CADET-SMB is a comprehensive simulator for analysis and design of simulated movi
 There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied. In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
 
 # Branch: OCA-FPI
-For more general introduction, please see the main branch, in which we introduce the standard version of fixed point iteration (STD-FPI) method.
+For more general introduction, please see the main branch, in which we introduce the standard version of fixed-point iteration (STD-FPI) method.
 
-In this branch, we introduce the one-column analog fixed iteration (OCA-FPI) method. The underlying idea of this method is that the convergence to the cyclic steady state could be accelerated by merely using single column analog. The analog is developed by studying an arbitrary selected column in a SMB unit through a complete circulation and then, replacing the remaining columns with tanks (or plug-flows) of appropriate volume to provide the necessary recycle streams.
+In this branch, we introduce the one-column analog fixed-point iteration (OCA-FPI) method. The underlying idea of this method is that the convergence to the cyclic steady state could be accelerated by merely using single column analog. The analog is developed by studying an arbitrary selected column in a SMB unit through a complete circulation and then, replacing the remaining columns with tanks (or plug-flows) of appropriate volume to provide the necessary recycle streams.
   
 ![](https://github.com/modsim/CADET-SMB/blob/One-column_analog/doc/recycle_pattern.JPG)
 
@@ -41,11 +41,6 @@ In this branch, we introduce the one-column analog fixed iteration (OCA-FPI) met
 *Five-zone scheme for ternary separations and the chromatogram of the five-zone scheme*
 
 * In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, 4-4-4-4-4;
-
-* We provide not only the CSS information like what have shown above, as well as the trajectory information by using LAW-OPS method.
-
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_extract.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_raffinate.JPG)
 
 *The trajectories from LAW-OPS. Left side is from extract port, right side is from raffinate port*
 
