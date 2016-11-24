@@ -11,7 +11,7 @@ For more general introduction, please see the main branch, in which we introduce
 
 In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. The underlying idea to have this method is that only the chromatograms under cyclic steady state (CSS) are provided in previous literatures, rather than the whole trajectories from starting time to the CSS. This is resulted from the "lag" problem in conventionally SMB simulations. Thus LAW-OPS is proposed to overcome this issue. 
 
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/flow_pattern.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/LAW-OSP/doc/flow_pattern.JPG)
 
 *The outlet of the cell 1 in previous columns should be transferred immediately to the inlet of the cell 1 in latter columns*
 
@@ -44,8 +44,8 @@ In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. 
 
 * We provide not only the CSS information like what have shown above, as well as the trajectory information by using LAW-OPS method.
 
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_extract.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_raffinate.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/LAW-OSP/doc/trajectory_extract.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/LAW-OSP/doc/trajectory_raffinate.JPG)
 
 *The trajectories from LAW-OPS. Left side is from extract port, right side is from raffinate port*
 
