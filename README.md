@@ -4,28 +4,19 @@
 
 CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. 
 
-# operator-splitting approach
+# Introduction
+There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied. In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
 
-This variant, operator-splitting approach, is a referee of the approach, advanced operator-splitting, which is on the branch of the operator-splitting of the GitHub repository. In both those two approaches, we intend to approach the real flow pattern of the SMB unit such that the actual convergence trajectories are able to be obtain. And Due to technical problems, we can not track the internal composition profile (the immediate concentration) in each column during processing, instead we only detect the concentration profile at the end of each column. Thus the simulation sequence in both standard_SMB and one-column analog approach is sequential, although clockwise in standard_SMB while counter-clockwise in one-column analog. However, the actually simulation sequence in reality should be simultaneous, like which is presented in following figure.
+# Branch: STD-OPS
+For more general introduction, please see the main branch, in which we introduce the standard version of fixed point iteration (STD-FPI) method.
 
-![](https://github.com/modsim/CADET-SMB/blob/Dynamic_SMB/doc/sequence.JPG)
+In this branch, we introduce the standard version of operator-splitting (STD-OPS) method. The underlying idea to have this method is that only the chromatograms under cyclic steady state (CSS) are provided in previous literatures, rather than the whole trajectories from starting time to the CSS. This is resulted from the "lag" problem in conventionally SMB simulations. Thus STD-OPS is proposed to overcome this issue.
 
-It does not matter what the simulation sequence is, if only the cyclic steady state (CSS) is concerned in the simulations. Since both standard_SMB approach and one-column analog approach converge to the same CSS, though, via the different convergence dynamics (hereafter, I will just call the convergence dynamics the trajectory). However, if the actual trajectories, rather than the CSS, are concerned, neither standard_SMB approach or one-column analog approach can afford any more extra information. We need to resort to new approaches. The operator-splitting technique is used to overcome the sequential simulation order in both standard_SMB approach and the one-column analog approach.
+![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/flow_pattern.JPG)
 
+*The outlet of the cell 1 in previous columns should be transferred immediately to the inlet of the cell 1 in latter columns*
 
-Operator splitting is a kind of mathematical terminology. By utilizing splitting of the simulations of columns in a SMB unit into several time sections, we could approach the real flow pattern as what has presented in the above figure. The definition of the time section is t_s/n, where n is the amount of time sections. 
-
-![](https://github.com/modsim/CADET-SMB/blob/Dynamic_SMB/doc/operator_splitting.JPG)
-
-*Brief demonstration*
-
-For simplicity, the amount of three is used. In considering simulations of one switch time interval, the simulations of all red time sections are implemented sequentially rather than the whole columns. Subsequently, the green time sections and blue time sections. Although the columns are still sequentially calculated, the really simultaneous flow pattern is able to be reproduced if the amount of time sections is big enough.
-
-Specifically, assuming the simulations start from the desorbent node, the outlet of the column in zone I within first time section interval (t_s/3) can be calculated given the inlet profile. In other words, the red piece of the column in zone I is pushed out to the first interval chromatogram. Then we switch to simulate the column in zone II with the given inlet profile from the simulation the column in zone I. Similarly, the red piece in zone II is pushed out to the first interval chromatogram. After all the red pieces are pushed out, the simulations of first time section have been accomplished. 
-
-Now there is a critical point that in the pushing-out of the green pieces of the column in zone I, what is the inlet profile? If the outlet profile stored in the zone IV chromatogram is adopted as the inlet profile, some errors rather than noise are introduced into the simulations (this will be illustrated later). Again, the green and blue pieces could be pushed out with given inlet profiles, and being stored in respectively chromatograms. 
-
-The introduced errors can be eliminated by increasing the amount of the time sections in this variant. In the following figures (a) there is 20 time sections in each column, while 50 time sections in (b), 100 in (c). The introduced errors could be eliminated by increasing the amount drastically, correspondingly the price of the computational time what is the major disadvantage.
+In comparison with LAW-OPS method, there is an external requirement on the number of time section amount. It has to be quite big value, in order to approach the unique trajectory, which correspondingly increase the computational efforts.
 
 ![](https://github.com/modsim/CADET-SMB/blob/Dynamic_SMB/doc/interval_20.JPG)
 ![](https://github.com/modsim/CADET-SMB/blob/Dynamic_SMB/doc/interval_50.JPG)
@@ -34,26 +25,55 @@ The introduced errors can be eliminated by increasing the amount of the time sec
 *The effects of the introduced errors which could be eliminated by the increasing of the amount of time sections*
 
 
+# Detailed feature list
 
-# Features
+* Binary separation is available using four-zone scheme; 
 
-* Binary separation is available using four-zone scheme; Ternary separation can be achieved by using either integrated five-zone scheme, eight-zone scheme, or cascade scheme;
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
+
+*Four zone scheme for binary separations and the chromatogram of the four-zone SMB*
+
+* Ternary separation is available by using the cascade scheme, the integrated five-zone or eight-zone schemes;
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_cascade.JPG)
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_cascade.JPG)
+
+*Cascade scheme for ternary separations and the respective chromatograms of the cascade system*
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_8.JPG)
+
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_8.JPG)
 
-* In separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, 4-4-4-4-4;
+*Eight-zone scheme for ternary separations and the chromatogram of the eight-zone scheme*
 
-* It not only converges to the same cyclic steady state (CSS) with the naive standard_SMB approach and one-column analog approach, but also the actual convergence dynamics. Correspondingly, more time-consuming;
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_ternary_5.JPG)
 
-![](https://github.com/modsim/CADET-SMB/blob/Dynamic_SMB/doc/time_comparison.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_ternary_5.JPG)
+
+*Five-zone scheme for ternary separations and the chromatogram of the five-zone scheme*
+
+* In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, 4-4-4-4-4;
+
+* We provide not only the CSS information like what have shown above, as well as the trajectory information by using LAW-OPS method.
+
+![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_extract.JPG)
+
+![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/trajectory_raffinate.JPG)
+
+*The trajectories from LAW-OPS. Left side is from extract port, right side is from raffinate port*
 
 * Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for dead volumes in pumps, tubing, and valves;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/dead_volumes.JPG)
 
 * MATLAB interface allows to monitor the dynamic characteristics of each column in the SMB unit;
+
+* Optimization of decision variables for improving, e.g., productivity, purity, operating costs;
+
+* Parameter estimation from experimental data will be implemented in future versions;
 
 * Column models include transport dispersive model, equilibrium dispersive model, and general rate model;
 
@@ -65,7 +85,7 @@ The introduced errors can be eliminated by increasing the amount of the time sec
 # Dependency and Platforms
 
 * Matlab (R2010b or higher);
-* CADET (version 2.3.2 or later);
+* CADET (version 2.3.2);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 
