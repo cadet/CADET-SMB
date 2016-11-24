@@ -1,11 +1,10 @@
 ![](https://github.com/modsim/CADET/blob/master/doc/logo/CADET-GitHub.png)
 
 # CADET-SMB
-
 CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. 
 
-# Introduction
-There are various practical modes of preparative chromatography. Cyclic bath elution chromatography is most frequently applied. In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
+# Introductionc
+There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied. In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
 
 # Branch: LAW-OPS
 For more general introduction, please see the main branch, in which we introduce the standard version of fixed point iteration (STD-FPI) method. 
@@ -14,10 +13,9 @@ In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. 
 
 ![](https://github.com/modsim/CADET-SMB/blob/Operator-splitting/doc/flow_pattern.JPG)
 
-*The outlet of the cell 1 in previous columns should be transferred immediately to inlet of the cell 1 in latter columns*
+*The outlet of the cell 1 in previous columns should be transferred immediately to the inlet of the cell 1 in latter columns*
 
 # Detailed feature list
-
 * Binary separation is available using four-zone scheme; 
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
@@ -69,19 +67,16 @@ In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. 
 
 
 # Dependency and Platforms
-
 * Matlab (R2010b or higher);
 * CADET (version 2.3.2);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 
 # Tutorial and Instructions
-
 First, download the CADET software from https://github.com/modsim/CADET-SMB/releases, as CADET-SMB is based on the CADET simulator.
 Then, download the latest release of CADET-SMB from https://github.com/modsim/CADET-SMB/releases.
 
 ## Installation of CADET
-
 * download the latest release for your platform;
 * unzip the archive to your destination directory;
 * start MATLAB;
@@ -89,14 +84,12 @@ Then, download the latest release of CADET-SMB from https://github.com/modsim/CA
 * Try one of the examples (e.g., examples/forward/loadWashElution.m) to check if everything works.
 
 ## Installation of CADET-SMB
-
 * create a directory, simulatedMovingBed, in your unzipped CADET directory;
 * unzip the CADET-SMB archive to the simulatedMovingBed directory;
 * Change the working directory to the simulatedMovingBed directory and run isSMBupdateAvailable.m script (Along side checking the existence of the newest version, it also attach the current path to the MATLAB path); 
 * To test a forward simulation, copy any getParameter routine from the examples/Forward folder to the simulatedMovingBed folder and change the name to getParameters.m; then run simulatedMovingBed.m.
 
 # Demonstration 
-
 Several examples are provided in the repository. 
 
 * The four-column case is taken from the paper http://dx.doi.org/10.1016/j.compchemeng.2006.06.013;
@@ -111,9 +104,7 @@ By the way, the demonstration cases can directly be run coping them from the exa
 * How to adopt another type of equilibrium isotherm models?
 
 # Documentation 
-
 For more details of the CADET-SMB software, see the file doc.pdf in the repository and the doc.pdf in the master branch.
 
 # Further Development 
-
 SMB is actively developed. Hence, breaking changes and extensive restructuring may occur in any commit and release. For non-developers it is recommended to upgrade from release to release instead of always working with the most recent commit.
