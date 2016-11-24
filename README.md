@@ -1,27 +1,46 @@
 ![](https://github.com/modsim/CADET/blob/master/doc/logo/CADET-GitHub.png)
 
 # CADET-SMB
-
 CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography.
 
-# Cascade approach
+# Introduction
+There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied. In counter-current chromatography, the fluid and solid phase are moved through the column in opposite directions. Since the true moving be (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
 
-This variant, cascade approach, is a branch of the master repository in relation to ternary separation. It is a quite intuitive approach, as two SMB units are sequentially connected. Actually, there is another method, five-zone scheme, that is also able to deal with the ternary separation scenario. Those two methods for ternary separation could be opted by the varying extent between components. 
+# Branch: cascade of STD-FPI
+For more general introduction, please see the main branch, in which we introduce the standard version of fixed point iteration (STD-FPI) method.
+
+In this branch, we introduce the cascade of two four-zone SMB in a row using STD-FPI method to achieve the goal of ternary separations. 
 
 ![](https://github.com/modsim/CADET-SMB/blob/Cascade/doc/scheme.JPG)
 
-*Cascade scheme*
+*Cascade scheme of two four-zone SMB in a row*
 
-As observed from the above figure, two SMB units are sequentially connected rather than one integrated SMB unit like five-zone scheme. In the first SMB unit, one pure component is collected at the extract port, and the outlet mixture which have two components are set as the feed inlet of the second SMB unit. Eventually, the rest two components are separated in the second SMB unit. The last concentration profiles of these two SMB units under cyclic steady state are listed in the following figures.
+# Detailed feature list
+* Ternary separation is available by using the cascade scheme;
 
 ![](https://github.com/modsim/CADET-SMB/blob/Cascade/doc/profile_1.JPG)
 ![](https://github.com/modsim/CADET-SMB/blob/Cascade/doc/profile_2.JPG)
 
+*The respective chromatograms of the cascade system*
+
+* Arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2, 3-3-3-3, 4-4-4-4;
+
+* Continuous stirred tank reactor (CSTR) and dispersive plug flow reactor (DPFR) models can be placed before and after each column to account for dead volumes in pumps, tubing, and valves;
+
+![](https://github.com/modsim/CADET-SMB/blob/master/doc/dead_volumes.JPG)
+
+* MATLAB interface allows to monitor the dynamic characteristics of each column in the SMB unit;
+
+* Column models include transport dispersive model, equilibrium dispersive model, and general rate model;
+
+* Wide range of standard equilibrium/isotherm models allow to simulate either pure component or multi-component/competitive behaviour;
+
+* Further features of the CADET framework can be found at https://github.com/modsim/CADET.
 
 # Dependency and Platforms
 
 * Matlab(R2010b or higher);
-* CADET (version 2.3.2 or later);
+* CADET (version 2.3.2);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 # Tutorial and Instructions
