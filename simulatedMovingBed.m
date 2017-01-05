@@ -10,9 +10,9 @@ function objective = simulatedMovingBed(varargin)
 % Extract                          Feed       |    Extract                           Feed
 %       \                          /          |         \                            /
 %        --------Zone II(b)--------           |          --------Zone II(c/d)--------
-%        |                        |           |          |                          | 
+%        |                        |           |          |                          |
 % Zone I(a)                  Zone III(c)      |     Zone I(a/b)               Zone III(e/f)
-%        |                        |           |          |                          | 
+%        |                        |           |          |                          |
 %        --------Zone IV(d)--------           |          --------Zone IV(h/g)--------
 %       /                          \          |         /                            \
 % Desorbent                       Raffinate   |   Desorbent                         Raffinate
@@ -21,9 +21,9 @@ function objective = simulatedMovingBed(varargin)
 % Extract                            Feed       |    Extract                         Feed
 %       \                            /          |         \                          /
 %        -- ----Zone II(d/e/f)-------           |          -----Zone II(e/f/g/h)-----
-%        |                          |           |          |                        | 
+%        |                          |           |          |                        |
 % Zone I(c/b/a)                Zone III(g/h/i)  |  Zone I(a/b/c/d)           Zone III(i/j/k/l)
-%        |                          |           |          |                        | 
+%        |                          |           |          |                        |
 %        -------Zone IV(l/k/j)-------           |          -----Zone IV(p/o/n/m)-----
 %       /                            \          |         /                          \
 % Desorbent                         Raffinate   |   Desorbent                       Raffinate
@@ -33,13 +33,13 @@ function objective = simulatedMovingBed(varargin)
 %    Ext2                          Feed       |      Ext2                            Feed
 %       \                          /          |         \                            /
 %        --------Zone II(c)--------           |          --------Zone III(e/f)--------
-%        |                        |           |          |                           | 
+%        |                        |           |          |                           |
 % Zone II(b)                      |           |     Zone II(d/c)                     |
 %        |                        |           |          |                           |
 % Ext1 --                    Zone IV(d)       |   Ext1 --                        Zone IV(g/h)
 %        |                        |           |          |                           |
 % Zone I(a)                       |           |     Zone I(b/a)                      |
-%        |                        |           |          |                           | 
+%        |                        |           |          |                           |
 %        --------Zone V(e)---------           |          ---------Zone V(j/i)---------
 %       /                          \          |         /                            \
 % Desorbent                       Raffinate   |   Desorbent                         Raffinate
@@ -48,13 +48,13 @@ function objective = simulatedMovingBed(varargin)
 %    Ext2                            Feed       |      Ext2                              Feed
 %       \                            /          |         \                              /
 %        -------Zone II(g/h/i)-------           |          -------Zone III(i/g/k/l)-------
-%        |                          |           |          |                             | 
+%        |                          |           |          |                             |
 % Zone II(f/e/d)                    |           | Zone II(h/g/f/e)                       |
 %        |                          |           |          |                             |
 % Ext1 --                    Zone IV(j/k/l)     |   Ext1 --                        Zone IV(m/n/o/p)
 %        |                          |           |          |                             |
 % Zone I(c/b/a)                     |           | Zone I(d/c/b/a)                        |
-%        |                          |           |          |                             | 
+%        |                          |           |          |                             |
 %        -------Zone V(o/n/m)--------           |          -------Zone V(t/s/r/q)---------
 %       /                            \          |         /                              \
 % Desorbent                         Raffinate   |   Desorbent                           Raffinate
@@ -86,8 +86,8 @@ function objective = simulatedMovingBed(varargin)
 %       and assign a very big objective function value to this column configuration.
     flag = SMB.interstVelocityCheck(interstVelocity, opt);
     if flag == 1
-        objective = 1e3;  
-        return;  
+        objective = 1e3;
+        return;
     end
 
     if opt.enable_CSTR && opt.enable_DPFR
@@ -107,7 +107,7 @@ function objective = simulatedMovingBed(varargin)
 %   If num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
 %       num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
 %	In the 8-zone scenario, it should be careful in choosing the starting node
-%       as it is impossible to start from Feed2 node at the outset. 
+%       as it is impossible to start from Feed2 node at the outset.
     string = circshift(string, 0);
     startingPointIndex = SMB.stringIndexing(opt, string(1));
 
@@ -130,7 +130,7 @@ function objective = simulatedMovingBed(varargin)
 
 %       transitionData stores the composition profile of nInterval pieces
         transitionData{k}.outlet.time = linspace(0, opt.switch*opt.nInterval, opt.timePoints*opt.nInterval);
-        transitionData{k}.outlet.concentration = zeros(opt.timePoints*opt.nInterval, opt.nComponents); 
+        transitionData{k}.outlet.concentration = zeros(opt.timePoints*opt.nInterval, opt.nComponents);
 
 %       This is the temporary data for dynamic trajectory plotting
         tempData{k}.concentration = cell(1, opt.nInterval);
@@ -251,7 +251,7 @@ function objective = simulatedMovingBed(varargin)
                     end
                 end
 
-                % The concentration profile of column string(end) is also stored as the dummyProfile 
+                % The concentration profile of column string(end) is stored as the dummyProfile
                 % because of a technical problem
                 if ~strcmp(k, string(1))
                     currentData{sequence.(k)}.lastState  = lastState;
@@ -276,11 +276,11 @@ function objective = simulatedMovingBed(varargin)
             elseif opt.nZone == 5
                 dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:4))))) }.outlet.concentration;
                 dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:2))))) }.outlet.concentration;
-                dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+                dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
             elseif opt.nZone == 8
                 dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:7))))) }.outlet.concentration;
                 dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:5))))) }.outlet.concentration;
-                dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+                dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
             end
 
 %           Plot the dynamic trajectory
@@ -289,6 +289,7 @@ function objective = simulatedMovingBed(varargin)
             else
                 fprintf(' %9d\n', j);
             end
+
             SMB.plotDynamic(opt, dyncData(:,1:j+(i-1)*opt.nInterval), j+(i-1)*opt.nInterval);
 
         end % for j = 1:opt.nInterval
@@ -363,11 +364,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
