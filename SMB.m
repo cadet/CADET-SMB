@@ -18,10 +18,10 @@ classdef SMB < handle
 %       - lastState. The last STATE from previous simulation of next simulation
 %       - ParSwarm. In the optimization situations, this is the vector which contains
 %           the optimized decision variables
-% 
+%
 % Returns:
 %       - outletProfile. outlet time and corresponding concentration profile
-%       - lastState. Record the last STATE which is used as the boundary condition 
+%       - lastState. Record the last STATE which is used as the boundary condition
 % -----------------------------------------------------------------------------
 
 
@@ -30,13 +30,13 @@ classdef SMB < handle
                 if nargin < 3
                     lastState = [];
                     if nargin < 2
-                        error('secColumn: There are no enough inputs for carrying out Simulator in CADET');
+                        error('SMB.secColumn: There are no enough inputs for carrying out Simulator in CADET \n');
                     end
                 end
             end
 
             if isempty(params.initMobilCon) && isempty(params.initSolidCon) && isempty(lastState)
-                error('secColumn: There are no Initial / Boundary Conditions for the Simulator');
+                error('SMB.secColumn: There are no Initial / Boundary Conditions for the Simulator \n');
             end
 
 %           Get parameters options
@@ -53,7 +53,7 @@ classdef SMB < handle
             if strcmp(opt.BindingModel, 'LinearBinding')
 
                 model.kineticBindingModel = false;
-                model.bindingModel = LinearBinding(); 
+                model.bindingModel = LinearBinding();
 
 %               Adsorption parameters
                 model.bindingParameters.LIN_KA   = opt.KA;
@@ -82,19 +82,19 @@ classdef SMB < handle
 
             elseif strcmp(opt.BindingModel, 'StericMassAction')
 
-                error('%s: it is not available yet.', opt.BindingModel);
+                error('%s: it is not available yet \n', opt.BindingModel);
 
             end
 
             if nargin >= 3 && ~isempty(lastState)
                 model.initialState = lastState;
-            else      
+            else
                 model.initialMobileConcentration = params.initMobilCon;
                 model.initialSolidConcentration  = params.initSolidCon;
             end
 
 %           Transport
-            model.dispersionColumn          = opt.dispersionColumn;
+            model.dispersionColumn          = params.dispersionColumn;
             model.filmDiffusion             = opt.filmDiffusion;
             model.diffusionParticle         = opt.diffusionParticle;
             model.diffusionParticleSurface  = opt.diffusionParticleSurface;
@@ -148,7 +148,7 @@ classdef SMB < handle
                 result = sim.simulate();
             catch e
                 % Something went wrong
-                error('CADET:simulationFailed', 'Check your settings and try again.\n%s',e.message);
+                error('CADET:simulationFailed', 'Check your settings and try again. \n%s',e.message);
             end
 
 %           Extract the outlet profile
@@ -168,9 +168,9 @@ classdef SMB < handle
 % Extract                          Feed       |    Extract                           Feed
 %       \                          /          |         \                            /
 %        --------Zone II(b)--------           |          --------Zone II(c/d)--------
-%        |                        |           |          |                          | 
+%        |                        |           |          |                          |
 % Zone I(a)                  Zone III(c)      |     Zone I(a/b)               Zone III(e/f)
-%        |                        |           |          |                          | 
+%        |                        |           |          |                          |
 %        --------Zone IV(d)--------           |          --------Zone IV(h/g)--------
 %       /                          \          |         /                            \
 % Desorbent                       Raffinate   |   Desorbent                         Raffinate
@@ -179,9 +179,9 @@ classdef SMB < handle
 % Extract                            Feed       |    Extract                         Feed
 %       \                            /          |         \                          /
 %        -- ----Zone II(d/e/f)-------           |          -----Zone II(e/f/g/h)-----
-%        |                          |           |          |                        | 
+%        |                          |           |          |                        |
 % Zone I(c/b/a)                Zone III(g/h/i)  |  Zone I(a/b/c/d)           Zone III(i/j/k/l)
-%        |                          |           |          |                        | 
+%        |                          |           |          |                        |
 %        -------Zone IV(l/k/j)-------           |          -----Zone IV(p/o/n/m)-----
 %       /                            \          |         /                          \
 % Desorbent                         Raffinate   |   Desorbent                       Raffinate
@@ -191,13 +191,13 @@ classdef SMB < handle
 %    Ext2                          Feed       |      Ext2                            Feed
 %       \                          /          |         \                            /
 %        --------Zone II(c)--------           |          --------Zone III(e/f)--------
-%        |                        |           |          |                           | 
+%        |                        |           |          |                           |
 % Zone II(b)                      |           |     Zone II(d/c)                     |
 %        |                        |           |          |                           |
 % Ext1 --                    Zone IV(d)       |   Ext1 --                        Zone IV(g/h)
 %        |                        |           |          |                           |
 % Zone I(a)                       |           |     Zone I(b/a)                      |
-%        |                        |           |          |                           | 
+%        |                        |           |          |                           |
 %        --------Zone V(e)---------           |          ---------Zone V(j/i)---------
 %       /                          \          |         /                            \
 % Desorbent                       Raffinate   |   Desorbent                         Raffinate
@@ -206,13 +206,13 @@ classdef SMB < handle
 %    Ext2                            Feed       |      Ext2                              Feed
 %       \                            /          |         \                              /
 %        -------Zone II(g/h/i)-------           |          -------Zone III(i/g/k/l)-------
-%        |                          |           |          |                             | 
+%        |                          |           |          |                             |
 % Zone II(f/e/d)                    |           | Zone II(h/g/f/e)                       |
 %        |                          |           |          |                             |
 % Ext1 --                    Zone IV(j/k/l)     |   Ext1 --                        Zone IV(m/n/o/p)
 %        |                          |           |          |                             |
 % Zone I(c/b/a)                     |           | Zone I(d/c/b/a)                        |
-%        |                          |           |          |                             | 
+%        |                          |           |          |                             |
 %        -------Zone V(o/n/m)--------           |          -------Zone V(t/s/r/q)---------
 %       /                            \          |         /                              \
 % Desorbent                         Raffinate   |   Desorbent                           Raffinate
@@ -222,19 +222,19 @@ classdef SMB < handle
 %
 % Parameters:
 %       - currentData. Which includes each column's outlet concentration
-%       (time-dependent), and the last state (which records every component's concentration 
+%       (time-dependent), and the last state (which records every component's concentration
 %        in bulk phase and stationary phase, and used as the initial state for the next simulation).
 %       - interstVelocity. The interstitial velocity of each column
-%       - Feed. The initialied injection 
+%       - Feed. The initialied injection
 %       - opt. Options
 %       - sequence. During switching, the structure used for storing the sequence of columns
-%       - alphabet. It is a character. It tells this subroutine to calculate the specified column 
-% 
+%       - alphabet. It is a character. It tells this subroutine to calculate the specified column
+%
 % Returns:
 %   Preparation for next column simulation
 %       - column.inlet. The new inlet concentration of each column, which is
 %       obtained from mass conservation on each node.
-%       - column.lastState. 
+%       - column.lastState.
 %       - column.params. Set the initial Mobile and Solid concentration to the
 %       Simulator (if there is no lastState given), and also store the interstitial velocity.
 % -----------------------------------------------------------------------------
@@ -314,29 +314,26 @@ classdef SMB < handle
 %
 % Parameters:
 % 		- sequence. The alphabet of each zone and their column number
-% 		- interstVelocity. The interstitial velocity of each zone 
+% 		- interstVelocity. The interstitial velocity of each zone
 % 		- opt. option of parameterss
 % 		- index. The capital letter used to indicate which zone current column situated in
-% 		- alphabet. The letter of current calculated column, i. 
-% 		- pre_alphabet. The letter of column before the current calculated one, i-1. 
-% 
+% 		- alphabet. The letter of current calculated column, i.
+% 		- pre_alphabet. The letter of column before the current calculated one, i-1.
+%
 % Returns:
-% 		- params. It contains interstitial velocity and boundary conditions
+% 		- params. interstitial velocity, axial dispersion and boundary conditions
 %-----------------------------------------------------------------------------------------
 
 
-%             global stringSet;
-%             string = char(stringSet(1:opt.nColumn));
-
             params = cell(1, opt.nColumn);
             for k = 1:opt.nColumn
-%               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
+%               set the initial conditions to the solver, but when lastState is used, this setup will be ignored
                 params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
-                    zeros(1,opt.nComponents), 'interstitialVelocity', []);
+                    zeros(1,opt.nComponents), 'interstitialVelocity', [], 'dispersionColumn', []);
             end
 
 %             for j = 1:opt.nColumn
-% %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored 
+% %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored
 %                 params{ sequence.(string(j)) }.initMobilCon = zeros(1,opt.nComponents);
 %                 params{ sequence.(string(j)) }.initSolidCon = zeros(1,opt.nComponents);
 %             end
@@ -348,15 +345,19 @@ classdef SMB < handle
                     case {'D' 'M_D'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(1);
                     case {'E' 'M_E'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(2);
                     case {'F' 'M_F'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(3);
                     case {'R' 'M_R'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(4);
 
                 end
 
@@ -367,18 +368,23 @@ classdef SMB < handle
                     case {'D' 'M_D'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(1);
                     case {'E1' 'M_E1'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(2);
                     case {'E2' 'M_E2'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(3);
                     case {'F' 'M_F'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(4);
                     case {'R' 'M_R'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(5);
 
                 end
 
@@ -391,7 +397,7 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 % This is the function which interpret the alphabet of columns into the position of
 % SMB unit.
-% 
+%
 % Parameters:
 % 		- opt. options involving the parameters for models
 % 		- alphabet. The letter is used for switching
@@ -402,6 +408,10 @@ classdef SMB < handle
 
 
             global stringSet;
+
+            if nargin < 2
+                error('SMB.stringIndexing: There are no enough arguments \n')
+            end
 
             string = stringSet(1:opt.nColumn);
 
@@ -501,7 +511,7 @@ classdef SMB < handle
 % 		- opt. options
 %
 % Returns:
-% 		- obj. A struct data which contains the numbers for indicating the EXTRACT and 
+% 		- obj. A struct data which contains the numbers for indicating the EXTRACT and
 % 			RAFFINATE ports those are used for calculation of purity and productivity
 %-----------------------------------------------------------------------------------------
 
@@ -526,7 +536,7 @@ classdef SMB < handle
 
                 obj.position_ext1 = numberBlock{1}(end); % Desorbent node
                 obj.position_ext2 = numberBlock{2}(end); % Extract_1 node
-                obj.position_raf = numberBlock{4}(end);  % Feed node
+                obj.position_raf  = numberBlock{4}(end); % Feed node
 
             end
 
@@ -541,9 +551,13 @@ classdef SMB < handle
 %       - interstVelocity. The interstitial velocity in the SMB unit
 %
 % Returns:
-% 		- flag. flag = 1, there is negative velocity in the struct of interstVelocity 
+% 		- flag. flag = 1, there is negative velocity in the struct of interstVelocity
 %-----------------------------------------------------------------------------------------
 
+
+            if nargin < 2
+                error('SMB.interstVelocity: There are no enough arguments \n');
+            end
 
             if opt.nZone == 4
 
@@ -579,7 +593,7 @@ classdef SMB < handle
         function objective = objectiveFunction(Results, opt)
 %-----------------------------------------------------------------------------------------
 % The objective function for the optimizers
-% You can also define your own objective function here. The default function is: 
+% You can also define your own objective function here. The default function is:
 %
 % Max Productivity_extract + Productivity_raffinate
 % s.t. Purity_extract   >= 99% for more retained component
@@ -588,24 +602,27 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
+            if nargin < 2
+                error('SMB.objectiveFunction: There are no enough arguments \n');
+            end
+
             if opt.nZone == 4
 %               Construct the Penalty Function for the objective function
                 penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 5
 %               Construct the Penalty Function for the objective function
-                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 *opt.Penalty_factor ...
+                penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum.    
+%               (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
             end
-
 
             if opt.enableDebug
                 fprintf('**** The objective value:  %g \n', objective);
@@ -627,6 +644,10 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
+            if nargin < 2
+                error('SMB.Purity_Productivity: There are no enough arguments \n');
+            end
+
 %           Get the position of the withdrawn ports to calculate the purity and productivity
             obj = SMB.positionIndexing(opt);
 
@@ -635,7 +656,7 @@ classdef SMB < handle
 
             if opt.nZone == 4
 
-%               using column 1 to calculate the integral of purity, plotData{1,x}
+%               Column 1 is used to calculate the integral of purity, plotData{1,x}
                 position_ext = obj.position_ext; position_raf = obj.position_raf;
 
 %               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
@@ -679,7 +700,7 @@ classdef SMB < handle
                 for k = 1:opt.nComponents
                     sum_ext1 = sum_ext1 + trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,k));
                     sum_ext2 = sum_ext2 + trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,k));
-                    sum_raf = sum_raf + trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,k));
+                    sum_raf  = sum_raf  + trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,k));
                 end
 
 %               Extract ports
@@ -725,7 +746,7 @@ classdef SMB < handle
 %       - Profile. Inlet time concentration, the initial conditions
 %       - column. The boundary conditions of the CSTR
 %       - opt. Options for the software
-% 
+%
 % Returns:
 %       - columnProfile. outlet time and corresponding concentration profile
 %               - time. The time points observed
@@ -733,6 +754,10 @@ classdef SMB < handle
 %               points
 % -----------------------------------------------------------------------------
 
+
+            if nargin < 3
+                error('SMB.CSTR: There are no enough arguments \n');
+            end
 
             for i = 1:opt.nComponents
 
@@ -780,7 +805,7 @@ classdef SMB < handle
 %       - Profile. Inlet time concentration, the initial conditions
 %       - initialState. The boundary conditions of the DPFR
 %       - opt. Options for the software
-% 
+%
 % Returns:
 %       - columnProfile. outlet time and corresponding concentration profile
 %               - time. The time points observed
@@ -790,6 +815,10 @@ classdef SMB < handle
 %       calculation
 % -----------------------------------------------------------------------------
 
+
+            if nargin < 3
+                error('SMB.DPFR: There are no enough arguments \n');
+            end
 
             lastState = zeros(opt.nComponents, opt.DPFR_nCells);
 
@@ -848,8 +877,11 @@ classdef SMB < handle
 %----------------------------------------------------------------------------------------
 
 
-            for j = 1:opt.nColumn
+            if nargin < 3
+                error('SMB.concDataConvertToASCII: There are no enough arguments \n');
+            end
 
+            for j = 1:opt.nColumn
                 y = plotData{j,1}.outlet.concentration;
 
                 for k =2:opt.nColumn
@@ -875,6 +907,10 @@ classdef SMB < handle
 %       - opt. The option that might be used
 %----------------------------------------------------------------------------------------
 
+
+            if nargin < 3
+                error('SMB.trajDataConvertToASCII: There are no enough arguments \n');
+            end
 
             % Find the index of non-empty cell
             [nRow, nCol] = size(dyncData);
@@ -905,9 +941,9 @@ classdef SMB < handle
 
         function plotFigures(opt, plotData)
 %-----------------------------------------------------------------------------------------
-% This is the plot function 
+% This is the plot function
 % The numbers in the figure() represent the number of the columns
-% 
+%
 % Parameters:
 % 		- opt. options
 % 		- plotData. The data for plotting
@@ -915,13 +951,7 @@ classdef SMB < handle
 
 
             if nargin < 2
-                disp('Error in plotFigures: there are no enough input data for the function');
-            else
-                if isempty(opt)
-                    disp('Error in plotFigures: the options of the parameters are missing');
-                elseif isempty(plotData)
-                    disp('Error in plotFigures: the data for figures plotting are missing');
-                end
+                error('SMB.plotFigures: There are no enough arguments \n');
             end
 
             if opt.enableDebug
@@ -935,7 +965,7 @@ classdef SMB < handle
                     end
 
                     FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                    ylabel('Concentration [Mol]', 'FontSize', 10);
+                    ylabel('Concentration [mol]', 'FontSize', 10);
                     if opt.nComponents == 2
                         legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                     elseif opt.nComponents == 3
@@ -1090,12 +1120,12 @@ classdef SMB < handle
                         end
 
                     elseif opt.nZone == 5
-                        
+
                         if opt.nColumn == 5 && all( eq(opt.structID, [1 1 1 1 1]) )
 
                             set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
                             switch j
-                                
+
                                 case 1
                                     set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
                                 case 2
@@ -1279,20 +1309,13 @@ classdef SMB < handle
 %-----------------------------------------------------------------------------------------
 
 
-            if nargin < 2
-                disp('Error: there are no enough input data for the function, plotFigures');
-            else
-                if isempty(opt)
-                    disp('Error in plotFigures: the options of the parameters are missing');
-                elseif isempty(dyncData)
-                    disp('Error in plotFigures: the data for figures plotting are missing');
-                end
+            if nargin < 3
+                error('SMB.plotDynamic: There are no enough arguments \n');
             end
 
             if opt.enableDebug
 
                 figure(100);clf
-
                 if opt.nZone == 4
 
                     for i = 1:2
@@ -1303,9 +1326,9 @@ classdef SMB < handle
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
                         switch i
                             case 1
-                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Raffinate Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 2
-                                ylabel({'Extract Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract Port'; 'Concentration [mol]'}, 'FontSize', 10);
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
                         xlabel(xString, 'FontSize', 10);
@@ -1350,11 +1373,11 @@ classdef SMB < handle
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
                         switch i
                             case 1
-                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Raffinate Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 2
-                                ylabel({'Extract_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract_2 Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 3
-                                ylabel({'Extract_1 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract_1 Port'; 'Concentration [mol]'}, 'FontSize', 10);
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
                         xlabel(xString, 'FontSize', 10);
@@ -1403,11 +1426,11 @@ end % classdef
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
