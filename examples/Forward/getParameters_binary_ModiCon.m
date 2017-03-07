@@ -4,11 +4,11 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
-% Returns: 
+% Returns:
 %       1. opt stands for options, which involves the parameter settings
 %       for the algorithm, the binding isotherm, and the model equations
 %
-%       2. interstVelocity is calculated from flowrate of each column and inlet. 
+%       2. interstVelocity is calculated from flowrate of each column and inlet.
 %       interstitial_velocity = flow_rate / (across_area * porosity_Column)
 %
 %       3. Feed initializes the injection concentration
@@ -32,7 +32,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.Purity_raffinate_limit  = 0.99;  % used for constructing constraints
     opt.Penalty_factor          = 10;    % penalty factor in penalty function
 
-    opt.enableDebug = true;  % set it true when you want to see the figures 
+    opt.enableDebug = true;  % set it true when you want to see the figures
     opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
     opt.nColumn     = 4;
     opt.structID    = [1 1 1 1];
@@ -46,8 +46,8 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.comp_ext_ID = 2; % the target component withdrawn from the extract ports
 
 %   Transport
-    opt.dispersionColumn          = 3.8148e-20;     % D_{ax}
-    opt.filmDiffusion             = [100 100];      % K_{eff} 
+    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20; % D_{ax}
+    opt.filmDiffusion             = [100 100];  % K_f
     opt.diffusionParticle         = [1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0];
 
@@ -56,12 +56,12 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.columnDiameter      = 0.02;      % m
     opt.particleRadius      = 0.0005;    % m % user-defined one in this case
     opt.porosityColumn      = 0.83;
-    opt.porosityParticle    = 0.000001;  % unknown
+    opt.porosityParticle    = 0.000001;  % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
     crossArea = pi * (opt.columnDiameter/2)^2;
-    flowRate.recycle    = 9.62e-7;      % m^3/s  
+    flowRate.recycle    = 9.62e-7;      % m^3/s
     flowRate.feed       = 0.98e-7;      % m^3/s
     flowRate.raffinate  = 1.40e-7;      % m^3/s
     flowRate.desorbent  = 1.96e-7;      % m^3/s
@@ -70,17 +70,17 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.flowRate_raffinate = flowRate.raffinate;
 
 %   Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
-    interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s 
+    interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s
     interstVelocity.feed      = flowRate.feed / (crossArea*opt.porosityColumn);         % m/s
     interstVelocity.raffinate = flowRate.raffinate / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    ModiCon_interval = 3; 
-%   intervals X components % g/m^3 [concentration_compA, concentration_compB]
+    ModiCon_interval = 3;
+%   intervals X components % g/cm^3 [concentration_compA, concentration_compB]
     concentrationFeed = [0.45, 0.45;
                          0.75, 0.75;
-                         0.45, 0.45]; 
+                         0.45, 0.45];
     if ~isequal(size(concentrationFeed), [ModiCon_interval, opt.nComponents])
         warning('The interval setup in the ModiCon situation is not right');
     end
@@ -120,11 +120,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and

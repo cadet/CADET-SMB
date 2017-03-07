@@ -3,7 +3,7 @@ classdef OptAlgorithms < handle
 % =============================================================================
 % This is the class of the functions of optimization algorithms.
 %
-% =============================================================================   
+% =============================================================================
 
     properties (Constant)
         FUNC        = @SMB.simulatedMovingBed;  % the objective function
@@ -11,10 +11,12 @@ classdef OptAlgorithms < handle
         sample      = 200;                      % the loop count for evolution
         dataPoint   = 1000;                     % the amount of data observation
         DE_strategy = 5;                        % the strategy of DE kernel
+        prior       = [];
+%        prior = load('prior.dat');     % load the prior distribution if possible
     end
 
 
-% Lower level algorithms, in charge of continuous decision variables optimization 
+% Lower level algorithms, in charge of continuous decision variables optimization
 % -----------------------------------------------------------------------------
 %   DE
     methods (Static = true, Access = 'public')
@@ -33,7 +35,7 @@ classdef OptAlgorithms < handle
 %        And let the main function informed that which parameters are need
 %        to be optimized
 % -----------------------------------------------------------------------------
-    
+
 
             startTime = clock;
 
@@ -93,7 +95,7 @@ classdef OptAlgorithms < handle
 
         function opt = getOptions_DE(obj, params)
 % -----------------------------------------------------------------------------
-%  The parameters for the Optimizer 
+%  The parameters for the Optimizer
 %
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
@@ -108,7 +110,7 @@ classdef OptAlgorithms < handle
 %           + loopCount. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 % -----------------------------------------------------------------------------
@@ -156,7 +158,7 @@ classdef OptAlgorithms < handle
 %           + loopCount. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 %
@@ -169,14 +171,14 @@ classdef OptAlgorithms < handle
             % Initialization of the parameters
             Population = rand(opt.PopulSize, opt.IndivSize+1);
 
-            % Use vectorization to speed up. Keep the parameters in the domain 
+            % Use vectorization to speed up. Keep the parameters in the domain
             Population(:,1:opt.IndivSize) = repmat(opt.IndivScope(:,1)',opt.PopulSize,1) + ...
                 Population(:,1:opt.IndivSize) .* repmat( (opt.IndivScope(:,2) - opt.IndivScope(:,1))',opt.PopulSize,1 );
 
 
             % Simulation of the sampled points
             Population(:, opt.IndivSize+1) = arrayfun( @(idx) feval(OptAlgorithms.FUNC, ...
-                exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize ); 
+                exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize );
 
 %             % if the parallel toolbox is available
 %             value = zeros(1,opt.PopulSize); parameter = Population(1:opt.PopulSize, 1:opt.IndivSize);
@@ -209,7 +211,7 @@ classdef OptAlgorithms < handle
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 % -----------------------------------------------------------------------------
-    
+
 
             R = opt.PopulSize;
             C = opt.IndivSize;
@@ -313,12 +315,12 @@ classdef OptAlgorithms < handle
             OptPopul(1:R, 1:C) = repmat( Population(minRow, 1:C), R, 1 );
 
 
-        end 
-        
+        end
+
     end % DE
 
 
-%   PSO    
+%   PSO
     methods (Static = true, Access = 'public')
 
         function [xValue, yValue] = Particle_Swarm_Optimization(obj, params)
@@ -399,7 +401,7 @@ classdef OptAlgorithms < handle
 
         function opt = getOptions_PSO(obj, params)
 % -----------------------------------------------------------------------------
-%  The parameters for the Optimizer 
+%  The parameters for the Optimizer
 %
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
@@ -464,7 +466,7 @@ classdef OptAlgorithms < handle
             opt.randCount      = int32(opt.swarmSize * 0.6);
 
         end
-    
+
         function [ParSwarm, OptSwarm, ToplOptSwarm] = InitSwarm(opt)
 % -----------------------------------------------------------------------------
 % The initilization of the population
@@ -506,7 +508,7 @@ classdef OptAlgorithms < handle
 
             % Use vectorization to speed up. Keep the parameters in the domain
             ParSwarm(:,1:opt.particleSize) = repmat(opt.paramsRange(:,1)',opt.swarmSize,1) + ...
-                ParSwarm(:,1:opt.particleSize) .* repmat( (opt.paramsRange(:,2) - opt.paramsRange(:,1))',opt.swarmSize,1 );    
+                ParSwarm(:,1:opt.particleSize) .* repmat( (opt.paramsRange(:,2) - opt.paramsRange(:,1))',opt.swarmSize,1 );
 
 
             % Simulation of the sampled points
@@ -550,7 +552,7 @@ classdef OptAlgorithms < handle
                 error('OptAlgorithms.ParticlesEvolution: There are no enough input arguments \n')
             end
 
-            if nargout ~= 3 
+            if nargout ~= 3
                 error('OptAlgorithms.ParticlesEvolution: There are no enough output arguments \n')
             end
 
@@ -566,7 +568,7 @@ classdef OptAlgorithms < handle
 
             ParCol = (ParCol - 1) / 2;
 
-            LocalOptDiff = OptSwarm(1:ParRow, 1:ParCol) - ParSwarm(:, 1:ParCol);    
+            LocalOptDiff = OptSwarm(1:ParRow, 1:ParCol) - ParSwarm(:, 1:ParCol);
 
 
             for row = 1:ParRow
@@ -648,13 +650,13 @@ classdef OptAlgorithms < handle
 
                     ToplOptSwarm(row,:) = OptSwarm(minrow,1:ParCol);
 
-                elseif strcmp(opt.topology, 'Ring Topology')            
+                elseif strcmp(opt.topology, 'Ring Topology')
 
                     if row == 1
                         ValTemp2 = OptSwarm(ParRow, ParCol+1);
                     else
                         ValTemp2 = OptSwarm(row-1, ParCol+1);
-                    end     
+                    end
 
                     if row == ParRow
                         ValTemp3 = OptSwarm(1, ParCol+1);
@@ -683,17 +685,17 @@ classdef OptAlgorithms < handle
 
                 end
 
-            end   
+            end
 
 
             % Statistics
             [minValue, row] = min(arrayfun(@(idx) OptSwarm(idx, ParCol+1), 1: ParRow));
 
             OptSwarm(ParRow+1, 1:ParCol) = OptSwarm(row,1:ParCol);
-            OptSwarm(ParRow+1, ParCol+1) = minValue; 
+            OptSwarm(ParRow+1, ParCol+1) = minValue;
 
         end
-        
+
     end % PSO
 
 
@@ -739,7 +741,7 @@ classdef OptAlgorithms < handle
             if SS < 0
                 sumSquare = exp(SS);
             end
-            sigmaSqu = sumSquare / (opt.nDataPoint - opt.Nparams); 
+            sigmaSqu = sumSquare / (opt.nDataPoint - opt.Nparams);
             sigmaSqu_0 = sigmaSqu;
 
             if ~isempty(Jac)
@@ -766,7 +768,7 @@ classdef OptAlgorithms < handle
 
                 % If the Jacobian matrix cannot be obtained,
                 % a set of samples is used to generate R
-                R = OptAlgorithms.burnInSamples(opt);
+                [R, oldpar] = OptAlgorithms.burnInSamples(opt);
 
             end
 
@@ -797,7 +799,8 @@ classdef OptAlgorithms < handle
                 newSS = feval( OptAlgorithms.FUNC, exp(newpar) );
 
                 % The Metropolis probability
-                rho12 = exp( -0.5 * (newSS - SS) / sigmaSqu);
+                rho12 = exp( -0.5 * (newSS - SS) / sigmaSqu) *...
+                    ( OptAlgorithms.priorPDF(newpar) / OptAlgorithms.priorPDF(oldpar) );
 
                 % The new proposal is accepted with Metropolis probability
                 if rand <= min(1, rho12)
@@ -805,7 +808,7 @@ classdef OptAlgorithms < handle
                     oldpar   = newpar;
                     SS       = newSS;
                     accepted = accepted + 1;
-				end
+                end
 
                 % If the poposal is denied, a Delayed Rejection procedure is adopted
                 % in order to increase the acceptance ratio
@@ -824,10 +827,12 @@ classdef OptAlgorithms < handle
                     newSS2 = feval( OptAlgorithms.FUNC, exp(newpar2) );
 
                     % The conventional version of calculation
-%                   rho32 = exp( -0.5 * (newSS - newSS2) / sigmaSqu);
+                    rho32 = exp( -0.5 * (newSS - newSS2) / sigmaSqu) * ...
+                       ( OptAlgorithms.priorPDF(newpar) / OptAlgorithms.priorPDF(newpar2) );
 
-%                   q2 = exp( -0.5 * (newSS2 - SS) / sigmaSqu);
-%                   q1 = exp( -0.5 * (norm((newpar2 - newpar) * inv(R))^2 - norm((oldpar - newpar) * inv(R))^2));
+%                   q2 = exp( -0.5 * (newSS2 - SS) / sigmaSqu ) * ...
+%                       ( OptAlgorithms.priorPDF(newpar2) / OptAlgorithms.priorPDF(oldpar) );
+%                   q1 = exp( -0.5 * (norm((newpar2 - newpar) * inv(R))^2 - norm((oldpar - newpar) * inv(R))^2) );
 
 %                   if rho32 == Inf
 %                       rho13 = 0;
@@ -836,11 +841,12 @@ classdef OptAlgorithms < handle
 %                   end
 
                     % The speed-up version of above calculation
-                    q1q2 = exp( -0.5 * ((newSS2 - SS) / sigmaSqu + ...
-                        ((newpar2 - newpar) * (R \ (R' \ (newpar2' - newpar')))...
-                        - (oldpar - newpar) * (R \ (R' \ (oldpar' - newpar'))))));
+                    q1q2 = exp( -0.5 * ( (newSS2 - SS) / sigmaSqu + ...
+                        ( (newpar2 - newpar) * (R \ (R' \ (newpar2' - newpar')))...
+                        - (oldpar - newpar) * (R \ (R' \ (oldpar' - newpar'))) )) ) * ...
+                        ( OptAlgorithms.priorPDF(newpar2) / OptAlgorithms.priorPDF(oldpar) );
 
-                    rho13 = q1q2 * expm1(-0.5 * (newSS - newSS2) / sigmaSqu) / expm1(-0.5 * (newSS - SS) / sigmaSqu);
+                    rho13 = q1q2 * (1 - rho32) / (1 - rho12);
 
                     if rand <= min(1, rho13)
                         oldpar   = newpar2;
@@ -895,7 +901,7 @@ classdef OptAlgorithms < handle
 
 
                 % Updata the sigma^2 according to the current objective value
-                if SS < 0, sumSquare = exp(SS); end
+                if SS < 0, sumSquare = exp(SS); else sumSquare = SS; end
                 sigmaSqu  = 1 / OptAlgorithms.GammarDistribution( 1, 1, (n0 + opt.nDataPoint)/2,...
                     2 / (n0 * sigmaSqu_0 + sumSquare));
 
@@ -946,8 +952,6 @@ classdef OptAlgorithms < handle
 %           + opt.nsamples. The pre-defined maximal iteration
 %           + opt.criterionTol. The error tolerance to stop the algorithm
 %           + opt.burn_in. The burn-in period before adaptation begin
-%           + opt.burnInSwarm. This is specific used in the generation of R matrix
-%               when Jacobian information is not available. A sample of swarm is initialized
 %           + opt.convergInt. The integer for checking of the convergence
 %           + opt.rejectValue. This is specific used in the generation of R matrix
 %               when Jacobian information is not available. In the generated sample,
@@ -969,13 +973,12 @@ classdef OptAlgorithms < handle
 
             opt.nsamples      = OptAlgorithms.sample;
             opt.criterionTol  = 0.0001;
-            opt.burn_in       = 50;
-            opt.burnInSwarm   = 5000;
-            opt.convergInt    = 50;
+            opt.burn_in       = 0;
+            opt.convergInt    = 100;
             opt.rejectValue   = 10000;
             opt.nDataPoint    = OptAlgorithms.dataPoint;
 
-            opt.Jacobian      = false;
+            opt.Jacobian      = false; % set it false when you do not need Jacobian matrix
             opt.DelayedRejection = true;
 
             [row, col] = size(opt.Nparams);
@@ -1017,29 +1020,31 @@ classdef OptAlgorithms < handle
 
         end
 
-        function R = burnInSamples(opt)
+        function [R, oldpar] = burnInSamples(opt)
 %------------------------------------------------------------------------------
 % The routine that is used for generating samples in cases that Jocabian matrix
 % is not available
 %------------------------------------------------------------------------------
 
 
-            swarm = opt.burnInSwarm;
+            Swarm = OptAlgorithms.swarm;
 
             % Generate random sample with swarm scale
-            ParSwarm = rand(swarm, opt.Nparams+1);
+            ParSwarm = rand(Swarm, opt.Nparams+1);
 
             % Keep all the swarm in the searching domain
-            ParSwarm(:, 1:opt.Nparams) = repmat(opt.bounds(1,:), swarm,1) + ...
-                ParSwarm(:, 1:opt.Nparams) .* repmat( (opt.bounds(2,:) - opt.bounds(1,:)), swarm,1 );
+            ParSwarm(:, 1:opt.Nparams) = repmat(opt.bounds(1,:), Swarm,1) + ...
+                ParSwarm(:, 1:opt.Nparams) .* repmat( (opt.bounds(2,:) - opt.bounds(1,:)), Swarm,1 );
 
             % All the proposals are simulated
             ParSwarm(:, opt.Nparams+1) = arrayfun( @(idx) feval(OptAlgorithms.FUNC,...
-                exp(ParSwarm(idx, 1:opt.Nparams))), 1:swarm);
+                exp(ParSwarm(idx, 1:opt.Nparams))), 1:Swarm);
 
             % If the objective value is too big in the case, the proposals are deleted
-            row = find(ParSwarm(:, opt.Nparams+1) > opt.rejectValue);
-            ParSwarm(row, :) = [];
+            nullRow = find(ParSwarm(:, opt.Nparams+1) > opt.rejectValue);
+            ParSwarm(nullRow, :) = [];
+            [~, minRow] = min(ParSwarm(:, opt.Nparams+1));
+            oldpar = ParSwarm(minRow, 1:opt.Nparams);
 
             % Calculate the covariance matrix
             [chaincov, ~, ~] = OptAlgorithms.covUpdate(ParSwarm(:, 1:opt.Nparams), 1, [], [], []);
@@ -1230,10 +1235,14 @@ classdef OptAlgorithms < handle
                 idx = floor(0.5 * (opt.nsamples + opt.burn_in));
             end
 
+            if idx < length(chainData)
+                idx = 0;
+            end
+
             eval(sprintf('chainData(1:idx, :) = [];'));
             Population = chainData;
 
-            save('population.dat', 'Population', '-ascii', '-append');
+            save('population.dat', 'Population', '-ascii');
 
         end
 
@@ -1244,7 +1253,7 @@ classdef OptAlgorithms < handle
     methods (Static = true, Access = 'public')
 
         function [xValue, yValue] = Parallel_Riemann_Metropolis_Adjusted_Langevin(obj, params)
-%------------------------------------------------------------------------------ 
+%------------------------------------------------------------------------------
 % Riemannian manifold Metropolis adjusted Langevin with parallel tempering (PRML)
 %
 % The Langevin algorithm is combined withe Metropolis probability, which leads to
@@ -1282,7 +1291,7 @@ classdef OptAlgorithms < handle
             Temperatures(:, 1) = ones(opt.nsamples, 1);
             Temperatures(1, :) = opt.temperature;
 
-            % Initialization 
+            % Initialization
             [states, MetricTensor] = OptAlgorithms.initChainP((1./opt.temperature), opt);
 
             chain = zeros(opt.Nchain, opt.Nparams+1, opt.nsamples);
@@ -1401,7 +1410,7 @@ classdef OptAlgorithms < handle
 % Parameter:
 %       - obj. The parameter options from the main function
 %       - params. It is the specified parameters from the main function
-% 
+%
 % Return:
 %       - opt.
 %           + temperature. The vector of the temperature of the parallel tempering
@@ -1410,7 +1419,7 @@ classdef OptAlgorithms < handle
 %           + nsamples. The length of the sampling chain
 %           + bounds. The boundary limitation of the sampling
 %           + burn_in. The burn-in period that is discarded
-%           + convergInt. The interval to check the convergence criterion 
+%           + convergInt. The interval to check the convergence criterion
 %           + swapInt. The interval to swap the N chains when sampling
 %           + nDataPoint. The data point of the y
 %           + criterionTol. The stopping tolerance
@@ -1430,8 +1439,8 @@ classdef OptAlgorithms < handle
             opt.nsamples          = OptAlgorithms.sample;
             opt.bounds            = log(obj.paramBound)';
 
-            opt.burn_in           = 100;
-            opt.convergInt        = 50;
+            opt.burn_in           = 0;
+            opt.convergInt        = 100;
             opt.swapInt           = 100;
             opt.nDataPoint        = OptAlgorithms.dataPoint;
             opt.criterionTol      = 1.1;
@@ -1549,7 +1558,8 @@ classdef OptAlgorithms < handle
                 SS    = states(j,opt.Nparams+1);
 
                 % The Metropolis probability
-                rho = (exp( -0.5*(newSS - SS) / sigmaSqu(j)))^Beta(j);
+                rho = ( exp( -0.5*(newSS - SS) / sigmaSqu(j)) )^Beta(j) * ...
+                    ( OptAlgorithms.priorPDF(proposal) / OptAlgorithms.priorPDF(states(j,1:opt.Nparams)) );
 
                 % If the proposal is accepted
                 if rand <= min(1, rho)
@@ -1707,7 +1717,7 @@ classdef OptAlgorithms < handle
                 Population = [Population; eval(sprintf('chainData_%d', k))];
             end
 
-            save('population.dat', 'Population', '-ascii', '-append');
+            save('population.dat', 'Population', '-ascii');
 
         end
 
@@ -1780,7 +1790,7 @@ classdef OptAlgorithms < handle
                 chain(:,:,i) = states;
 
                 for j = 1:opt.Nchain
-                    temp = states(j, 1:opt.Nparams+1);
+                    temp = states(j, :);
                     save(sprintf('chainData_%d.dat', j), 'temp', '-ascii', '-append');
                 end
 
@@ -1829,7 +1839,7 @@ classdef OptAlgorithms < handle
             result.optTime        = etime(clock,startTime) / 3600;
             result.convergDiagno  = criterion;
             result.Nchain         = opt.Nchain;
-            result.Ieteration     = maxIter;
+            result.Iteration      = maxIter;
             result.acceptanceRate = fix( accepted / (opt.Nchain * maxIter) * 100 );
             result.correlation    = corrcoef(Population(:,1:opt.Nparams));
             result.population     = Population;
@@ -1858,7 +1868,7 @@ classdef OptAlgorithms < handle
 %           + nsamples. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 % -----------------------------------------------------------------------------
@@ -1876,7 +1886,7 @@ classdef OptAlgorithms < handle
 
             opt.nsamples      = OptAlgorithms.sample;
             opt.criterionTol  = 1.01;
-            opt.convergInt    = 50;
+            opt.convergInt    = 100;
             % this data should be manually changed, as it is related to the data
             opt.nDataPoint    = OptAlgorithms.dataPoint;
 
@@ -1910,7 +1920,7 @@ classdef OptAlgorithms < handle
 %           + loopCount. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 %
@@ -1963,7 +1973,8 @@ classdef OptAlgorithms < handle
                     newSS = feval( OptAlgorithms.FUNC, exp(proposal) );
                 end
 
-                rho = exp( -0.5*(newSS - SS) / sigmaSqu(j));
+                rho = exp( -0.5*(newSS - SS) / sigmaSqu(j)) * ...
+                    ( OptAlgorithms.priorPDF(proposal) / OptAlgorithms.priorPDF(states(j, 1:opt.Nparams)) );
 
                 if rand <= min(1, rho)
                     states(j, 1:opt.Nparams) = proposal;
@@ -2080,12 +2091,12 @@ classdef OptAlgorithms < handle
             clear row col;
 
 
-        end  
+        end
 
         function y = GammarDistribution(m, n, a, b)
 %-----------------------------------------------------------------------------------------
 % GammarDistrib random deviates from gamma distribution
-% 
+%
 %  GAMMAR_MT(M,N,A,B) returns a M*N matrix of random deviates from the Gamma
 %  distribution with shape parameter A and scale parameter B:
 %
@@ -2155,7 +2166,7 @@ classdef OptAlgorithms < handle
             end
 
             % Split each chain into half and check all the resulting half-sequences
-            index           = floor(0.5 * idx); 
+            index           = floor(0.5 * idx);
             eachChain       = zeros(index, opt.Nparams);
             betweenMean     = zeros(opt.Nchain, opt.Nparams);
             withinVariance  = zeros(opt.Nchain, opt.Nparams);
@@ -2234,6 +2245,11 @@ classdef OptAlgorithms < handle
             save('population.dat', 'Population', '-ascii', '-append');
         end
 
+    end % MADE
+
+
+    methods (Static = true, Access = 'public')
+
         function FigurePlot(Population, opt)
 %------------------------------------------------------------------------------
 % Plot the histgram and scatter figures of the last population
@@ -2256,8 +2272,8 @@ classdef OptAlgorithms < handle
                 set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);
 %                OptAlgorithms.tickLabelFormat(gca, 'x', '%0.2e');
 %                OptAlgorithms.tickLabelFormat(gca, 'x', []);
-                set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%3g'));
-                OptAlgorithms.xtickLabelRotate([], 5, [], 'FontSize', 20, 'FontName', 'Times New Roman');
+                set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
+%                 OptAlgorithms.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
                 set(gca, 'ygrid', 'on');
 
             end
@@ -2274,8 +2290,8 @@ classdef OptAlgorithms < handle
                     ylabel(sprintf('$x_%d$', i), 'FontName', 'Times New Roman', 'FontSize', 20, 'Interpreter', 'latex');
                     set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);
 %                    OptAlgorithms.tickLabelFormat(gca, 'x', '%0.2e');
-                    set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%3g'));
-                    OptAlgorithms.xtickLabelRotate([], 5, [], 'FontSize', 20, 'FontName', 'Times New Roman');
+                    set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
+%                     OptAlgorithms.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
                     grid on;
 
                 end
@@ -2283,10 +2299,62 @@ classdef OptAlgorithms < handle
 
         end
 
-    end % MADE
+        function prior = priorPDF(points)
+%------------------------------------------------------------------------------
+% This is a routine used for constructe the prior distribution for MCMC
+%
+% Parameters:
+%       points. The estimated parameters
+%       binNum. The amount of the histogram bar
+%
+% Return:
+%       prior. The prior possibility
+%           It should be the plain data in my script, which will be used by
+%           hist routine to generate discrete points. If you have a continuous
+%           function, it is better. Please change this routine to customize.
+%           Such as, prior = f(point).
+%------------------------------------------------------------------------------
 
 
-    methods (Static = true, Access = 'public')
+            prior = 1;
+
+            % if no prior information, return
+            if isempty(OptAlgorithms.prior)
+                return;
+            end
+
+            binNum = 20;
+            x = zeros(binNum, 3);
+            [r, c] = size(OptAlgorithms.prior);
+
+            for i = 1:c-1
+
+                point = points(i);
+
+                binWidth = ( max(OptAlgorithms.prior(:,i)) - min(OptAlgorithms.prior(:,i)) ) / binNum;
+
+                [y, x(:,1)] = hist(OptAlgorithms.prior(:,i), binNum);
+
+                x(:,2) = x(:,1) - binWidth/2;
+                x(:,3) = x(:,1) + binWidth/2;
+
+                if point <= x(1,2)
+                    idx = 1;
+                elseif point >= x(binNum, 3)
+                    idx = binNum;
+                else
+                    idx = find(point >= x(:,2) & point <= x(:,3));
+                end
+
+                if isempty(idx)
+                    error('OptAlgorithms.priorPDF: Please re-check your searching domain setup \n');
+                else
+                    prior = prior * y(idx) / r;
+                end
+
+            end
+
+        end
 
         function checkOptDimension(opt, LEN)
 %------------------------------------------------------------------------------
@@ -2448,8 +2516,8 @@ classdef OptAlgorithms < handle
 % xtick label rotate
 %
 % Parameter:
-%       - XTick. vector array of XTick positions & values (numeric) uses current 
-%           XTick values or XTickLabel cell array by default (if empty) 
+%       - XTick. vector array of XTick positions & values (numeric) uses current
+%           XTick values or XTickLabel cell array by default (if empty)
 %       - rot. angle of rotation in degrees, 90° by default
 %       - XTickLabel: cell array of label strings
 %       - [var]. Optional. "Property-value" pairs passed to text generator
@@ -2484,9 +2552,9 @@ classdef OptAlgorithms < handle
 % Modifications include Text labels (in the form of cell array)
 %       Arbitrary angle rotation
 %       Output of text handles
-%       Resizing of axes and title/xlabel/ylabel positions to maintain same overall size 
+%       Resizing of axes and title/xlabel/ylabel positions to maintain same overall size
 %          and keep text on plot
-%          (handles small window resizing after, but not well due to proportional placement with 
+%          (handles small window resizing after, but not well due to proportional placement with
 %           fixed font size. To fix this would require a serious resize function)
 %       Uses current XTick by default
 %       Uses current XTickLabel is different from XTick values (meaning has been already defined)
@@ -2526,7 +2594,7 @@ classdef OptAlgorithms < handle
             XTick = XTick(:);
 
             if ~exist('xTickLabels')
-                % Define the xtickLabels 
+                % Define the xtickLabels
                 % If XtickLabel is passed as a cell array then use the text
                 if ~isempty(varargin) && (iscell(varargin{1}))
                     xTickLabels = varargin{1};
@@ -2583,7 +2651,7 @@ classdef OptAlgorithms < handle
 
             % Adjust the size of the axis to accomodate for longest label (like if they are text ones)
             % This approach keeps the top of the graph at the same place and tries to keep xlabel at the same place
-            % This approach keeps the right side of the graph at the same place 
+            % This approach keeps the right side of the graph at the same place
 
             set(get(gca,'xlabel'),'units','data');
                 labxorigpos_data = get(get(gca,'xlabel'),'position');
@@ -2599,7 +2667,7 @@ classdef OptAlgorithms < handle
 
             origpos = get(gca,'position');
 
-            % Modified with forum comment from "Peter Pan" to deal with case when only one XTickLabelName is given. 
+            % Modified with forum comment from "Peter Pan" to deal with case when only one XTickLabelName is given.
             x = get( hText, 'extent' );
             if iscell( x ) == true
                 textsizes = cell2mat( x );
@@ -2686,7 +2754,7 @@ classdef OptAlgorithms < handle
 % And the sequence of ports are D E (ext_1 ext_2) F R constantly. The selective ranges of each pointer
 % (E,F,R) are shown as follows in the binary scenario:
 %           0 1 2 3 4 5 6 7 8 9 10 ...
-%           D 
+%           D
 %             E < ------- > E      : extract_pool
 %               F < ------- > F    : feed_pool
 %                 R < ------- > R  : raffinate_pool
@@ -2731,7 +2799,7 @@ classdef OptAlgorithms < handle
         function structID = structure2structID(opt,structure)
 % -----------------------------------------------------------------------------
 % This is the rountine that decode the structure into structID for simulation
-% 
+%
 % For instance, the structure is [0, 3, 5, 9] in a binary situation with column amount 10
 % the structID is [3,2,4,1], there are three in the zone I, two in zone II, four in
 % zone III, one in zone IV
@@ -2777,7 +2845,7 @@ classdef OptAlgorithms < handle
 %       - Metropolis Adjusted Differential Evolution (MADE)
 %       - Markov Chain Monte Carlo (MCMC)
 %       - Metropolis Adjusted Langevin Algorithm (MLA) defined on Riemann manifold
-% 
+%
 % -----------------------------------------------------------------------------
 
 
@@ -2832,8 +2900,8 @@ classdef OptAlgorithms < handle
         function mutant_struct = discreteMutation(opt, structure)
 % -----------------------------------------------------------------------------
 % This is the mutation part of the upper-level structure optimization algorithm
-% 
-% First of all, two random selected structures are prepared; 
+%
+% First of all, two random selected structures are prepared;
 % Then the optimal structure until now is recorded;
 % Lastly, the mutant_struct = rand_struct_1 &+ rand_struct_2 &+ optima_struct
 % -----------------------------------------------------------------------------
@@ -2889,11 +2957,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
