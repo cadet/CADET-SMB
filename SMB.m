@@ -90,7 +90,7 @@ classdef SMB < handle
             end
 
 %           Transport
-            model.dispersionColumn          = opt.dispersionColumn;
+            model.dispersionColumn          = params.dispersionColumn;
             model.filmDiffusion             = opt.filmDiffusion;
             model.diffusionParticle         = opt.diffusionParticle;
             model.diffusionParticleSurface  = opt.diffusionParticleSurface;
@@ -347,7 +347,7 @@ classdef SMB < handle
 % 		- pre_alphabet. The letter of column before the current calculated one, i-1.
 %
 % Returns:
-% 		- params. It contains interstitial velocity and boundary conditions
+% 		- params. interstitial velocity, axial dispersion and boundary conditions
 %-----------------------------------------------------------------------------------------
 
 
@@ -355,13 +355,16 @@ classdef SMB < handle
                 error('SMB.getParams: There are no enough arguments \n');
             end
 
+            if length(opt.dispersionColumn) ~= opt.nZone
+                error('SMB.getParams: The dimension of dispersionColumn in getParameters routine is not correct \n');
+            end
+
             params = cell(1, opt.nColumn);
             for k = 1:opt.nColumn
 %               set the initial conditions to the solver, but when lastState is used, this setup will be ignored
                 params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
-                    zeros(1,opt.nComponents), 'interstitialVelocity', []);
+                    zeros(1,opt.nComponents), 'interstitialVelocity', [], 'dispersionColumn', []);
             end
-
 
             if opt.nZone == 4
 
@@ -370,15 +373,19 @@ classdef SMB < handle
                     case {'D' 'M_D'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(1);
                     case {'E' 'M_E'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(2);
                     case {'F' 'M_F'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(3);
                     case {'R' 'M_R'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract + interstVelocity.feed;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(4);
 
                 end
 
@@ -389,18 +396,23 @@ classdef SMB < handle
                     case {'D' 'M_D'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(1);
                     case {'E1' 'M_E1'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(2);
                     case {'E2' 'M_E2'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(3);
                     case {'F' 'M_F'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 - interstVelocity.extract2;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(4);
                     case {'R' 'M_R'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent + interstVelocity.raffinate;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(5);
 
                 end
 
@@ -411,27 +423,35 @@ classdef SMB < handle
                     case {'D1' 'M_D1'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(1);
                     case {'E1' 'M_E1'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(2);
                     case {'F1' 'M_F1'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(3);
                     case {'R1' 'M_R1'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(4);
                     case {'D2' 'M_D2'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1 + interstVelocity.desorbent2;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(5);
                     case {'E2' 'M_E2'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2 - interstVelocity.feed2;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.extract1 + interstVelocity.feed1 - interstVelocity.raffinate1 + interstVelocity.desorbent2;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(6);
                     case {'F2' 'M_F2'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2 - interstVelocity.feed2;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(7);
                     case {'R2' 'M_R2'}
                         params{sequence.(alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1;
                         params{sequence.(pre_alphabet)}.interstitialVelocity = interstVelocity.recycle - interstVelocity.desorbent1 + interstVelocity.raffinate2;
+                        params{sequence.(alphabet)}.dispersionColumn = opt.dispersionColumn(8);
 
                 end
 
@@ -1244,6 +1264,7 @@ classdef SMB < handle
             end
 
             y = [];
+
             % nComp represents the number of outlet ports
             if opt.nZone == 4, nComp = 2; else nComp = 3; end
             for k = 1:nComp
@@ -1283,7 +1304,7 @@ classdef SMB < handle
                     end
 
                     FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints*opt.nInterval, 0,opt.yLim])
-                    ylabel('Concentration [Mol]', 'FontSize', 10);
+                    ylabel('Concentration [mol]', 'FontSize', 10);
                     if opt.nComponents == 2
                         legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                     elseif opt.nComponents == 3
@@ -1672,7 +1693,7 @@ classdef SMB < handle
 
                         end
 
-                    end% if opt.nZone
+                    end % if opt.nZone
 
                     for i = 1: (opt.nColumn-1)
                         line([i*opt.timePoints*opt.nInterval,i*opt.timePoints*opt.nInterval], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
@@ -1708,9 +1729,9 @@ classdef SMB < handle
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
                         switch i
                             case 1
-                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Raffinate Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 2
-                                ylabel({'Extract Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract Port'; 'Concentration [mol]'}, 'FontSize', 10);
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
                         xlabel(xString, 'FontSize', 10);
@@ -1759,11 +1780,11 @@ classdef SMB < handle
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
                         switch i
                             case 1
-                                ylabel({'Raffinate Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Raffinate Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 2
-                                ylabel({'Extract_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract_2 Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 3
-                                ylabel({'Extract_1 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract_1 Port'; 'Concentration [mol]'}, 'FontSize', 10);
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
                         xlabel(xString, 'FontSize', 10);
@@ -1812,11 +1833,11 @@ classdef SMB < handle
                         FigSet = plot(y,'.'); axis([0,iter*opt.timePoints, 0,opt.yLim])
                         switch i
                             case 1
-                                ylabel({'Raffinate_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Raffinate_2 Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 2
-                                ylabel({'Extract_2 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract_2 Port'; 'Concentration [mol]'}, 'FontSize', 10);
                             case 3
-                                ylabel({'Extract_1 Port'; 'Concentration [Mol]'}, 'FontSize', 10);
+                                ylabel({'Extract_1 Port'; 'Concentration [mol]'}, 'FontSize', 10);
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
                         xlabel(xString, 'FontSize', 10);

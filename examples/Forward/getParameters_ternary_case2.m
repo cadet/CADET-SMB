@@ -4,11 +4,11 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
-% Returns: 
+% Returns:
 %       1. opt stands for options, which involves the parameter settings
 %       for the algorithm, the binding isotherm, and the model equations
 %
-%       2. interstVelocity is calculated from flowrate of each column and inlet. 
+%       2. interstVelocity is calculated from flowrate of each column and inlet.
 %       interstitial_velocity = flow_rate / (across_area * porosity_Column)
 %
 %       3. Feed initializes the injection concentration
@@ -49,22 +49,22 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.comp_ext2_ID = 2; % the target component withdrawn from the extract_2 ports
 
 %   Transport
-    opt.dispersionColumn          = 1.1781e-7;     % D_{ax}
-    opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5];      % K_f 
+    opt.dispersionColumn          = ones(1, opt.nZone) .* 1.1781e-7; % D_{ax}
+    opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5];  % K_f
     opt.diffusionParticle         = [1.6e4, 1.6e4, 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0, 0.0, 0.0];
 
 %   Geometry
     opt.columnLength        = 25e-2;      % m
-    opt.columnDiameter      = 1.0e-2;    % m
+    opt.columnDiameter      = 1.0e-2;     % m
     opt.particleRadius      = 15e-6/2;    % m % user-defined one in this case
     opt.porosityColumn      = 0.47;
-    opt.porosityParticle    = 0.00000001;   % unknown
+    opt.porosityParticle    = 0.00000001; % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
     crossArea = pi * (opt.columnDiameter/2)^2;
-    flowRate.recycle    = 9.7333e-8;      % m^3/s  
+    flowRate.recycle    = 9.7333e-8;      % m^3/s
     flowRate.feed       = 4.1667e-9;      % m^3/s
     flowRate.raffinate  = 1.2000e-8;      % m^3/s
     flowRate.desorbent  = 5.8999e-8;      % m^3/s
@@ -75,16 +75,16 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.flowRate_raffinate = flowRate.raffinate;
 
 %   Interstitial velocity = flow_rate / (across_area * opt.porosityColumn)
-    interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s 
+    interstVelocity.recycle   = flowRate.recycle / (crossArea*opt.porosityColumn);      % m/s
     interstVelocity.feed      = flowRate.feed / (crossArea*opt.porosityColumn);         % m/s
     interstVelocity.raffinate = flowRate.raffinate / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
-    interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);      % m/s
-    interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);      % m/s
+    interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);     % m/s
+    interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);     % m/s
 
     SMB.intervalAmountCheck(opt, interstVelocity);
 
-    concentrationFeed 	= [1.0, 1.0, 1.0];    % g/m^3 [concentration_compA, concentration_compB]
+    concentrationFeed 	= [1.0, 1.0, 1.0];    % g/cm^3 [concentration_compA, concentration_compB]
     opt.molMass         = [309.401, 309.401, 309.401]; % The molar mass of each components
     opt.yLim            = max(concentrationFeed ./ opt.molMass) * 1.1; % the magnitude for plotting
 
@@ -117,11 +117,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2015: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
