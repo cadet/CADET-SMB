@@ -47,7 +47,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.comp_ext_ID = 3; % the target component withdrawn from the extract ports
 
 %   Transport
-    opt.dispersionColumn          = ones(1, opt.nZone) . * 3.8148e-6; % D_{ax}
+    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-6; % D_{ax}
     opt.filmDiffusion             = [5.0e-5 5.0e-5 5.0e-5];  % K_f
     opt.diffusionParticle         = [1.6e4 1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0 0.0];
