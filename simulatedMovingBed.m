@@ -243,6 +243,7 @@ function objective = simulatedMovingBed(varargin)
 
 %       Convergence criterion was adopted in each nColumn iteration
 %           ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
+%        if fix(i/opt.nColumn/opt.nColumn) == i/(opt.nColumn*opt.nColumn)
         if fix(i/opt.nColumn) == i/(opt.nColumn)
 
             diffNorm = 0; stateNorm = 0;
