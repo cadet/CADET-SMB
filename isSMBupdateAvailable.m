@@ -10,7 +10,7 @@ function updateAvailable = isSMBupdateAvailable
     path(localPath, path);
     fileID = fopen([localPath filesep 'version.txt']);
 
-    currentVersion = [];    
+    currentVersion = [];
     try
         currentVersion = fgets(fileID);
     end
@@ -25,7 +25,7 @@ function updateAvailable = isSMBupdateAvailable
 
     stableVersion = [];
     try
-        stableVersion = urlread('https://raw.githubusercontent.com/modsim/CADET-SMB/master/version.txt'); 
+        stableVersion = urlread('https://raw.githubusercontent.com/modsim/CADET-SMB/master/version.txt');
     end
 
     if isempty(stableVersion)
@@ -51,11 +51,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
