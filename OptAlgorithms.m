@@ -3,9 +3,9 @@ classdef OptAlgorithms < handle
 % =============================================================================
 % This is the class of the functions of optimization algorithms.
 %
-% =============================================================================   
+% =============================================================================
 
-% Lower level algorithms, in charge of continuous decision variables optimization 
+% Lower level algorithms, in charge of continuous decision variables optimization
 % -----------------------------------------------------------------------------
 %   DE
     methods (Static = true, Access = 'public')
@@ -24,25 +24,25 @@ classdef OptAlgorithms < handle
 %        And let the main function informed that which parameters are need
 %        to be optimized
 % -----------------------------------------------------------------------------
-    
+
 
             startTime = clock;
 
-%           Get the optimizer options
+            % Get the optimizer options
             opt = OptAlgorithms.getOptions_DE(algOpt, params);
 
-%           Initialization of the population
+            % Initialization of the population
             [Population, OptPopul] = OptAlgorithms.InitPopulation(opt);
 
 
 % ----------------------------------------------------------------------------------------
-%           The main loop
+            % The main loop
             for i = 1: opt.loopCount
 
-%               The evolution of the particles in DE
+                % The evolution of the particles in DE
                 [Population, OptPopul] = OptAlgorithms.DE_Evolution(Population, OptPopul, opt);
 
-%               Abstract best information so far from the population and display it
+                % Abstract best information so far from the population and display it
                 XResult = exp(OptPopul(1, 1:opt.IndivSize));
                 YResult = OptPopul(opt.PopulSize+1, opt.IndivSize+1);
 
@@ -55,8 +55,8 @@ classdef OptAlgorithms < handle
                 end
 
 
-%               The convergence criterion: when the standard deviation is smaller
-%               than the specified tolerence
+                % The convergence criterion: when the standard deviation is smaller
+                %   than the specified tolerence
                 if mod(i, 5) == 0
 
                     delta = std(Population(:,1:opt.IndivSize)) ./ mean(Population(:,1:opt.IndivSize));
@@ -69,10 +69,10 @@ classdef OptAlgorithms < handle
 
 
             end
-%-----------------------------------------------------------------------------------------     
+%-----------------------------------------------------------------------------------------
 
             if algOpt.enableDebug
-%               Gather some useful information and store them
+                % Gather some useful information and store them
                 result.optTime        = etime(clock,startTime)/3600;
                 result.convergence    = delta;
                 result.correlation    = corrcoef(Population(:,1:opt.IndivSize));
@@ -90,7 +90,7 @@ classdef OptAlgorithms < handle
 
         function opt = getOptions_DE(algOpt, params)
 % -----------------------------------------------------------------------------
-%  The parameters for the Optimizer 
+%  The parameters for the Optimizer
 %
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
@@ -105,7 +105,7 @@ classdef OptAlgorithms < handle
 %           + loopCount. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 % -----------------------------------------------------------------------------
@@ -118,7 +118,7 @@ classdef OptAlgorithms < handle
             opt.IndivScope     = log(algOpt.paramBound);
             opt.loopCount      = 200;
 
-%           Check out the dimension of the set of parameters, and the boundary limiatation
+            % Check out the dimension of the set of parameters, and the boundary limiatation
             [row, col] = size(opt.IndivSize);
             if row > 1 || col > 1
                 error('getOptions_DE: The initialized dimension of the set of parameters might be wrong');
@@ -129,7 +129,7 @@ classdef OptAlgorithms < handle
                 error('getOptions_DE: Please check your setup of the range of parameters');
             end
 
-%           Those are the specific parameters for the DE algorithm   
+            % Those are the specific parameters for the DE algorithm
             opt.cr_Probability = 0.5;
             opt.weight         = 0.3;
             opt.enablePlot     = 0;
@@ -152,7 +152,7 @@ classdef OptAlgorithms < handle
 %           + loopCount. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 %
@@ -162,26 +162,26 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
-%           Initialization of the parameters
+            % Initialization of the parameters
             Population = rand(opt.PopulSize, opt.IndivSize+1);
 
-%           Use vectorization to speed up, it's actually equivalent to the for-loop  
+            % Use vectorization to speed up, it's actually equivalent to the for-loop
             Population(:,1:opt.IndivSize) = repmat(opt.IndivScope(:,1)',opt.PopulSize,1) + ...
                 Population(:,1:opt.IndivSize) .* repmat( (opt.IndivScope(:,2) - opt.IndivScope(:,1))',opt.PopulSize,1 );
 
 
-%           Simulation of the sampled points, using subroutine simulatedMovingBed
+            % Simulation of the sampled points, using subroutine simulatedMovingBed
             Population(:, opt.IndivSize+1) = arrayfun( @(idx) feval(@SMB.simulatedMovingBed, ...
-                exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize ); 
+                exp(Population(idx, 1:opt.IndivSize)) ), 1: opt.PopulSize );
 
-%           if the parallel toolbox is available
+            % if the parallel toolbox is available
 %             value = zeros(1,opt.PopulSize); parameter = Population(1:opt.PopulSize, 1:opt.IndivSize);
 %             parfor i = 1:opt.PopulSize
 %                 value(i)= feval( @SMB.simulatedMovingBed, exp(parameter(i,:)) )
 %             end
 %             Population(:,opt.IndivSize+1) = value';
 
-%           The statistics of the population
+            % The statistics of the population
             OptPopul = zeros(opt.PopulSize+1, opt.IndivSize+1);
             [minValue, row] = min(Population(:, opt.IndivSize+1));
 
@@ -204,7 +204,7 @@ classdef OptAlgorithms < handle
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 % -----------------------------------------------------------------------------
-    
+
 
             R = opt.PopulSize;
             C = opt.IndivSize;
@@ -233,22 +233,22 @@ classdef OptAlgorithms < handle
 
             switch opt.strategy
                 case 1
-%               strategy 1
+                % strategy 1
                     tempPop = PopMutR3 + (PopMutR1 - PopMutR2) * opt.weight;
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 2
-%               strategy 2
+                % strategy 2
                     tempPop = Population(1:R, 1:C) + opt.weight * (OptPopul(1:R, 1:C) - Population(1:R, 1:C)) + (PopMutR1 - PopMutR2) * opt.weight;
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 3
-%               strategy 3
+                % strategy 3
                     tempPop = OptPopul(1:R, 1:C) + (PopMutR1 - PopMutR2) .* ((1 -0.9999) * rand(R, C) + opt.weight);
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 4
-%               strategy 4
+                % strategy 4
                     f1 = (1-opt.weight) * rand(R, 1) + opt.weight;
                     for i = 1: C
                         PopMutR5(:, i) = f1;
@@ -258,13 +258,13 @@ classdef OptAlgorithms < handle
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 5
-%               strategy 5
+                % strategy 5
                     f1 = (1-opt.weight) * rand + opt.weight;
                     tempPop = PopMutR3 + (PopMutR1 - PopMutR2) * f1;
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 6
-%               strategy 6
+                % strategy 6
                     if (rand < 0.5)
                         tempPop = PopMutR3 + (PopMutR1 - PopMutR2) * opt.weight;
                     else
@@ -274,7 +274,7 @@ classdef OptAlgorithms < handle
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
             end
 
-%           Check the boundary limitation
+            % Check the boundary limitation
             loBound = repmat(opt.IndivScope(:,1)', R, 1);
             [row, col] = find( (tempPop(1:R, 1:C) - loBound) < 0 );
             tempPop((col-1).*R + row) = loBound((col-1).*R + row);
@@ -285,10 +285,10 @@ classdef OptAlgorithms < handle
             clear row col;
 
 
-%           Simulate the new population and compare their objective function values
+            % Simulate the new population and compare their objective function values
             tempValue(:, 1) = arrayfun(@(idx) feval( @SMB.simulatedMovingBed, exp(tempPop(idx, 1:C)) ), 1:R );
 
-%           if the parallel toolbox is available
+            % if the parallel toolbox is available
 %             parfor i = 1:R
 %                 tempValue(i,1)= feval( @SMB.simulatedMovingBed, exp(tempPop(i,:)) )
 %             end
@@ -301,19 +301,19 @@ classdef OptAlgorithms < handle
             clear row col;
 
 
-%           Rank the objective function value to find the minimum
+            % Rank the objective function value to find the minimum
             [minValue, minRow] = min(arrayfun(@(idx) Population(idx, C+1), 1:R));
 
             OptPopul(R+1, C+1) = minValue;
             OptPopul(1:R, 1:C) = repmat( Population(minRow, 1:C), R, 1 );
 
 
-        end 
-        
+        end
+
     end % DE
 
-%   PSO    
-    methods (Static = true, Access = 'public') 
+%   PSO
+    methods (Static = true, Access = 'public')
 
         function [XResult, YResult] = Particle_Swarm_Optimization(algOpt, params)
 % -----------------------------------------------------------------------------
@@ -336,24 +336,24 @@ classdef OptAlgorithms < handle
 
             startTime = clock;
 
-%           Get the optimizer options
+            % Get the optimizer options
             options = OptAlgorithms.getOptions_PSO(algOpt, params);
 
-%           Initialization of the population
+            % Initialization of the population
             [ParSwarm, OptSwarm, ToplOptSwarm] = OptAlgorithms.InitSwarm(options);
 
 
 %-----------------------------------------------------------------------------------------
-%           The main loop
+            % The main loop
             for k = 1:options.loopCount
 
-%               The evolution of the particles in PSO
+                % The evolution of the particles in PSO
                 [ParSwarm, OptSwarm, ToplOptSwarm] = OptAlgorithms.ParticlesEvolution...
                     (ParSwarm, OptSwarm, ToplOptSwarm, k, options);
 
-%               Abstract best information so far from the population and display it
+                % Abstract best information so far from the population and display it
                 XResult = exp( OptSwarm(options.swarmSize+1, 1:options.particleSize) );
-                YResult = OptSwarm(options.swarmSize+1, options.particleSize+1);        
+                YResult = OptSwarm(options.swarmSize+1, options.particleSize+1);
 
 
                 if algOpt.nZone == 4
@@ -365,8 +365,8 @@ classdef OptAlgorithms < handle
                 end
 
 
-%               The convergence criterion: when the standard deviation is smaller
-%               than the specified tolerance
+                % The convergence criterion: when the standard deviation is smaller
+                %   than the specified tolerance
                 if mod(k, 5) == 0
 
                     delta = std(ParSwarm(:,1:options.particleSize)) ./ mean(ParSwarm(:,1:options.particleSize));
@@ -379,10 +379,10 @@ classdef OptAlgorithms < handle
 
 
             end
-%-----------------------------------------------------------------------------------------  
+%-----------------------------------------------------------------------------------------
 
             if algOpt.enableDebug
-%                   Gather some useful information and store them
+                % Gather some useful information and store them
                 result.optTime        = etime(clock,startTime)/3600;
                 result.convergence    = delta;
                 result.correlation    = corrcoef(ParSwarm(:,1:options.particleSize));
@@ -400,7 +400,7 @@ classdef OptAlgorithms < handle
 
         function opt = getOptions_PSO(algOpt, params)
 % -----------------------------------------------------------------------------
-%  The parameters for the Optimizer 
+%  The parameters for the Optimizer
 %
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
@@ -431,17 +431,17 @@ classdef OptAlgorithms < handle
 
             opt = [];
 
-%           The number of population of the swarm intellectual (SI)
+            % The number of population of the swarm intellectual (SI)
             opt.swarmSize      = 20;
 
-%           The dimension of the optimized parameters
+            % The dimension of the optimized parameters
             opt.particleSize   = length(fieldnames(params));
 
-%           the row represents the parameter, while the column denotes the upbound and lowerbound
-            opt.paramsRange    = log(algOpt.paramBound);   
+            % The row represents the parameter, while the column denotes the upbound and lowerbound
+            opt.paramsRange    = log(algOpt.paramBound);
             opt.loopCount      = 200;
 
-%           check out the dimension of the set of parameters, and the boundary limitation
+            % Check out the dimension of the set of parameters, and the boundary limitation
             [row, col] = size(opt.particleSize);
             if row > 1 || col > 1
                 error('getOptions_PSO: The initialized dimension of the set of parameters might be wrong');
@@ -452,7 +452,7 @@ classdef OptAlgorithms < handle
                 error('getOptions_PSO: Please check your setup of the range of parameters');
             end
 
-%           Those are the specific parameters for the PSO algorithm
+            % Those are the specific parameters for the PSO algorithm
             opt.wMax           = 0.9;
             opt.wMin           = 0.4;
             opt.accelCoeff     = [0.6, 0.4];
@@ -463,7 +463,7 @@ classdef OptAlgorithms < handle
             opt.compValue      = 1e5;
 
         end
-    
+
         function [ParSwarm,OptSwarm,ToplOptSwarm] = InitSwarm(opt)
 % -----------------------------------------------------------------------------
 % The initilization of the population
@@ -496,25 +496,25 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
-%           Check out the variables which are needed in this funciton
+            % Check out the variables which are needed in this funciton
             if nargout < 3
                 error('InitSwarm: There are not enough output in the subroutine InitSwarm');
             end
 
 
-%           Initilization of the parameters, velocity of parameters   
+            % Initilization of the parameters, velocity of parameters
             ParSwarm = rand(opt.swarmSize, 2 * opt.particleSize + 1);
 
-%           Use vectorization to speed up, it's actually equivalent to the for-loop  
+            % Use vectorization to speed up, it's actually equivalent to the for-loop
             ParSwarm(:,1:opt.particleSize) = repmat(opt.paramsRange(:,1)',opt.swarmSize,1) + ...
-                ParSwarm(:,1:opt.particleSize) .* repmat( (opt.paramsRange(:,2) - opt.paramsRange(:,1))',opt.swarmSize,1 );    
+                ParSwarm(:,1:opt.particleSize) .* repmat( (opt.paramsRange(:,2) - opt.paramsRange(:,1))',opt.swarmSize,1 );
 
 
-%           Simulation of the sampled points, using subroutine simulatedMovingBed
+            % Simulation of the sampled points, using subroutine simulatedMovingBed
             ParSwarm(: ,2 * opt.particleSize + 1) = arrayfun( @(idx) feval(@SMB.simulatedMovingBed,...
                 exp(ParSwarm(idx, 1:opt.particleSize)) ), 1:opt.swarmSize );
 
-%           The statistics of the population
+            % The statistics of the population
             OptSwarm = zeros(opt.swarmSize + 1, opt.particleSize + 1);
             [minValue, row] = min(ParSwarm(:,2 * opt.particleSize + 1));
 
@@ -550,20 +550,20 @@ classdef OptAlgorithms < handle
             if nargin ~= 5
                 error('ParticlesEvolution: There are error in the input of the function ParticlesEvolution')
             end
-            if nargout ~= 3 
+            if nargout ~= 3
                 error('ParticlesEvolution: There are error in the output of the function ParticlesEvolution')
             end
 
 
-%           Different strategies of the construction of the weight
+            % Different strategies of the construction of the weight
             weight = opt.wMax - CurCount * ((opt.wMax - opt.wMin) / opt.loopCount);
 %             w=0.7;
 %             w=(MaxW-MinW)*(CurCount/LoopCount)^2+(MinW-MaxW)*(2*CurCount/LoopCount)+MaxW;
 %             w=MinW*(MaxW/MinW)^(1/(1+10*CurCount/LoopCount));
 
 
-%           Different options of the accelaration coefficients
-            c1 = opt.accelCoeff(1); 
+            % Different options of the accelaration coefficients
+            c1 = opt.accelCoeff(1);
             c2 = opt.accelCoeff(2);
 
 %             c1=2.8;
@@ -574,17 +574,17 @@ classdef OptAlgorithms < handle
 %             c2=4-c1;
 
 
-%           LocalOptDiff: Each particle compares the difference of current position and the best
-%           position it ever encountered
+            % LocalOptDiff: Each particle compares the difference of current position and the best
+            %   position it ever encountered
             [ParRow, ParCol] = size(ParSwarm);
             ParCol = (ParCol - 1) / 2;
-            LocalOptDiff = OptSwarm(1:ParRow, 1:ParCol) - ParSwarm(:, 1:ParCol);    
+            LocalOptDiff = OptSwarm(1:ParRow, 1:ParCol) - ParSwarm(:, 1:ParCol);
 
 
             for row = 1:ParRow
 
-%               GlobalOptDiff: Each particle compares the difference of current position and the best
-%               position it ever encountered
+                % GlobalOptDiff: Each particle compares the difference of current position and the best
+                %   position it ever encountered
                 if strcmp(opt.topology, 'without Topology')
                     GlobalOptDiff = OptSwarm(ParRow+1, 1:ParCol) - ParSwarm(row, 1:ParCol);
                 end
@@ -593,19 +593,19 @@ classdef OptAlgorithms < handle
                     GlobalOptDiff = ToplOptSwarm(row, 1:ParCol) - ParSwarm(row, 1:ParCol);
                 end
 
-%               The evolution of the velocity, according to the LocalOptDiff and GlobalOptDiff   
-%               TempVelocity = weight .* ParSwarm(row,:) + c1 * unifrnd(0,1.0) .* LocalOptDiff(row,:)...
-%                   + c2 * unifrnd(0,1.0) .* GlobalOptDiff;
+                % The evolution of the velocity, according to the LocalOptDiff and GlobalOptDiff
+                % TempVelocity = weight .* ParSwarm(row,:) + c1 * unifrnd(0,1.0) .* LocalOptDiff(row,:)...
+                %   + c2 * unifrnd(0,1.0) .* GlobalOptDiff;
                 TempVelocity = weight .* ParSwarm(row, ParCol+1 : 2*ParCol) + c1 *LocalOptDiff(row, :) + c2 * GlobalOptDiff;
 
 
-%               check the boundary limitation of the Velocity
+                % Check the boundary limitation of the Velocity
                 velocityBound = (opt.paramsRange(:,2)-opt.paramsRange(:,1) )';
 
                 [~, veCol] = find( abs(TempVelocity(:, 1:ParCol)) > velocityBound  );
                 TempVelocity(veCol) = velocityBound(veCol);
 
-%               Value Assignment: store the updated Velocity into the matrix ParSwarm
+                % Value Assignment: store the updated Velocity into the matrix ParSwarm
                 ParSwarm(row, ParCol+1 : 2*ParCol) = TempVelocity;
 
 
@@ -613,11 +613,11 @@ classdef OptAlgorithms < handle
                 step_size = 1;
 %                 step_size = 0.729;
 
-%               The evolution of the current positions, according to the Velocity and the step size
+                % The evolution of the current positions, according to the Velocity and the step size
                 ParSwarm(row, 1:ParCol) = ParSwarm(row, 1:ParCol) + step_size * TempVelocity;
 
 
-%               Check the boundary limitation
+                % Check the boundary limitation
                 loBound = repmat(opt.paramsRange(:,1)', ParRow, 1);
                 [loRow, loCol] = find( (ParSwarm(1:ParRow, 1:ParCol) - loBound) < 0 );
                 ParSwarm((loCol-1).*ParRow + loRow) = loBound((loCol-1).*ParRow + loRow);
@@ -628,20 +628,20 @@ classdef OptAlgorithms < handle
                 clear loRow loCol upRow upCol veCol;
 
 
-%               Simulation of the sampled points, using subroutine simulatedMovingBed
+                % Simulation of the sampled points, using subroutine simulatedMovingBed
                 ParSwarm(row, 2*ParCol+1) = feval( @SMB.simulatedMovingBed, exp(ParSwarm(row, 1:ParCol)) );
 
-%               if the updated position is better than the current position, the
-%               particle flies to the updated positon; otherwise, keep still in current position
-%               Update the LocalOpt for each particle
+                % If the updated position is better than the current position, the particle flies
+                %   to the updated positon; otherwise, keep still in current position
+                % Update the LocalOpt for each particle
                 if ParSwarm(row, 2*ParCol+1) < OptSwarm(row, ParCol+1)
                     OptSwarm(row, 1:ParCol) = ParSwarm(row, 1:ParCol);
                     OptSwarm(row, ParCol+1) = ParSwarm(row, 2*ParCol+1);
                 end
 
-%               Usint different type of the topology between particles, the global
-%               optimal position is transferred to the swarm with different strategy
-%               Update the GlobalOpt around the whole group
+                % Using different type of the topology between particles, the global
+                %   optimal position is transferred to the swarm with different strategy
+                % Update the GlobalOpt around the whole group
                 if strcmp(opt.topology, 'Random Topology')
 
                     for i = 1: opt.randCount
@@ -658,13 +658,13 @@ classdef OptAlgorithms < handle
 
                     ToplOptSwarm(row,:) = OptSwarm(minrow,1:ParCol);
 
-                elseif strcmp(opt.topology, 'Ring Topology')            
+                elseif strcmp(opt.topology, 'Ring Topology')
 
                     if row == 1
                         ValTemp2 = OptSwarm(ParRow, ParCol+1);
                     else
                         ValTemp2 = OptSwarm(row-1, ParCol+1);
-                    end     
+                    end
 
                     if row == ParRow
                         ValTemp3 = OptSwarm(1, ParCol+1);
@@ -693,34 +693,34 @@ classdef OptAlgorithms < handle
 
                 end
 
-            end   
+            end
 
 
-%           Statistics
+            % Statistics
             [minValue, row] = min(arrayfun(@(idx) OptSwarm(idx, ParCol+1), 1: ParRow));
 
             OptSwarm(ParRow+1, 1:ParCol) = OptSwarm(row,1:ParCol);
-            OptSwarm(ParRow+1, ParCol+1) = minValue; 
+            OptSwarm(ParRow+1, ParCol+1) = minValue;
 
         end
-        
+
     end % PSO
 
-%   MADE    
+%   MADE
     methods (Static = true, Access = 'public')
 
         function [xValue, yValue] = Metropolis_Adjusted_Differential_Evolution(algOpt, params)
 % -----------------------------------------------------------------------------
 % Metropolis Adjusted Differential Evolution algorithm (MADE)
 %
-% MADE optimizes a problem by combining the prominent features of Metropolis 
-% Hastings algorithm and Differential Evolution algorithm. In the upper level, 
-% each chain is accepted with the Metropolis probability, while in the lower 
-% level, chains have an evolution with resort to heuristic method, Differential 
+% MADE optimizes a problem by combining the prominent features of Metropolis
+% Hastings algorithm and Differential Evolution algorithm. In the upper level,
+% each chain is accepted with the Metropolis probability, while in the lower
+% level, chains have an evolution with resort to heuristic method, Differential
 % Evolution algorithm.
 %
 % Unlike the algorithm, PSO and DE, the MADE obtain the parameter distributions
-% rather than the single parameter set. It provides the confidential intervals 
+% rather than the single parameter set. It provides the confidential intervals
 % for each parameter, since it is based on the Markov Chain Monte Carlo (MCMC).
 %
 %  Parameter:
@@ -728,27 +728,27 @@ classdef OptAlgorithms < handle
 %        And let the main function informed that which parameters are need
 %        to be optimized
 % -----------------------------------------------------------------------------
-    
-    
+
+
             startTime = clock;
 
-%           Get the sampler options
+            % Get the sampler options
             opt = OptAlgorithms.getOptions_MADE(algOpt, params);
 
-%           Initialization of the chains
+            % Initialization of the chains
             states = OptAlgorithms.initChains(opt);
 
-%           Preallocation
+            % Preallocation
             chain       = zeros(opt.Nchain, opt.dimension+1, opt.nsamples);
 %             sigmaChain  = zeros(opt.nsamples, opt.Nchain);
 
-%           Calculate the initial sigma values
-%             sigmaSqu0 = sigmaSqu; n0 = 1; 
+            % Calculate the initial sigma values
+%             sigmaSqu0 = sigmaSqu; n0 = 1;
             acpt = 0;
             sigmaSqu = 0.01;
 
 %-----------------------------------------------------------------------------------------
-%           The main loop
+            % The main loop
             for i = 1: opt.nsamples
 
                 fprintf('Iter: %5d    average acceptance: %3d,    ', i, fix(acpt/(opt.Nchain*i)*100));
@@ -756,7 +756,7 @@ classdef OptAlgorithms < handle
 
                 [states, acpt] = OptAlgorithms.MADE_sampler(states, sigmaSqu, acpt, opt, algOpt);
 
-%               Append the newest states to the end of the 3-D matrix
+                % Append the newest states to the end of the 3-D matrix
                 chain(:,:,i) = states;
 
                 if mod(i, opt.convergint) == 0 && i > opt.convergint
@@ -771,7 +771,7 @@ classdef OptAlgorithms < handle
                 end
 
 
-%               Variance of error distribution (sigma) was treated as a parameter to be estimated.
+                % Variance of error distribution (sigma) was treated as a parameter to be estimated.
 %                 for k = 1:opt.Nchain
 %                     sigmaSqu(k)  = 1 ./ OptAlgorithms.GammarDistribution(1, 1, (n0 + opt.nr)/2, 2 ./(n0 .* sigmaSqu0(k)...
 %                         + chain(k, opt.dimension+1, i)));
@@ -782,11 +782,11 @@ classdef OptAlgorithms < handle
 %                     warning('There is something wrong in the sigma evolution, since sigma square must be nonegtive');
 %                 end
 
-            end    
-%----------------------------------------------------------------------------------------- 
+            end
+%-----------------------------------------------------------------------------------------
 
 
-%           Discard the former 50%, retain only the last 50 percentage of the chains.
+            % Discard the former 50%, retain only the last 50 percentage of the chains.
             if indx < opt.nsamples
                 id = floor(0.5*indx);
             else
@@ -803,7 +803,7 @@ classdef OptAlgorithms < handle
             end
 
 
-%           Thinning of the chains
+            % Thinning of the chains
             result.Population = zeros(id * opt.Nchain / opt.thinint, opt.dimension+1);
             for i = 1: id*opt.Nchain
                 if mod(i, opt.thinint) == 0
@@ -813,10 +813,10 @@ classdef OptAlgorithms < handle
 
 
             if algOpt.enbaleDebug
-%                   Gather some useful information and store them
+                % Gather some useful information and store them
                 clear samplers
                 [yValue, row]         = min(result.Population(:,opt.dimension+1));
-                xValue                = result.Population(row,1:opt.dimension);  
+                xValue                = result.Population(row,1:opt.dimension);
                 result.optTime        = etime(clock,startTime) / 3600;
                 result.convergDiagno  = R;
                 result.correlation    = corrcoef(result.Population(:,1:opt.dimension));
@@ -825,8 +825,8 @@ classdef OptAlgorithms < handle
                 result.acceptanceRate = fix( acpt / (opt.Nchain * indx) * 100 );
 
                 result.chain          = chain;
-%                     result.sigmaChain     = sigmaChain; 
-                result.xValue         = xValue; 
+%                result.sigmaChain     = sigmaChain;
+                result.xValue         = xValue;
                 result.yValue         = yValue;
 
                 save(sprintf('result_%3d.mat', fix(rand*1000)), 'result');
@@ -834,7 +834,7 @@ classdef OptAlgorithms < handle
 
 
 
-%           Figures plotting
+                % Figures plotting
                 figure(1);clf
                 for i = 1: opt.dimension
 
@@ -869,12 +869,12 @@ classdef OptAlgorithms < handle
                 end
 
             end
-    
-        end    
-   
+
+        end
+
         function opt = getOptions_MADE(algOpt, params)
 % -----------------------------------------------------------------------------
-%  The parameters for the Optimizer 
+%  The parameters for the Optimizer
 %
 %  Parameter:
 %       - params. It is the specified parameters from the main function.
@@ -889,7 +889,7 @@ classdef OptAlgorithms < handle
 %           + nsamples. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 % -----------------------------------------------------------------------------
@@ -900,10 +900,10 @@ classdef OptAlgorithms < handle
             opt.Nchain        = 20;
             opt.dimension     = length(fieldnames(params));
             opt.bounds        = log(algOpt.paramBound)';
-            opt.nsamples      = 200; 
+            opt.nsamples      = 200;
 
 
-%           Check out the dimension of the set of parameters, and the boundary limitation
+            % Check out the dimension of the set of parameters, and the boundary limitation
             [row, col] = size(opt.dimension);
             if row > 1 || col > 1
                 error('getOptions_MADE: The initialized dimension of the set of parameters might be wrong');
@@ -914,7 +914,7 @@ classdef OptAlgorithms < handle
                 error('getOptions_MADE: Please check your setup of the range of parameters');
             end
 
-%           Those are the specific parameters for the Markov Chain Simulation
+            % Those are the specific parameters for the Markov Chain Simulation
             opt.thinint       = 2;
             opt.convergint    = 50;
             opt.burnin        = 300;
@@ -923,7 +923,7 @@ classdef OptAlgorithms < handle
             opt.iterMax       = 10000;
             opt.nr            = 1000;
 
-%           Those are the specific parameters for the DE algorithm
+            % Those are the specific parameters for the DE algorithm
             opt.cr_Probability  = 0.5;
             opt.weight          = 0.3;
             opt.enablePlot      = 1;
@@ -947,7 +947,7 @@ classdef OptAlgorithms < handle
 %           + loopCount. The maximum number of algorithm's iteration
 %           + cr_Probability. The cross-over probability in DE's formula
 %           + weight. The weight coefficients in DE's formula
-%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to 
+%           + strategy. There are 1,2,3,4,5,6 strategies in DE algorithm to
 %               deal with the cross-over and mutation. As for detais, we
 %               will refer your the original paper of Storn and Price
 %
@@ -957,15 +957,15 @@ classdef OptAlgorithms < handle
 % -----------------------------------------------------------------------------
 
 
-        %   Initilization of the chains   
+            % Initilization of the chains
             initChain = rand(opt.Nchain, opt.dimension+1);
 
-        %   Use vectorization to speed up, it's actually equivalent to the for-loop 
+            % Use vectorization to speed up, it's actually equivalent to the for-loop
             initChain(:,1:opt.dimension) = repmat(opt.bounds(1,:),opt.Nchain,1) + ...
-                initChain(:,1:opt.dimension) .* repmat( (opt.bounds(2,:) - opt.bounds(1,:)),opt.Nchain,1 );    
+                initChain(:,1:opt.dimension) .* repmat( (opt.bounds(2,:) - opt.bounds(1,:)),opt.Nchain,1 );
 
 
-        %   Simulation of the sampled points, using subroutine simulatedMovingBed    
+            % Simulation of the sampled points, using subroutine simulatedMovingBed
             initChain(:,opt.dimension+1) = arrayfun( @(idx) feval( @SMB.simulatedMovingBed, ...
                 exp( initChain(idx,1:opt.dimension)) ), 1: opt.Nchain);
 
@@ -977,10 +977,10 @@ classdef OptAlgorithms < handle
 %-----------------------------------------------------------------------------------------
 
 
-%           The evolution of the chains in DE
+            % The evolution of the chains in DE
             [tempPopulation, OptPopul] = OptAlgorithms.MADE_DE_Evolution(states, opt);
 
-%           Abstract best information so far from the population and display it
+            % Abstract best information so far from the population and display it
             XResult = exp(OptPopul(1, 1:opt.dimension));
             YResult = OptPopul(opt.Nchain+1, opt.dimension+1);
 
@@ -991,7 +991,7 @@ classdef OptAlgorithms < handle
             end
 
 
-%           For each chain, it is accepted in terms of the Metropolis probability
+            % For each chain, it is accepted in terms of the Metropolis probability
             for j = 1: opt.Nchain
 
                 proposal = tempPopulation(j, 1:opt.dimension);
@@ -999,7 +999,7 @@ classdef OptAlgorithms < handle
                 if any(proposal < opt.bounds(1,:)) || any(proposal > opt.bounds(2,:))
 
                     rho = 0;
-                else            
+                else
 
                     newSS = feval( @SMB.simulatedMovingBed, exp(proposal) );
                     SS    = states(j, opt.dimension+1);
@@ -1032,8 +1032,8 @@ classdef OptAlgorithms < handle
 %       - Population. The population of the particles, correspondingly the objective value
 %       - OptPopul. The best fit found among the population.
 % -----------------------------------------------------------------------------
-    
-    
+
+
             R = opt.Nchain;
             C = opt.dimension;
             [minValue, row] = min(Population(:,opt.dimension+1));
@@ -1071,22 +1071,22 @@ classdef OptAlgorithms < handle
 
             switch opt.strategy
                 case 1
-%               strategy 1
+                % strategy 1
                     tempPop = PopMutR3 + (PopMutR1 - PopMutR2) * opt.weight;
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 2
-%               strategy 2
+                % strategy 2
                     tempPop = Population(1:R, 1:C) + opt.weight * (OptPopul(1:R, 1:C) - Population(1:R, 1:C)) + (PopMutR1 - PopMutR2) * opt.weight;
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 3
-%               strategy 3
+                % strategy 3
                     tempPop = OptPopul(1:R, 1:C) + (PopMutR1 - PopMutR2) .* ((1 -0.9999) * rand(R, C) + opt.weight);
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 4
-%               strategy 4
+                % strategy 4
                     f1 = (1-opt.weight) * rand(R, 1) + opt.weight;
                     for i = 1: C
                         PopMutR5(:, i) = f1;
@@ -1096,13 +1096,13 @@ classdef OptAlgorithms < handle
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 5
-%               strategy 5
+                % strategy 5
                     f1 = (1-opt.weight) * rand + opt.weight;
                     tempPop = PopMutR3 + (PopMutR1 - PopMutR2) * f1;
                     tempPop = Population(1:R, 1:C) .* cr_old + tempPop .* cr_mutation;
 
                 case 6
-%               strategy 6
+                % strategy 6
                     if (rand < 0.5)
                         tempPop = PopMutR3 + (PopMutR1 - PopMutR2) * opt.weight;
                     else
@@ -1113,7 +1113,7 @@ classdef OptAlgorithms < handle
             end
 
 
-%           Check the boundary limitation
+            % Check the boundary limitation
             loBound = repmat(opt.bounds(1,:), R, 1);
             [row, col] = find( (tempPop(1:R, 1:C) - loBound) < 0 );
             tempPop((col-1).*R + row) = loBound((col-1).*R + row);
@@ -1124,12 +1124,12 @@ classdef OptAlgorithms < handle
             clear row col;
 
 
-        end  
+        end
 
         function y = GammarDistribution(m, n, a, b)
 %-----------------------------------------------------------------------------------------
 % GammarDistrib random deviates from gamma distribution
-% 
+%
 %  GAMMAR_MT(M,N,A,B) returns a M*N matrix of random deviates from the Gamma
 %  distribution with shape parameter A and scale parameter B:
 %
@@ -1194,13 +1194,13 @@ classdef OptAlgorithms < handle
 %-----------------------------------------------------------------------------------------
 
 
-%           Split each chain into half and check all the resulting half-sequences
-            index           = floor(0.5 * idx); 
+            % Split each chain into half and check all the resulting half-sequences
+            index           = floor(0.5 * idx);
             eachChain       = zeros(index, opt.dimension);
             betweenMean     = zeros(opt.Nchain, opt.dimension);
-            withinVariance  = zeros(opt.Nchain, opt.dimension);   
+            withinVariance  = zeros(opt.Nchain, opt.dimension);
 
-%           Mean and variance of each half-sequence chain
+            % Mean and variance of each half-sequence chain
             for i = 1: opt.Nchain
                 for j = 1: opt.dimension
                     for k = 1: index
@@ -1213,25 +1213,25 @@ classdef OptAlgorithms < handle
 
             end
 
-%           Between-sequence variance
+            % Between-sequence variance
             Sum = 0;
             for i = 1: opt.Nchain
                Sum = Sum + (betweenMean(i,:) - mean(betweenMean)) .^ 2;
             end
             B = Sum ./ (opt.Nchain-1);
 
-%           Within-sequence variance
+            % Within-sequence variance
             Sum = 0;
             for i = 1: opt.Nchain
                 Sum = Sum + withinVariance(i,:);
             end
             W = Sum ./ opt.Nchain;
 
-%           Convergence diagnostics
+            % Convergence diagnostics
             R = sqrt(1 + B ./ W);
 
         end
-        
+
     end % MADE
 
 
@@ -1249,7 +1249,7 @@ classdef OptAlgorithms < handle
 % And the sequence of ports are D E (ext_1 ext_2) F R constantly. The selective ranges of each pointer
 % (E,F,R) are shown as follows in the binary scenario:
 %           0 1 2 3 4 5 6 7 8 9 10 ...
-%           D 
+%           D
 %             E < ------- > E      : extract_pool
 %               F < ------- > F    : feed_pool
 %                 R < ------- > R  : raffinate_pool
@@ -1258,7 +1258,7 @@ classdef OptAlgorithms < handle
 
             nodeIndex = opt.nColumn -1 ;
 
-%           Preallocate of the structure matrix
+            % Preallocate of the structure matrix
             structure = zeros(opt.structNumber,opt.nZone+1);
 
             for i = 1:opt.structNumber
@@ -1294,7 +1294,7 @@ classdef OptAlgorithms < handle
         function structID = structure2structID(opt,structure)
 % -----------------------------------------------------------------------------
 % This is the rountine that decode the structure into structID for simulation
-% 
+%
 % For instance, the structure is [0, 3, 5, 9] in a binary situation with column amount 10
 % the structID is [3,2,4,1], there are three in the zone I, two in zone II, four in
 % zone III, one in zone IV
@@ -1312,25 +1312,25 @@ classdef OptAlgorithms < handle
         function [theta, objective] = continuousUnitOptimization(opt, params, optimization_method)
 % -----------------------------------------------------------------------------
         % This is the main function of the optimization of the Simulated Moving Bed
-        % The optimized parameters in this case are 
-        %       - columnLength 
-        %       - switchTime 
-        %       - flowRates_recycle 
+        % The optimized parameters in this case are
+        %       - columnLength
+        %       - switchTime
+        %       - flowRates_recycle
         %       - flowRate_feed
         %       - flowRate_desorbent
         %       - flowRate_extract
-        % 
+        %
         %       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_E}
-        % 
+        %
         % In the FIVE-ZONE, the optimized parameters are
-        %       - columnLength 
-        %       - switchTime 
-        %       - flowRates_recycle 
+        %       - columnLength
+        %       - switchTime
+        %       - flowRates_recycle
         %       - flowRate_feed
         %       - flowRate_desorbent
         %       - flowRate_extract_1
         %       - flowRate_extract_2
-        % 
+        %
         %       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_{E1}, Q_{E2}}
         %
         % There are four types of algorithms are integrated into this code, either
@@ -1339,7 +1339,7 @@ classdef OptAlgorithms < handle
         %       - Differential Evolution (DE)
         %       - Metropolis Adjusted Differential Evolution (MADE)
         %       - Riemann Manifold Metropolis Adjusted Langevin Algorithm (MLA)
-        % 
+        %
 % -----------------------------------------------------------------------------
 
 
@@ -1360,14 +1360,14 @@ classdef OptAlgorithms < handle
 
 %             elseif isfield(optimization_method, 'Riemann_Manifold_Metropolis_Adjusted_Langevin') ...
 %                     && optimization_method.Riemann_Manifold_Metropolis_Adjusted_Langevin
-% 
+%
 %                 [theta, objective] = Riemann_Manifold_Metropolis_Adjusted_Langevin(opt, params);
 
             elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
                     && optimization_method.Deterministic_algorithm_fmincon
 
-%               This is the demonstration case for the binary separation under FOUR-ZONE, 
-%                   in which 6 decision variables are optimized.      
+                % This is the demonstration case for the binary separation under FOUR-ZONE,
+                %   in which 6 decision variables are optimized.
                 initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
 
                 loBound = opt.paramBound(:,1);
@@ -1396,21 +1396,21 @@ classdef OptAlgorithms < handle
         function mutant_struct = discreteMutation(opt, structure)
 % -----------------------------------------------------------------------------
 % This is the mutation part of the upper-level structure optimization algorithm
-% 
-% First of all, two random selected structures are prepared; 
+%
+% First of all, two random selected structures are prepared;
 % Then the optimal structure until now is recorded;
 % Lastly, the mutant_struct = rand_struct_1 &+ rand_struct_2 &+ optima_struct
 % -----------------------------------------------------------------------------
 
 
-%           Record the optimal structure so far and select two random structures
+            % Record the optimal structure so far and select two random structures
             rand_struct_1 = structure(randi(structNumber), 1:opt.nZone);
             rand_struct_2 = structure(randi(structNumber), 1:opt.nZone);
 
             [~, id] = min(structure(:,opt.nZone+1));
             optima_struct = structure(id, 1:opt.nZone);
 
-%           Preallocate of the mutation structure
+            % Preallocate of the mutation structure
             mutant_struct = zeros(1,nZone);
 
             for i = 1:opt.nZone
@@ -1453,11 +1453,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and

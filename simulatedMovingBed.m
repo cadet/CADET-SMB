@@ -10,9 +10,9 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 % Extract                          Feed       |    Extract                           Feed
 %       \                          /          |         \                            /
 %        --------Zone II(b)--------           |          --------Zone II(c/d)--------
-%        |                        |           |          |                          | 
+%        |                        |           |          |                          |
 % Zone I(a)                  Zone III(c)      |     Zone I(a/b)               Zone III(e/f)
-%        |                        |           |          |                          | 
+%        |                        |           |          |                          |
 %        --------Zone IV(d)--------           |          --------Zone IV(h/g)--------
 %       /                          \          |         /                            \
 % Desorbent                       Raffinate   |   Desorbent                         Raffinate
@@ -21,9 +21,9 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 % Extract                            Feed       |    Extract                         Feed
 %       \                            /          |         \                          /
 %        -- ----Zone II(d/e/f)-------           |          -----Zone II(e/f/g/h)-----
-%        |                          |           |          |                        | 
+%        |                          |           |          |                        |
 % Zone I(c/b/a)                Zone III(g/h/i)  |  Zone I(a/b/c/d)           Zone III(i/j/k/l)
-%        |                          |           |          |                        | 
+%        |                          |           |          |                        |
 %        -------Zone IV(l/k/j)-------           |          -----Zone IV(p/o/n/m)-----
 %       /                            \          |         /                          \
 % Desorbent                         Raffinate   |   Desorbent                       Raffinate
@@ -33,13 +33,13 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 %    Ext2                          Feed       |      Ext2                            Feed
 %       \                          /          |         \                            /
 %        --------Zone II(c)--------           |          --------Zone III(e/f)--------
-%        |                        |           |          |                           | 
+%        |                        |           |          |                           |
 % Zone II(b)                      |           |     Zone II(d/c)                     |
 %        |                        |           |          |                           |
 % Ext1 --                    Zone IV(d)       |   Ext1 --                        Zone IV(g/h)
 %        |                        |           |          |                           |
 % Zone I(a)                       |           |     Zone I(b/a)                      |
-%        |                        |           |          |                           | 
+%        |                        |           |          |                           |
 %        --------Zone V(e)---------           |          ---------Zone V(j/i)---------
 %       /                          \          |         /                            \
 % Desorbent                       Raffinate   |   Desorbent                         Raffinate
@@ -48,13 +48,13 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 %    Ext2                            Feed       |      Ext2                              Feed
 %       \                            /          |         \                              /
 %        -------Zone II(g/h/i)-------           |          -------Zone III(i/g/k/l)-------
-%        |                          |           |          |                             | 
+%        |                          |           |          |                             |
 % Zone II(f/e/d)                    |           | Zone II(h/g/f/e)                       |
 %        |                          |           |          |                             |
 % Ext1 --                    Zone IV(j/k/l)     |   Ext1 --                        Zone IV(m/n/o/p)
 %        |                          |           |          |                             |
 % Zone I(c/b/a)                     |           | Zone I(d/c/b/a)                        |
-%        |                          |           |          |                             | 
+%        |                          |           |          |                             |
 %        -------Zone V(o/n/m)--------           |          -------Zone V(t/s/r/q)---------
 %       /                            \          |         /                              \
 % Desorbent                         Raffinate   |   Desorbent                           Raffinate
@@ -68,7 +68,7 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
     tTotal = tic;
 
-%   Construct the string in order to tell simulator the calculation sequence
+    % Construct the string in order to tell simulator the calculation sequence
     stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
                  'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'...
                  'a1' 'b1' 'c1' 'd1' 'e1' 'f1' 'g1' 'h1' 'i1' 'j1' 'k1' 'l1' 'm1'...
@@ -86,12 +86,12 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
         [opt, interstVelocity, Feed] = getParameters_unit_2(varargin{:});
     end
 
-%   Check the interstitial velocity, if anyone was negative, stop the simulation
-%       and assign a very big objective function value to this column configuration.
+    % Check the interstitial velocity, if anyone was negative, stop the simulation
+    %   and assign a very big objective function value to this column configuration.
     flag = SMB.interstVelocityCheck(interstVelocity, opt);
     if flag == 1
-        objective = 1e3;  
-        return;  
+        objective = 1e5;
+        return;
     end
 
     if opt.enable_CSTR && opt.enable_DPFR
@@ -105,18 +105,18 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
 %   Preallocation
 %----------------------------------------------------------------------------------------
-%   Construct the string for simulation sequence
+    % Construct the string for simulation sequence
     string = char(stringSet(1:opt.nColumn));
 
-%   If num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
-%       num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
-    string = circshift(string, 0); 
+    % If num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
+    %   num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
+    string = circshift(string, 0);
     startingPointIndex = SMB.stringIndexing(opt, string(1));
 
-%   Initialize the starting points, currentData
+    % Initialize the starting points, currentData
     currentData    = cell(1, opt.nColumn);
     for k = 1:opt.nColumn
-%       currentData stores the outlets of each interval of columns
+        % currentData stores the outlets of each interval of columns
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
         currentData{k}.lastState = [];
@@ -128,7 +128,7 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
         end
     end
 
-%   Number the columns for the sake of plotting
+    % Number the columns for the sake of plotting
     columnNumber = cell(1, opt.nColumn);
     for k = 1:opt.nColumn
         if k == 1
@@ -140,31 +140,31 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
     sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
 
-%   Specify the column for the convergence checking
-%   Usually, the column after the Feed node is adopted
+    % Specify the column for the convergence checking
+    % Usually, the column after the Feed node is adopted
     if opt.nZone == 4
         convergIndx = sum(opt.structID(1:2));
     elseif opt.nZone == 5
         convergIndx = sum(opt.structID(1:3));
     end
 
-%   convergPrevious is used for stopping criterion
+    % convergPrevious is used for stopping criterion
     convergPrevious = currentData{convergIndx}.outlet.concentration;
 
-%   After switching, dummyProfile is used to transfer concentration profile of last column
-%       to the inlet port of the first column
+    % After switching, dummyProfile is used to transfer concentration profile of last column
+    %   to the inlet port of the first column
     dummyProfile = currentData{sequence.(string(end))}.outlet;
 
-%   The dimension of plotData (columnNumber x switches)
-%          t_s   2*t_s  3*t_s  4*t_s
-%          {1}    {1}    {1}    {1}
-%          {2}    {2}    {2}    {2}
-%          {3}    {3}    {3}    {3}
-%          {4}    {4}    {4}    {4}
+    % The dimension of plotData (columnNumber x switches)
+    %          t_s   2*t_s  3*t_s  4*t_s
+    %          {1}    {1}    {1}    {1}
+    %          {2}    {2}    {2}    {2}
+    %          {3}    {3}    {3}    {3}
+    %          {4}    {4}    {4}    {4}
     plotData = cell(opt.nColumn,opt.nColumn);
 
-%   The data for plotting dynamic trajectory.
-%   The row represents the number of withdrawn ports
+    % The data for plotting dynamic trajectory.
+    % The row represents the number of withdrawn ports
     if opt.nZone == 4
         dyncData = cell(2, opt.nMaxIter);
     elseif opt.nZone == 5
@@ -174,19 +174,19 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
 %   Simulations
 %----------------------------------------------------------------------------------------
-%   Interactive plotting
+    % Interactive plotting
     if opt.enableDebug
         fprintf(' ============================================= \n');
         fprintf(' ---- Switch ---- Cycle ---- CSS_relError ---- \n');
     end
 
-%   Main loop
+    % Main loop
     for i = 1:opt.nMaxIter
 
-%       Switching the ports, in the countercurrent manner of fluid
+        % Switching the ports, in the countercurrent manner of fluid
         sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
-%       Load the feed inlets of second sub-unit from the outlets of first sub-unit
+        % Load the feed inlets of second sub-unit from the outlets of first sub-unit
         if iter == 2
             for ii = 1:opt.nComponents
                 load('intermediateFeedConc.mat');
@@ -194,8 +194,8 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
             end
         end
 
-%       The simulation of columns within a SMB unit by the sequence, 
-%           say, 'a', 'b', 'c', 'd' in four-column cases
+        % The simulation of columns within a SMB unit by the sequence,
+        %   say, 'a', 'b', 'c', 'd' in four-column cases
         for k = string'
 
             % The node balance: transmission of concentration, column state, velocity and so on
@@ -230,10 +230,15 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
             end
 
+
+            % The concentration profile of column string(end) is also stored as the dummyProfile
+            % because of a technical problem
             if strcmp(k, string(end))
-                dummyProfile = outletProfile;
+                dummyProfile = outletProfile.outlet;
             end
-            currentData{sequence.(k)}.outlet     = outletProfile;
+
+            currentData{sequence.(k)}.outlet     = outletProfile.outlet;
+            currentData{sequence.(k)}.colState   = outletProfile.column;
             currentData{sequence.(k)}.lastState  = lastState;
 
         end
@@ -249,10 +254,10 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
             dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
         end
 
-%       Plot the dynamic trajectory
+        % Plot the dynamic trajectory
         SMB.plotDynamic(opt, dyncData(:,1:i), i);
 
-%       Store the data of one round (opt.nColumn switches), into plotData
+        % Store the data of one round (opt.nColumn switches), into plotData
         index = mod(i, opt.nColumn);
         if index == 0
             plotData(:,opt.nColumn) = currentData';
@@ -260,9 +265,11 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
             plotData(:,index) = currentData';
         end
 
+        % Plot the outlet profile of each column in one round
+        SMB.plotFigures(opt, currentData);
 
-%       Convergence criterion was adopted in each nColumn iteration
-%           ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
+        % Convergence criterion was adopted in each nColumn iteration
+        %   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
         if fix(i/opt.nColumn) == i/(opt.nColumn)
 
             diffNorm = 0; stateNorm = 0;
@@ -277,9 +284,6 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
             if opt.enableDebug
                 fprintf(' %8d %10d %18g \n', i, i/opt.nColumn, relativeDelta);
             end
-
-%           Plot the outlet profile of each column in one round
-            SMB.plotFigures(opt, plotData);
 
             if relativeDelta <= opt.tolIter
                 if iter == 1 || strcmp(intermediate_feed, 'raffinate')
@@ -300,17 +304,17 @@ function objective = simulatedMovingBed(iter, intermediate_feed, varargin)
 
 %   Post-process
 %----------------------------------------------------------------------------------------
-%   Compute the performance index, such Purity and Productivity
+    % Compute the performance index, such Purity and Productivity
     Results = SMB.Purity_Productivity(plotData, opt);
 
-%   Construct your own Objective Function and calculate the value
+    % Construct your own Objective Function and calculate the value
     objective = SMB.objectiveFunction(Results, opt);
 
     tTotal = toc(tTotal);
-%   Store the final data into DATA.mat file in the mode of forward simulation
+    % Store the final data into DATA.mat file in the mode of forward simulation
     if opt.enableDebug
         fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
-        SMB.concDataConvertToASCII(plotData, opt, iter);
+        SMB.concDataConvertToASCII(currentData, opt, iter);
         SMB.trajDataConvertToASCII(dyncData, iter);
         save(sprintf('Performance_%03d.mat',fix(rand*100)),'Results');
         fprintf('The results about concentration profiles and the trajectories have been stored \n');
@@ -320,11 +324,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
