@@ -6,13 +6,12 @@ classdef OptAlgorithms < handle
 % =============================================================================
 
     properties (Constant)
-        FUNC        = @SMB.simulatedMovingBed;  % the objective function
         swarm       = 20;                       % the population amount
         sample      = 200;                      % the loop count for evolution
         dataPoint   = 1000;                     % the amount of data observation
         DE_strategy = 5;                        % the strategy of DE kernel
-        prior       = [];
-%        prior = load('prior.dat');     % load the prior distribution if possible
+        prior       = [];                       % default; no prior information
+        FUNC        = @SMB.simulatedMovingBed;  % the objective function
     end
 
 
@@ -89,7 +88,7 @@ classdef OptAlgorithms < handle
             fprintf('****************************************************** \n');
             fprintf('Time %5.3g elapsed after %5d Iteration \n', result.optTime, result.Iteration);
             fprintf('********* Objective value: %10.3g ********** \n', yValue);
-            fprintf('%g |', xValue); fprintf('\n');
+            fprintf(' %g |', xValue); fprintf('\n');
 
         end
 
@@ -361,7 +360,7 @@ classdef OptAlgorithms < handle
                     (ParSwarm, OptSwarm, ToplOptSwarm, k, opt);
 
                 % Abstract best information so far from the population and display it
-                xValue = exp( OptSwarm(opt.swarmSize+1, 1:opt.particleSize) );
+                xValue = exp(OptSwarm(opt.swarmSize+1, 1:opt.particleSize));
                 yValue = OptSwarm(opt.swarmSize+1, opt.particleSize+1);
 
                 fprintf('Iter = %5d   ----------------  Minimum: %10.3g  ---------------- \n', k, yValue);
@@ -395,7 +394,7 @@ classdef OptAlgorithms < handle
             fprintf('****************************************************** \n');
             fprintf('Time %5.3g elapsed after %5d Iteration \n', result.optTime, result.Iteration);
             fprintf('********* Objective value: %10.3g ********** \n', yValue);
-            fprintf('%g |', xValue); fprintf('\n');
+            fprintf(' %g |', xValue); fprintf('\n');
 
         end
 
@@ -768,7 +767,7 @@ classdef OptAlgorithms < handle
 
                 % If the Jacobian matrix cannot be obtained,
                 % a set of samples is used to generate R
-                [R, oldpar] = OptAlgorithms.burnInSamples(opt);
+                [R, oldpar, SS] = OptAlgorithms.burnInSamples(opt);
 
             end
 
@@ -799,8 +798,8 @@ classdef OptAlgorithms < handle
                 newSS = feval( OptAlgorithms.FUNC, exp(newpar) );
 
                 % The Metropolis probability
-                rho12 = exp( -0.5 * (newSS - SS) / sigmaSqu) *...
-                    ( OptAlgorithms.priorPDF(newpar) / OptAlgorithms.priorPDF(oldpar) );
+                rho12 = exp( -0.5 *( (newSS - SS) / sigmaSqu + ...
+                    OptAlgorithms.priorPDF(newpar) - OptAlgorithms.priorPDF(oldpar) ) );
 
                 % The new proposal is accepted with Metropolis probability
                 if rand <= min(1, rho12)
@@ -827,24 +826,24 @@ classdef OptAlgorithms < handle
                     newSS2 = feval( OptAlgorithms.FUNC, exp(newpar2) );
 
                     % The conventional version of calculation
-                    rho32 = exp( -0.5 * (newSS - newSS2) / sigmaSqu) * ...
-                       ( OptAlgorithms.priorPDF(newpar) / OptAlgorithms.priorPDF(newpar2) );
+                    rho32 = exp( -0.5 *( (newSS - newSS2) / sigmaSqu + ...
+                        OptAlgorithms.priorPDF(newpar) - OptAlgorithms.priorPDF(newpar2) ) );
 
-%                   q2 = exp( -0.5 * (newSS2 - SS) / sigmaSqu ) * ...
-%                       ( OptAlgorithms.priorPDF(newpar2) / OptAlgorithms.priorPDF(oldpar) );
-%                   q1 = exp( -0.5 * (norm((newpar2 - newpar) * inv(R))^2 - norm((oldpar - newpar) * inv(R))^2) );
+%                    q2 = exp( -0.5 *( (newSS2 - SS) / sigmaSqu + ...
+%                        OptAlgorithms.priorPDF(newpar2) - OptAlgorithms.priorPDF(oldpar) ) );
+%                    q1 = exp( -0.5 * (norm((newpar2 - newpar) * inv(R))^2 - norm((oldpar - newpar) * inv(R))^2) );
 
-%                   if rho32 == Inf
-%                       rho13 = 0;
-%                   else
-%                       rho13 = q1 * q2 * (1-rho32) / (1-rho12);
-%                   end
+%                    if rho32 == Inf
+%                        rho13 = 0;
+%                    else
+%                        rho13 = q1 * q2 * (1-rho32) / (1-rho12);
+%                    end
 
                     % The speed-up version of above calculation
-                    q1q2 = exp( -0.5 * ( (newSS2 - SS) / sigmaSqu + ...
-                        ( (newpar2 - newpar) * (R \ (R' \ (newpar2' - newpar')))...
-                        - (oldpar - newpar) * (R \ (R' \ (oldpar' - newpar'))) )) ) * ...
-                        ( OptAlgorithms.priorPDF(newpar2) / OptAlgorithms.priorPDF(oldpar) );
+                    q1q2 = exp( -0.5 *( (newSS2 - SS) / sigmaSqu + ...
+                        ( (newpar2 - newpar) * (R \ (R' \ (newpar2' - newpar'))) - ...
+                        (oldpar - newpar) * (R \ (R' \ (oldpar' - newpar'))) ) + ...
+                        OptAlgorithms.priorPDF(newpar2) - OptAlgorithms.priorPDF(oldpar) ) );
 
                     rho13 = q1q2 * (1 - rho32) / (1 - rho12);
 
@@ -920,7 +919,7 @@ classdef OptAlgorithms < handle
             OptAlgorithms.FigurePlot(Population, opt);
 
             [yValue, row] = min(Population(:, opt.Nparams+1));
-            xValue        = exp( Population(row, 1:opt.Nparams) );
+            xValue        = exp(Population(row, 1:opt.Nparams));
 
             % Gather some useful information and store them
             result.optTime         = etime(clock, startTime) / 3600;
@@ -975,7 +974,7 @@ classdef OptAlgorithms < handle
             opt.criterionTol  = 0.0001;
             opt.burn_in       = 0;
             opt.convergInt    = 100;
-            opt.rejectValue   = 10000;
+            opt.rejectValue   = 1e5;
             opt.nDataPoint    = OptAlgorithms.dataPoint;
 
             opt.Jacobian      = false; % set it false when you do not need Jacobian matrix
@@ -1020,7 +1019,7 @@ classdef OptAlgorithms < handle
 
         end
 
-        function [R, oldpar] = burnInSamples(opt)
+        function [R, oldpar, SS] = burnInSamples(opt)
 %------------------------------------------------------------------------------
 % The routine that is used for generating samples in cases that Jocabian matrix
 % is not available
@@ -1045,9 +1044,14 @@ classdef OptAlgorithms < handle
             ParSwarm(nullRow, :) = [];
             [~, minRow] = min(ParSwarm(:, opt.Nparams+1));
             oldpar = ParSwarm(minRow, 1:opt.Nparams);
+            SS = ParSwarm(minRow, opt.Nparams+1);
 
             % Calculate the covariance matrix
             [chaincov, ~, ~] = OptAlgorithms.covUpdate(ParSwarm(:, 1:opt.Nparams), 1, [], [], []);
+
+            if isempty(chaincov)
+                error('OptAlgorithms.burnInSamples:\n %g randomly generated samples are all rejected with opt.rejectValue = %g \n Please change your rejection value in OptAlgorithms.getOptions_MCMC function', Swarm, opt.rejectValue);
+            end
 
             % Cholesky decomposition
             R = chol( chaincov + eye(opt.Nparams) * 1e-7 );
@@ -1319,7 +1323,7 @@ classdef OptAlgorithms < handle
                     % Abstract best information so far from the population and display it
                     [minValue, row] = min(states(1:opt.Nchain, opt.Nparams+1));
                     fprintf('----------------  Minimum: %3g  ---------------- \n', minValue);
-                    fprintf('%10.3g | ', exp( states(row, 1:opt.Nparams) )); fprintf('\n');
+                    fprintf('%10.3g | ', exp(states(row, 1:opt.Nparams)) ); fprintf('\n');
                 end
 
                 % PRML: Evolution of the chains
@@ -1384,7 +1388,7 @@ classdef OptAlgorithms < handle
             OptAlgorithms.FigurePlot(Population, opt)
 
             [yValue, row] = min(Population(:,opt.Nparams+1));
-            xValue        = exp( Population(row,1:opt.Nparams) );
+            xValue        = exp(Population(row,1:opt.Nparams));
 
             % Gather some useful information and store them
             result.optTime        = etime(clock, startTime)/3600;
@@ -1558,8 +1562,9 @@ classdef OptAlgorithms < handle
                 SS    = states(j,opt.Nparams+1);
 
                 % The Metropolis probability
-                rho = ( exp( -0.5*(newSS - SS) / sigmaSqu(j)) )^Beta(j) * ...
-                    ( OptAlgorithms.priorPDF(proposal) / OptAlgorithms.priorPDF(states(j,1:opt.Nparams)) );
+                rho = ( exp( -0.5 *( (newSS - SS) / sigmaSqu(j) + ...
+                    OptAlgorithms.priorPDF(proposal) - ...
+                    OptAlgorithms.priorPDF(states(j, 1:opt.Nparams)) ) ) )^Beta(j);
 
                 % If the proposal is accepted
                 if rand <= min(1, rho)
@@ -1833,7 +1838,7 @@ classdef OptAlgorithms < handle
             OptAlgorithms.FigurePlot(Population, opt);
 
             [yValue, row]  = min(Population(:,opt.Nparams+1));
-            xValue         = exp( Population(row,1:opt.Nparams) );
+            xValue         = exp(Population(row,1:opt.Nparams));
 
             % Gather some useful information and store them
             result.optTime        = etime(clock,startTime) / 3600;
@@ -1958,7 +1963,7 @@ classdef OptAlgorithms < handle
 
             % Abstract best information so far from the population and display it
             fprintf('----------------  Minimum: %g  ---------------- \n', OptPopul(opt.Nchain+1, opt.Nparams+1));
-            fprintf('%10.3g | ', exp( OptPopul(1, 1:opt.Nparams) )); fprintf('\n');
+            fprintf('%10.3g | ', exp(OptPopul(1, 1:opt.Nparams))); fprintf('\n');
 
             % In each chain, the proposal point is accepted in terms of the Metropolis probability
             for j = 1: opt.Nchain
@@ -1973,8 +1978,8 @@ classdef OptAlgorithms < handle
                     newSS = feval( OptAlgorithms.FUNC, exp(proposal) );
                 end
 
-                rho = exp( -0.5*(newSS - SS) / sigmaSqu(j)) * ...
-                    ( OptAlgorithms.priorPDF(proposal) / OptAlgorithms.priorPDF(states(j, 1:opt.Nparams)) );
+                rho = exp( -0.5 *( (newSS - SS) / sigmaSqu(j) + ...
+                    OptAlgorithms.priorPDF(proposal) - OptAlgorithms.priorPDF(states(j, 1:opt.Nparams)) ) );
 
                 if rand <= min(1, rho)
                     states(j, 1:opt.Nparams) = proposal;
@@ -2237,12 +2242,17 @@ classdef OptAlgorithms < handle
                 idx = floor(0.5 * opt.nsamples);
             end
 
+            if idx < length(chainData_1)
+                idx = 0;
+            end
+
             for k = 1:opt.Nchain
                 eval(sprintf('chainData_%d(1:idx, :) = [];', k));
                 Population = [Population; eval(sprintf('chainData_%d', k))];
             end
 
             save('population.dat', 'Population', '-ascii', '-append');
+
         end
 
     end % MADE
@@ -2323,7 +2333,7 @@ classdef OptAlgorithms < handle
                 return;
             end
 
-            binNum = 20;
+            binNum = 15;
             x = zeros(binNum, 3);
             [r, c] = size(OptAlgorithms.prior);
 
@@ -2365,6 +2375,7 @@ classdef OptAlgorithms < handle
             if length(opt.paramBound) ~= LEN
                 error('The setup of the initial boundary in SMBOptimiztion is incorrent \n');
             end
+
         end
 
         function tickLabelFormat(hAxes, axName, format)
