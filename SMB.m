@@ -570,7 +570,7 @@ classdef SMB < handle
                         dummyProfile = outletProfile.outlet;
                     end
 
-                    currentData{sequence.(k)}.outlet     = outletProfile.ouetlet;
+                    currentData{sequence.(k)}.outlet     = outletProfile.outlet;
                     currentData{sequence.(k)}.colState   = outletProfile.column;
                     currentData{sequence.(k)}.lastState  = lastState;
 
