@@ -39,25 +39,25 @@ classdef SMB < handle
                 error('SMB.secColumn: There are no Initial / Boundary Conditions for the Simulator \n');
             end
 
-%           Get parameters options
+            % Get parameters options
             [opt, ~, ~] = getParameters(ParSwarm);
 
             model = ModelGRM();
             model.nComponents = opt.nComponents;
 
-%           The equilibrium isotherms
+            % The equilibrium isotherms
             if strcmp(opt.BindingModel, 'LinearBinding')
 
                 model.kineticBindingModel = false;
                 model.bindingModel = LinearBinding();
 
-%               Adsorption parameters
+                % Adsorption parameters
                 model.bindingParameters.LIN_KA   = opt.KA;
                 model.bindingParameters.LIN_KD   = opt.KD;
 
             elseif strcmp(opt.BindingModel, 'MultiComponentLangmuirBinding')
 
-                model.kineticBindingModel = true;
+                model.kineticBindingModel = false;
                 model.bindingModel = MultiComponentLangmuirBinding();
 
                 model.bindingParameters.MCL_KA   = opt.KA;
@@ -66,15 +66,15 @@ classdef SMB < handle
 
             elseif strcmp(opt.BindingModel, 'MultiComponentBiLangmuirBinding')
 
-                model.kineticBindingModel = true;
+                model.kineticBindingModel = false;
                 model.bindingModel = MultiComponentBiLangmuirBinding();
 
-                model.bindingParameters.MCL_KA1   = opt.KA(1);
-                model.bindingParameters.MCL_KD1   = opt.KD(1);
-                model.bindingParameters.MCL_QMAX1 = opt.QMAX(1);
-                model.bindingParameters.MCL_KA2   = opt.KA(2);
-                model.bindingParameters.MCL_KD2   = opt.KD(2);
-                model.bindingParameters.MCL_QMAX2 = opt.QMAX(2);
+                model.bindingParameters.MCBL_KA1   = opt.KA(1);
+                model.bindingParameters.MCBL_KD1   = opt.KD(1);
+                model.bindingParameters.MCBL_QMAX1 = opt.QMAX(1);
+                model.bindingParameters.MCBL_KA2   = opt.KA(2);
+                model.bindingParameters.MCBL_KD2   = opt.KD(2);
+                model.bindingParameters.MCBL_QMAX2 = opt.QMAX(2);
 
             elseif strcmp(opt.BindingModel, 'StericMassAction')
 
@@ -89,20 +89,20 @@ classdef SMB < handle
                 model.initialSolidConcentration  = params.initSolidCon;
             end
 
-%           Transport
+            % Transport
             model.dispersionColumn          = params.dispersionColumn;
             model.filmDiffusion             = opt.filmDiffusion;
             model.diffusionParticle         = opt.diffusionParticle;
             model.diffusionParticleSurface  = opt.diffusionParticleSurface;
             model.interstitialVelocity      = params.interstitialVelocity;
 
-%           Geometry
+            % Geometry
             model.columnLength        = opt.columnLength;
             model.particleRadius      = opt.particleRadius;
             model.porosityColumn      = opt.porosityColumn;
             model.porosityParticle    = opt.porosityParticle;
 
-%           Apply the inlet profile to the CADET model
+            % Apply the inlet profile to the CADET model
             Time = repmat({inletProfile.time}, 1, opt.nComponents);
             if opt.nComponents == 2
                 Profile = [{inletProfile.concentration(:,1)}, {inletProfile.concentration(:,2)}];
@@ -116,30 +116,30 @@ classdef SMB < handle
 
             model.setInletsFromData(Time, Profile);
 
-%           Turn off the warnings of the interpolation, optional
+            % Turn off the warnings of the interpolation, optional
             warning('off', 'MATLAB:interp1:ppGriddedInterpolant');
             warning('off', 'MATLAB:interp1:UsePCHIP');
 
-%           Discretization
+            % Discretization
             disc = DiscretizationGRM();
             disc.nCellsColumn   = opt.nCellsColumn;
             disc.nCellsParticle = opt.nCellsParticle;
 
-%           Solving options
+            % Solving options
             sim = Simulator(model, disc);
             sim.nThreads = opt.nThreads;
             sim.solutionTimes = inletProfile.time;
             sim.solverOptions.time_integrator.ABSTOL         = opt.ABSTOL;
             sim.solverOptions.time_integrator.INIT_STEP_SIZE = opt.INIT_STEP_SIZE;
             sim.solverOptions.time_integrator.MAX_STEPS      = opt.MAX_STEPS;
-            sim.solverOptions.WRITE_SOLUTION_ALL    = false;
+            sim.solverOptions.WRITE_SOLUTION_ALL    = true;
             sim.solverOptions.WRITE_SOLUTION_LAST   = true;
             sim.solverOptions.WRITE_SENS_LAST       = false;
             sim.solverOptions.WRITE_SOLUTION_COLUMN_OUTLET = true;
-            sim.solverOptions.WRITE_SOLUTION_COLUMN_INLET  = true;
+            sim.solverOptions.WRITE_SOLUTION_COLUMN_INLET  = false;
 
 
-%           Run the simulation
+            % Run the simulation
             try
                 result = sim.simulate();
             catch e
@@ -147,11 +147,11 @@ classdef SMB < handle
                 error('CADET:simulationFailed', 'Check your settings and try again. \n%s',e.message);
             end
 
-%           Extract the outlet profile
-            outletProfile.time = result.solution.time;
-            outletProfile.concentration = result.solution.outlet(:,:);
+            % Extract the outletProfile
+            outletProfile.outlet.time = result.solution.time;
+            outletProfile.outlet.concentration = result.solution.outlet(:,:);
+            outletProfile.column  = result.solution.column;
             lastState =  result.solution.lastState;
-
 
         end % secColumn
 
@@ -242,10 +242,10 @@ classdef SMB < handle
                 error('SMB.massConservation: There are no enough arguments \n');
             end
 
-%           Time points
+            % Time points
             column.inlet.time = linspace(0, opt.switch, opt.timePoints);
 
-%           Translate the alphabet into the position index of SMB unit
+            % Translate the alphabet into the position index of SMB unit
             index = SMB.stringIndexing(opt, alphabet);
 
             if ~strcmp(alphabet, 'a')
@@ -254,21 +254,21 @@ classdef SMB < handle
                 pre_alphabet = char(stringSet(opt.nColumn));
             end
 
-%           Get the interstitial velocity of each column and boundary conditions
+            % Get the interstitial velocity of each column and boundary conditions
             params = SMB.getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet);
 
             idx_i = sequence.(alphabet);     % the number of current column
             idx_j = sequence.(pre_alphabet); % the number of the column before
 
-%           Update the intersitial velocity, boundary conditions
+            % Update the intersitial velocity, boundary conditions
             column.params = params{idx_i};
             column.initialState = currentData{idx_i}.lastState;
-%           If DPFRs were implemented, transfer the boundary conditons between switches
+            % If DPFRs were implemented, transfer the boundary conditons between switches
             if opt.enable_DPFR
                 column.initialState_DPFR = currentData{idx_i}.lastState_DPFR;
             end
 
-%           Calculate concentration of the column due to its position in the SMB unit
+            % Calculate concentration of the column due to its position in the SMB unit
             switch index
 
                 case {'D','D1','D2'} % node DESORBENT
@@ -282,7 +282,7 @@ classdef SMB < handle
                             params{idx_j}.interstitialVelocity ./ params{idx_i}.interstitialVelocity;
                     end
 
-                case 'F' % node FEED in four-zone and five zone
+                case 'F' % node FEED in four-zone and five-zone
 
                     %   C_i^in = (Q_{i-1} * C_{i-1}^out + Q_F * C_F) / Q_i
                     if ~strcmp(startingPointIndex, index)
@@ -401,7 +401,7 @@ classdef SMB < handle
 
             global string stringSet structID dummyProfile startingPointIndex Feed2;
 
-%           Construct the string in order to tell simulator the calculation sequence
+            % Construct the string in order to tell simulator the calculation sequence
             stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
                          'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'...
                          'a1' 'b1' 'c1' 'd1' 'e1' 'f1' 'g1' 'h1' 'i1' 'j1' 'k1' 'l1' 'm1'...
@@ -415,8 +415,8 @@ classdef SMB < handle
 
             [opt, interstVelocity, Feed] = getParameters(varargin{:});
 
-%           Check the interstitial velocity, if anyone was negative, stop the simulation
-%             and assign a very big objective function value to this column configuration.
+            % Check the interstitial velocity, if anyone was negative, stop the simulation
+            %   and assign a very big objective function value to this column configuration.
             flag = SMB.interstVelocityCheck(interstVelocity, opt);
             if flag == 1
                 objective = 1e5;
@@ -436,18 +436,19 @@ classdef SMB < handle
             end
 
 
-%           Preallocation
+%   Preallocation
 %----------------------------------------------------------------------------------------
+            % Construct the string for simulation sequence
             string = char(stringSet(1:opt.nColumn));
 
-%           If num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
-%               num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
-%           In the 8-zone scenario, it should be careful in choosing the starting node
-%               as it is impossible to start from Feed2 node at the outset.
+            % If num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
+            %   num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
+            % In the 8-zone scenario, it should be careful in choosing the starting node
+            % as it is impossible to start from Feed2 node at the outset.
             string = circshift(string, 0);
             startingPointIndex = SMB.stringIndexing(opt, string(1));
 
-%           Initialize the starting points, currentData
+            % Initialize the starting points, currentData
             currentData  = cell(1, opt.nColumn);
             for k = 1:opt.nColumn
                 currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
@@ -462,7 +463,7 @@ classdef SMB < handle
             end
 
             columnNumber = cell(1, opt.nColumn);
-%           Number the columns for the sake of plotting
+            % Number the columns for the sake of plotting
             for k = 1:opt.nColumn
                 if k == 1
                     columnNumber{1} = opt.nColumn;
@@ -473,35 +474,35 @@ classdef SMB < handle
 
             sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
 
-%           Specify the column for the convergence checking
-%           Usually, the column after the Feed node is adopted
+            % Specify the column for the convergence checking
+            % Usually, the column after the Feed node is adopted
             if opt.nZone == 4
                 convergIndx = sum(opt.structID(1:2));
             elseif opt.nZone == 5
                 convergIndx = sum(opt.structID(1:3));
             elseif opt.nZone == 8
-                convergIndx = sum(opt.structID(1:6));
+                convergIndx = sum(opt.structID(1:3));
             else
                 fprintf('Please choose the correct zone configuration');
             end
 
-%           convergPrevious is used for stopping criterion
+            % convergPrevious is used for stopping criterion
             convergPrevious = currentData{convergIndx}.outlet.concentration;
 
-%           After switching, dummyProfile is used to transfer concentration profile of last column
-%               to the inlet port of the first column
+            % After switching, dummyProfile is used to transfer concentration profile of last column
+            %   to the inlet port of the first column
             dummyProfile    = currentData{sequence.(string(end))}.outlet;
 
-%           The dimension of plotData (columnNumber x switches)
-%               t_s   2*t_s  3*t_s  4*t_s
-%               {1}    {1}    {1}    {1}
-%               {2}    {2}    {2}    {2}
-%               {3}    {3}    {3}    {3}
-%               {4}    {4}    {4}    {4}
+            % The dimension of plotData (columnNumber x switches)
+            %       t_s   2*t_s  3*t_s  4*t_s
+            %       {1}    {1}    {1}    {1}
+            %       {2}    {2}    {2}    {2}
+            %       {3}    {3}    {3}    {3}
+            %       {4}    {4}    {4}    {4}
             plotData = cell(opt.nColumn,opt.nColumn);
 
-%           The data for plotting dynamic trajectory
-%           The row represents the number of withdrawn ports
+            % The data for plotting dynamic trajectory
+            % The row represents the number of withdrawn ports
             if opt.nZone == 4
                 dyncData = cell(2, opt.nMaxIter);
             elseif opt.nZone == 5
@@ -513,14 +514,14 @@ classdef SMB < handle
 
 %   Simulations
 %----------------------------------------------------------------------------------------
-%           Main loop
+            % Main loop
             for i = 1:opt.nMaxIter
 
-%               Switching the ports, in the countercurrent manner of fluid
+                % Switching the ports, in the countercurrent manner of fluid
                 sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
-%               The simulation of columns within a SMB unit by the sequence,
-%                   say, 'a', 'b', 'c', 'd' in four-column cases (desorbent node)
+                % The simulation of columns within a SMB unit by the sequence,
+                %   say, 'a', 'b', 'c', 'd' in four-column cases (desorbent node)
                 for k = string'
 
                     column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, k);
@@ -557,19 +558,20 @@ classdef SMB < handle
                     % Store the concentration profile, in which it is used as the profile of Feed_2 inlet
                     if opt.nZone == 8
                         if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
-                            Feed2 = outletProfile;
+                            Feed2 = outletProfile.outlet;
                         elseif strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
-                            Feed2 = outletProfile;
+                            Feed2 = outletProfile.outlet;
                         end
                     end
 
                     % The concentration profile of column string(end) is also stored as the dummyProfile
                     % because of a technical problem
                     if strcmp(k, string(end))
-                        dummyProfile = outletProfile;
+                        dummyProfile = outletProfile.outlet;
                     end
 
-                    currentData{sequence.(k)}.outlet     = outletProfile;
+                    currentData{sequence.(k)}.outlet     = outletProfile.ouetlet;
+                    currentData{sequence.(k)}.colState   = outletProfile.column;
                     currentData{sequence.(k)}.lastState  = lastState;
 
                 end
@@ -589,7 +591,7 @@ classdef SMB < handle
                     dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
                 end
 
-%               Store the data of one round (opt.nColumn switches), into plotData
+                % Store the data of one round (opt.nColumn switches), into plotData
                 index = mod(i, opt.nColumn);
                 if index == 0
                     plotData(:,opt.nColumn) = currentData';
@@ -598,8 +600,8 @@ classdef SMB < handle
                 end
 
 
-%               Convergence criterion was adopted in each nColumn iteration
-%                   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
+                % Convergence criterion was adopted in each nColumn iteration
+                %   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
                 if fix(i/opt.nColumn) == i/(opt.nColumn)
 
                     diffNorm = 0; stateNorm = 0;
@@ -623,10 +625,10 @@ classdef SMB < handle
 
 %   Post-process
 %----------------------------------------------------------------------------------------
-%           Compute the performance index, such Purity and Productivity
+            % Compute the performance index, such Purity and Productivity
             Results = SMB.Purity_Productivity(plotData, opt);
 
-%           Construct your own Objective Function and calculate the value
+            % Construct your own Objective Function and calculate the value
             objective = SMB.objectiveFunction(Results, opt);
 
 
@@ -659,7 +661,7 @@ classdef SMB < handle
 
             params = cell(1, opt.nColumn);
             for k = 1:opt.nColumn
-%               set the initial conditions to the solver, but when lastState is used, this setup will be ignored
+                % Set the initial conditions to the solver, but when lastState is used, this setup will be ignored
                 params{k} = struct('initMobilCon', zeros(1,opt.nComponents), 'initSolidCon',...
                     zeros(1,opt.nComponents), 'interstitialVelocity', [], 'dispersionColumn', []);
             end
@@ -780,17 +782,17 @@ classdef SMB < handle
 
             string = stringSet(1:opt.nColumn);
 
-%           Preallocation
-%           stringBlock is used for storing the alphabet in each zone
+            % Preallocation
+            % stringBlock is used for storing the alphabet in each zone
             stringBlock = cell(1, opt.nZone);
 
-%           Separate the string into nZone cells
+            % Separate the string into nZone cells
             stringBlock{1} = string(1:opt.structID(1));
             for k = 2:opt.nZone
                 stringBlock{k} = string( sum(opt.structID(1:k-1))+1 : sum(opt.structID(1:k)) );
             end
 
-%           Assign each alphabet with the indexing letter, D,E,F,R
+            % Assign each alphabet with the indexing letter, D,E,F,R
             if opt.nZone == 4
 
                 if any( strcmp(alphabet, stringBlock{1}) )
@@ -943,10 +945,10 @@ classdef SMB < handle
 
             Number = circshift( (fliplr(1:opt.nColumn))', 1 );
 
-%           numberBlock is used for storing the column number in each zone
+            % numberBlock is used for storing the column number in each zone
             numberBlock = cell(1, opt.nZone);
 
-%           separate the number string into nZone cells
+            % Separate the number string into nZone cells
             numberBlock{1} = Number(1:opt.structID(1));
             for k = 2:opt.nZone
                 numberBlock{k} = Number( sum(opt.structID(1:k-1))+1 : sum(opt.structID(1:k)) );
@@ -1053,29 +1055,29 @@ classdef SMB < handle
             end
 
             if opt.nZone == 4
-%               Construct the Penalty Function for the objective function
+                % Construct the Penalty Function for the objective function
                 penalty = abs( min(Results.Purity_extract - opt.Purity_extract_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum
+                % (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 5
-%               Construct the Penalty Function for the objective function
+                % Construct the Penalty Function for the objective function
                 penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate - opt.Purity_raffinate_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum
+                % (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate) + penalty;
 
             elseif opt.nZone == 8
-%               Construct the Penalty Function for the objective function
+                % Construct the Penalty Function for the objective function
                 penalty = abs( min(Results.Purity_extract1 - opt.Purity_extract1_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_extract2 - opt.Purity_extract2_limit, 0) ) * 100 * opt.Penalty_factor ...
                     + abs( min(Results.Purity_raffinate2 - opt.Purity_raffinate2_limit, 0) ) * 100 * opt.Penalty_factor;
 
-%               (-) since in the optimizer, the defined program is of optimization of minimum
+                % (-) since in the optimizer, the defined program is of optimization of minimum
                 objective = -(Results.Productivity_extract1 + Results.Productivity_extract2 + Results.Productivity_raffinate2) + penalty;
 
             end
@@ -1104,31 +1106,31 @@ classdef SMB < handle
                 error('SMB.Purity_Productivity: There are no enough arguments \n');
             end
 
-%           Get the position of the withdrawn ports to calculate the purity and productivity
+            % Get the position of the withdrawn ports to calculate the purity and productivity
             obj = SMB.positionIndexing(opt);
 
-%           The nominator of the formualar of productivity
+            % The nominator of the formualar of productivity
             Nominator = pi * (opt.columnDiameter/2)^2 * opt.columnLength * (1-opt.porosityColumn);
 
             if opt.nZone == 4
 
-%               Column 1 is used to calculate the integral of purity, plotData{1,x}
+                % Column 1 is used to calculate the integral of purity, plotData{1,x}
                 position_ext = obj.position_ext; position_raf = obj.position_raf;
 
-%               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+                % Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
                 sum_ext = 0; sum_raf = 0;
                 for k = 1:opt.nComponents
                     sum_ext = sum_ext + trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,k));
                     sum_raf = sum_raf + trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,k));
                 end
 
-%               Extract ports
+                % Extract ports
                 Purity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID)) / sum_ext;
 
-%               Raffinate ports
+                % Raffinate ports
                 Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / sum_raf;
 
-%               per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
+                % per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
                 Productivity_extract = trapz(plotData{1,position_ext}.outlet.time, plotData{1,position_ext}.outlet.concentration(:,opt.comp_ext_ID))...
                     * opt.molMass(opt.comp_ext_ID) * opt.flowRate_extract / Nominator;
 
@@ -1151,7 +1153,7 @@ classdef SMB < handle
 
                 position_ext1 = obj.position_ext1; position_ext2 = obj.position_ext2; position_raf = obj.position_raf;
 
-%               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+                % Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
                 sum_ext1 = 0; sum_ext2 = 0; sum_raf = 0;
                 for k = 1:opt.nComponents
                     sum_ext1 = sum_ext1 + trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,k));
@@ -1159,14 +1161,14 @@ classdef SMB < handle
                     sum_raf  = sum_raf  + trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,k));
                 end
 
-%               Extract ports
+                % Extract ports
                 Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) / sum_ext1;
                 Purity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID)) / sum_ext2;
 
-%               Raffinate ports
+                % Raffinate ports
                 Purity_raffinate = trapz(plotData{1,position_raf}.outlet.time, plotData{1,position_raf}.outlet.concentration(:,opt.comp_raf_ID)) / sum_raf;
 
-%               per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
+                % per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
                 Productivity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID))...
                     * opt.molMass(opt.comp_ext1_ID) * opt.flowRate_extract1 / Nominator;
 
@@ -1195,7 +1197,7 @@ classdef SMB < handle
 
                 position_ext1 = obj.position_ext1; position_ext2 = obj.position_ext2; position_raf2 = obj.position_raf2;
 
-%               Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
+                % Please be quite careful, which component is used for statistics (change them with comp_ext_ID or comp_raf_ID)
                 sum_ext1 = 0; sum_ext2 = 0; sum_raf2 = 0;
                 for k = 1:opt.nComponents
                     sum_ext1 = sum_ext1 + trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,k));
@@ -1203,14 +1205,14 @@ classdef SMB < handle
                     sum_raf2 = sum_raf2 + trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,k));
                 end
 
-%               Extract ports
+                % Extract ports
                 Purity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID)) / sum_ext1;
                 Purity_extract2 = trapz(plotData{1,position_ext2}.outlet.time, plotData{1,position_ext2}.outlet.concentration(:,opt.comp_ext2_ID)) / sum_ext2;
 
-%               Raffinate ports
+                % Raffinate ports
                 Purity_raffinate2 = trapz(plotData{1,position_raf2}.outlet.time, plotData{1,position_raf2}.outlet.concentration(:,opt.comp_raf2_ID)) / sum_raf2;
 
-%               per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
+                % per switching time, in the tank of extract port, such (unit: g/m^3) amount of target component was collected.
                 Productivity_extract1 = trapz(plotData{1,position_ext1}.outlet.time, plotData{1,position_ext1}.outlet.concentration(:,opt.comp_ext1_ID))...
                     * opt.molMass(opt.comp_ext1_ID) * opt.flowRate_extract1 / Nominator;
 
@@ -1381,15 +1383,31 @@ classdef SMB < handle
                 error('SMB.concDataConvertToASCII: There are no enough arguments \n');
             end
 
-            for j = 1:opt.nColumn
-                y = plotData{j,1}.outlet.concentration;
+            rowMajor = false; colMajor = false;
 
-                for k =2:opt.nColumn
-                    y = [y; plotData{j,k}.outlet.concentration];
-                end
+            [D1, D2, D3] = size(plotData{1,1}.colState);
 
-                save(sprintf('profile_column_%03d.dat', j), 'y' ,'-ascii');
+            if D1 == opt.nCellsColumn && D3 == opt.timePoints
+                rowMajor = true;
+            elseif D1 == opt.timePoints && D3 == opt.nCellsColumn
+                colMajor = true;
             end
+
+            if colMajor
+                yy = reshape(plotData{1,1}.colState, [opt.nCellsColumn, opt.nComponents, opt.timePoints]);
+                for k = 2:opt.nColumn
+                    yy = [yy; reshape(plotData{1,k}.colState, [opt.nCellsColumn, opt.nComponents, opt.timePoints])];
+                end
+            elseif rowMajor
+                yy = plotData{1,1}.colState;
+                for k = 2:opt.nColumn
+                    yy = [yy; plotData{1,k}.colState];
+                end
+            end
+
+            y = squeeze(yy(:,:,end));
+
+            save('chromatogram.dat', 'y' ,'-ascii');
 
         end % concDataConvertToASCII
 
@@ -1435,7 +1453,6 @@ classdef SMB < handle
         function plotFigures(opt, plotData)
 %-----------------------------------------------------------------------------------------
 % This is the plot function
-% The numbers in the figure() represent the number of the columns
 %
 % Parameters:
 % 		- opt. options
@@ -1449,411 +1466,114 @@ classdef SMB < handle
 
             if opt.enableDebug
 
-               for j = 1:opt.nColumn
-                    figure(j);clf
+                figure(01);clf
 
-                    y = zeros(1, opt.nComponents);
-                    for k = 1:opt.nColumn
-                        y = [y; plotData{j,k}.outlet.concentration];
+                % On windowns, it is column-major; on Linux, it is row-major
+                rowMajor = false; colMajor = false;
+
+                [D1, D2, D3] = size(plotData{1,1}.colState);
+
+                if D1 == opt.nCellsColumn && D3 == opt.timePoints
+                    rowMajor = true;
+                elseif D1 == opt.timePoints && D3 == opt.nCellsColumn
+                    colMajor = true;
+                end
+
+                if colMajor
+                    yy = reshape(plotData{1,1}.colState, [opt.nCellsColumn, opt.nComponents, opt.timePoints]);
+                    for k = 2:opt.nColumn
+                        yy = [yy; reshape(plotData{1,k}.colState, [opt.nCellsColumn, opt.nComponents, opt.timePoints])];
+                    end
+                elseif rowMajor
+                    yy = plotData{1,1}.colState;
+                    for k = 2:opt.nColumn
+                        yy = [yy; plotData{1,k}.colState];
+                    end
+                end
+
+                % Squeeze the 3-D tensor to a 2-D matrix
+                y = squeeze(yy(:,:,end));
+
+                FigSet = plot(y); axis([0,opt.nColumn*opt.nCellsColumn, 0,opt.yLim])
+                ylabel('Concentration [mol]', 'FontSize', 10);
+                if opt.nComponents == 2
+                    legend('comp 1', 'comp 2', 'Location', 'NorthWest');
+                elseif opt.nComponents == 3
+                    legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
+                elseif opt.nComponents == 4
+                    legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
+                end
+
+                set(FigSet, 'LineWidth', 2);
+                set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
+                set(gca, 'ygrid', 'on');
+
+
+                if opt.nZone == 4
+
+                    if opt.nColumn == 4 && all( eq(opt.structID, ones(1,opt.nZone)) )
+
+                        set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.nCellsColumn);
+
+                    elseif opt.nColumn == 8 && all( eq(opt.structID, ones(1,opt.nZone).*2) )
+
+                        set(gca, 'XTick', (1:2:opt.nColumn).*opt.nCellsColumn);
+
+                    elseif opt.nColumn == 12 && all( eq(opt.structID, ones(1,opt.nZone).*3) )
+
+                        set(gca, 'XTick', (opt.nColumn/8 : 3: opt.nColumn).*opt.nCellsColumn);
+
+                    elseif opt.nColumn == 16 && all( eq(opt.structID, ones(1,opt.nZone).*4) )
+
+                        set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.nCellsColumn);
+
                     end
 
-                    FigSet = plot(y); axis([0,opt.nColumn*opt.timePoints, 0,opt.yLim])
-                    ylabel('Concentration [mol]', 'FontSize', 10);
-                    if opt.nComponents == 2
-                        legend('comp 1', 'comp 2', 'Location', 'NorthWest');
-                    elseif opt.nComponents == 3
-                        legend('comp 1', 'comp 2', 'comp 3', 'Location', 'NorthWest');
-                    elseif opt.nComponents == 4
-                        legend('comp 1', 'comp 2', 'comp 3', 'comp 4', 'Location', 'NorthWest');
+                    set(gca, 'XTickLabel', {'Zone I','II','III','IV'});
+
+                elseif opt.nZone == 5
+
+                    if opt.nColumn == 5 && all( eq(opt.structID, ones(1,opt.nZone)) )
+
+                        set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.nCellsColumn);
+
+                    elseif opt.nColumn == 10 && all( eq(opt.structID, ones(1,opt.nZone).*2) )
+
+                        set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.nCellsColumn);
+
+                    elseif opt.nColumn == 15 && all( eq(opt.structID, ones(1,opt.nZone).*3) )
+
+                        set(gca, 'XTick', (opt.nColumn/10 : 3: opt.nColumn).*opt.nCellsColumn);
+
+                    elseif opt.nColumn == 20 && all( eq(opt.structID, ones(1,opt.nZone).*4) )
+
+                        set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.nCellsColumn);
+
                     end
 
-                    set(FigSet, 'LineWidth', 2);
-                    set(gca, 'FontName', 'Times New Roman', 'FontSize', 10);
-                    set(gca, 'ygrid', 'on');
+                    set(gca, 'XTickLabel', {'Zone I','II','III','IV','V'});
 
+                elseif opt.nZone == 8
 
-                    if opt.nZone == 4
+                    if opt.nColumn == 8 && all( eq(opt.structID, ones(1,opt.nZone)) )
 
-                        if opt.nColumn == 4 && all( eq(opt.structID, [1 1 1 1]) )
+                        set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.nCellsColumn);
 
-                            set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
-                            switch j
-                                case 1
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 2
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 3
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 4
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                            end
+                    elseif opt.nColumn == 16 && all( eq(opt.structID, ones(1,opt.nZone).*2) )
 
-                        elseif opt.nColumn == 8 && all( eq(opt.structID, [2 2 2 2]) )
+                        set(gca, 'XTick', (1:2:opt.nColumn).*opt.nCellsColumn);
 
-                            switch j
-                                case 1
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II','Zone I'});
-                                case 2
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 3
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III','Zone II'});
-                                case 4
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 5
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV','Zone III'});
-                                case 6
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 7
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone IV'});
-                                case 8
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        elseif opt.nColumn == 12 && all( eq(opt.structID, [3 3 3 3]) )
-                            switch j
-                                case 1
-                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                                case 2
-                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 3
-                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 4
-                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 5
-                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 6
-                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 7
-                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 8
-                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 9
-                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 10
-                                    set(gca, 'XTick', ((opt.nColumn/8+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 11
-                                    set(gca, 'XTick', ((opt.nColumn/8-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                                case 12
-                                    set(gca, 'XTick', (opt.nColumn/8 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        elseif opt.nColumn == 16 && all( eq(opt.structID, [4 4 4 4]) )
-
-                            switch j
-                                case 1
-                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                                case 2
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II','Zone I'});
-                                case 3
-                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 4
-                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 5
-                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone IV','Zone III','Zone II'});
-                                case 6
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III','Zone II'});
-                                case 7
-                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 8
-                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 9
-                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone IV','Zone III'});
-                                case 10
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV','Zone III'});
-                                case 11
-                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 12
-                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 13
-                                    set(gca, 'XTick', (opt.nColumn/8+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone IV'});
-                                case 14
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone IV'});
-                                case 15
-                                    set(gca, 'XTick', (opt.nColumn/8-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                                case 16
-                                    set(gca, 'XTick', (opt.nColumn/8 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        end
-
-                    elseif opt.nZone == 5
-
-                        if opt.nColumn == 5 && all( eq(opt.structID, [1 1 1 1 1]) )
-
-                            set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
-                            switch j
-
-                                case 1
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 2
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 3
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 4
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 5
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        elseif opt.nColumn == 10 && all( eq(opt.structID, [2 2 2 2 2]) )
-
-                            switch j
-                                case 1
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                                case 2
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 3
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 4
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 5
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 6
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 7
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 8
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 9
-                                    set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 10
-                                    set(gca, 'XTick', (1:2:(opt.nColumn-1)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        elseif opt.nColumn == 15 && all( eq(opt.structID, [3 3 3 3 3]) )
-
-                            switch j
-                                case 1
-                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                                case 2
-                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 3
-                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 4
-                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 5
-                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 6
-                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 7
-                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 8
-                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 9
-                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 10
-                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 11
-                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 12
-                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 13
-                                    set(gca, 'XTick', ((opt.nColumn/10+1) : 3: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 14
-                                    set(gca, 'XTick', ((opt.nColumn/10-1) : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                                case 15
-                                    set(gca, 'XTick', (opt.nColumn/10 : 3: (opt.nColumn-opt.nColumn/8)).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        elseif opt.nColumn == 20 && all( eq(opt.structID, [4 4 4 4 4]) )
-
-                            switch j
-                                case 1
-                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                                case 2
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                                case 3
-                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 4
-                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 5
-                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 6
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III','Zone II'});
-                                case 7
-                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 8
-                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 9
-                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 10
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV','Zone III'});
-                                case 11
-                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 12
-                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 13
-                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 14
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V','Zone IV'});
-                                case 15
-                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 16
-                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 17
-                                    set(gca, 'XTick', (opt.nColumn/10+1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 18
-                                    set(gca, 'XTick', (0:4:opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone V'});
-                                case 19
-                                    set(gca, 'XTick', (opt.nColumn/10-1 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                                case 20
-                                    set(gca, 'XTick', (opt.nColumn/10 : 4: opt.nColumn).*opt.timePoints);
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        end
-
-                    elseif opt.nZone == 8
-
-                        if opt.nColumn == 8 && all( eq(opt.structID, [1 1 1 1 1 1 1 1]) )
-
-                            set(gca, 'XTick', (1/2:1:(opt.nColumn-0.5)).*opt.timePoints);
-                            switch j
-                                case 1
-                                    set(gca, 'XTickLabel', {'Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II'});
-                                case 2
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III'});
-                                case 3
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV'});
-                                case 4
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V'});
-                                case 5
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI'});
-                                case 6
-                                    set(gca, 'XTickLabel', {'Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII'});
-                                case 7
-                                    set(gca, 'XTickLabel', {'Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII'});
-                                case 8
-                                    set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        elseif opt.nColumn == 16 && all( eq(opt.structID, [2 2 2 2 2 2 2 2]) )
-
-                            set(gca, 'XTick', (0:2:opt.nColumn).*opt.timePoints);
-                            switch j
-                                case 1
-                                    set(gca, 'XTickLabel', {'Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                                case 2
-                                    set(gca, 'XTickLabel', {'Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II'});
-                                case 3
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II'});
-                                case 4
-                                    set(gca, 'XTickLabel', {'Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone II'});
-                                case 5
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III'});
-                                case 6
-                                    set(gca, 'XTickLabel', {'Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV'});
-                                case 7
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V','Zone IV'});
-                                case 8
-                                    set(gca, 'XTickLabel', {'Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI','Zone V'});
-                                case 9
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone I','Zone VIII','Zone VII','Zone VI','Zone V'});
-                                case 10
-                                    set(gca, 'XTickLabel', {'Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII','Zone VII','Zone VI'});
-                                case 11
-                                    set(gca, 'XTickLabel', {'Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone II','Zone I','Zone VIII','Zone VII','Zone VI'});
-                                case 12
-                                    set(gca, 'XTickLabel', {'Zone VI','Zone V','Zone IV','Zone II','Zone II','Zone I','Zone VIII','Zone VII'});
-                                case 13
-                                    set(gca, 'XTickLabel', {'Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone III','Zone II','Zone I','Zone VIII','Zone VII'});
-                                case 14
-                                    set(gca, 'XTickLabel', {'Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I','Zone VIII'});
-                                case 15
-                                    set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone IV','Zone III','Zone II','Zone I','Zone VIII'});
-                                case 16
-                                    set(gca, 'XTickLabel', {'Zone VIII','Zone VII','Zone VI','Zone V','Zone IV','Zone III','Zone II','Zone I'});
-                            end
-
-                        end
-
-                    end % if opt.nZone
-
-                    for i = 1: (opt.nColumn-1)
-                        line([i*opt.timePoints,i*opt.timePoints], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
                     end
 
-               end % for j = 1:opt.nColumn
+                    set(gca, 'XTickLabel', {'Zone I','II','III','IV','V','VI','VII','VIII'});
+
+                end % if opt.nZone
+
+                for i = 1: (opt.nColumn-1)
+                    line([i*opt.nCellsColumn,i*opt.nCellsColumn], [0, opt.yLim], 'color', 'k', 'LineStyle', '-.');
+                end
+
+                title(sprintf('%g / ', opt.structID));
 
             end % if opt.enableDebug
 
@@ -1872,7 +1592,7 @@ classdef SMB < handle
 
             if opt.enableDebug
 
-                figure(100);clf
+                figure(02);clf
                 if opt.nZone == 4
 
                     for i = 1:2
@@ -1918,7 +1638,7 @@ classdef SMB < handle
 
                     end
 
-                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
+                    suptitle('The dynamic trajectories at Raffinate and Extract ports');
 
                 elseif opt.nZone == 5
 
@@ -1967,7 +1687,7 @@ classdef SMB < handle
 
                     end
 
-                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
+                    suptitle('The dynamic trajectories at Raffinate and Extract ports');
 
                 elseif opt.nZone == 8
 
@@ -2013,11 +1733,11 @@ classdef SMB < handle
 
                     end
 
-                    suptitle('The concentration profile evolution of the Raffinate and Extract ports');
+                    suptitle('The dynamic trajectories at Raffinate and Extract ports');
 
-                end
+                end % if opt.nZone
 
-            end
+            end % if opt.enableDebug
 
         end % plotDynamic
 

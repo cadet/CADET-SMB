@@ -2,25 +2,25 @@ function SMBOptimization()
 
 % =============================================================================
 % This is the main function of the optimization of the Simulated Moving Bed unit
-% The optimized parameters in this case are 
-%       - columnLength 
-%       - switchTime 
-%       - flowRates_recycle 
+% The optimized parameters in this case are
+%       - columnLength
+%       - switchTime
+%       - flowRates_recycle
 %       - flowRate_feed
 %       - flowRate_desorbent
 %       - flowRate_extract
-% 
+%
 %       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_E}
-% 
+%
 % In the FIVE-ZONE, the optimized parameters are
-%       - columnLength 
-%       - switchTime 
-%       - flowRates_recycle 
+%       - columnLength
+%       - switchTime
+%       - flowRates_recycle
 %       - flowRate_feed
 %       - flowRate_desorbent
 %       - flowRate_extract_1
 %       - flowRate_extract_2
-% 
+%
 %       theta = {L_c, t_s, Q_{re}, Q_F, Q_D, Q_{E1}, Q_{E2}}
 %
 % There are four types of algorithms are integrated into this code, either
@@ -29,7 +29,7 @@ function SMBOptimization()
 %       - Differential Evolution (DE)
 %       - Metropolis Adjusted Differential Evolution (MADE)
 %       - Riemann Manifold Metropolis Adjusted Langevin Algorithm (MLA)
-% 
+%
 % =============================================================================
 
 
@@ -39,7 +39,7 @@ function SMBOptimization()
        'Markov_Chain_Monte_Carlo',[], 'Deterministic_algorithm_fmincon',[]);
 
     % The set of the parameters which are optimized
-%     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]); % binary scenario 
+%     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]); % binary scenario
     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]); % ternary scenario
 
     [opt,~,~] = getParameters( zeros(1,length(fieldnames(params))) );
@@ -96,8 +96,8 @@ function SMBOptimization()
 
     elseif isfield(optimization_method, 'Deterministic_algorithm_fmincon') ...
             && optimization_method.Deterministic_algorithm_fmincon
- 
-        % This is the demonstration case for the binary separation under FOUR-ZONE, 
+
+        % This is the demonstration case for the binary separation under FOUR-ZONE,
         %    in which 6 decision variables are optimized.
         initParams = [0.25, 180, 9.62e-7, 0.98e-7, 1.96e-7, 1.54e-7];
 
@@ -133,11 +133,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
+%
 %      Copyright © 2008-2016: Eric von Lieres, Qiaole He
-% 
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
