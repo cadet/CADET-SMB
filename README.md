@@ -1,7 +1,7 @@
 ![](https://github.com/modsim/CADET/blob/master/doc/logo/CADET-GitHub.png)
 
 # CADET-SMB
-CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. 
+CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography.
 
 # Introduction
 There are various practical modes of preparative chromatography. Cyclic batch elution chromatography is most frequently applied. In counter-current chromatography, the fluid and solid phases are moved through the column in opposite directions. Since the true moving bed (TMB) process is technically hard to implement, the simulated moving bed (SMB) process is usually applied. In this repository, we offer an extension of the CADET framework, CADET-SMB, for simulating SMB chromatographic processes.
@@ -17,15 +17,9 @@ In this branch, we introduce the standard version of operator-splitting (STD-OSP
 
 In comparison with LAW-OPS method, there is an external requirement on the number of time section amount. It has to be quite big value, in order to approach the unique trajectory, which correspondingly increase the computational efforts.
 
-![](https://github.com/modsim/CADET-SMB/blob/STD-OSP/doc/interval_20.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/STD-OSP/doc/interval_50.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/STD-OSP/doc/interval_100.JPG)
-
-*The effects of the introduced errors which could be eliminated by the increasing of the amount of time sections*
-
 
 # Detailed feature list
-* Binary separation is available using four-zone scheme; 
+* Binary separation is available using four-zone scheme;
 
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/scheme_binary.JPG)
 ![](https://github.com/modsim/CADET-SMB/blob/master/doc/profile_binary.JPG)
@@ -95,25 +89,25 @@ Then, download the latest release of CADET-SMB from https://github.com/modsim/CA
 ## Installation of CADET-SMB
 * create a directory, simulatedMovingBed, in your unzipped CADET directory;
 * unzip the CADET-SMB archive to the simulatedMovingBed directory;
-* Change the working directory to the simulatedMovingBed directory and run isSMBupdateAvailable.m script (Along side checking the existence of the newest version, it also attach the current path to the MATLAB path); 
+* Change the working directory to the simulatedMovingBed directory and run isSMBupdateAvailable.m script (Along side checking the existence of the newest version, it also attach the current path to the MATLAB path);
 * To test a forward simulation, copy any getParameter routine from the examples/Forward folder to the simulatedMovingBed folder and change the name to getParameters.m; then run simulatedMovingBed.m.
 
-# Demonstration 
-Several examples are provided in the repository. 
+# Demonstration
+Several examples are provided in the repository.
 
 * The four-column case is taken from the paper http://dx.doi.org/10.1016/j.compchemeng.2006.06.013;
-* the eight-column case is taken from the paper http://dx.doi.org/10.1016/S0959-1524(01)00005-1; 
+* the eight-column case is taken from the paper http://dx.doi.org/10.1016/S0959-1524(01)00005-1;
 * the parameters of the ternary component in the binary separation example is made up from the eight-column case;
-* the five-column case for ternary separation is taken from the paper http://dx.doi.org/10.1016/j.chroma.2011.09.015; 
+* the five-column case for ternary separation is taken from the paper http://dx.doi.org/10.1016/j.chroma.2011.09.015;
 * the ten-column case for ternary separation is taken from the paper http://dx.doi.org/10.1016/j.ces.2004.10.007.
 
-By the way, the demonstration cases can directly be run coping them from the examples directory to the simulatedMovingBed directory, then changing the file name to getParameters.m. Apparently, the examples can also be modified by replacing your own models, operating conditions, and optimization routines. 
+By the way, the demonstration cases can directly be run coping them from the examples directory to the simulatedMovingBed directory, then changing the file name to getParameters.m. Apparently, the examples can also be modified by replacing your own models, operating conditions, and optimization routines.
 
 * How to write your own getParameter routine?
 * How to adopt another type of equilibrium isotherm models?
 
-# Documentation 
+# Documentation
 For more details of the CADET-SMB software, see the file doc.pdf in the repository and the doc.pdf in the master branch.
 
-# Further Development 
+# Further Development
 SMB is actively developed. Hence, breaking changes and extensive restructuring may occur in any commit and release. For non-developers it is recommended to upgrade from release to release instead of always working with the most recent commit.
