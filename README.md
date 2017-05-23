@@ -18,8 +18,7 @@ In this branch, we introduce the cascade of two four-zone SMB in a row using STD
 # Detailed feature list
 * Ternary separation is available by using the cascade scheme;
 
-![](https://github.com/modsim/CADET-SMB/blob/Cascade/doc/profile_1.JPG)
-![](https://github.com/modsim/CADET-SMB/blob/Cascade/doc/profile_2.JPG)
+![](https://github.com/modsim/CADET-SMB/blob/Cascade/doc/profile_cascade.JPG)
 
 *The respective chromatograms of the cascade system*
 
