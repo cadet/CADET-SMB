@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 3, a 8-zone eight-column case for ternary separation
-
+%   Case 5, a 8-zone eight-column case for ternary separation
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -51,20 +50,20 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 
 %   Transport
     opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-16; % D_{ax}
-    opt.filmDiffusion             = [5.0e-5 5.0e-5 5.0e-5];  % K_f
+    opt.filmDiffusion             = [5.0e-5 5.0e-5 5.0e-5]; % K_f
     opt.diffusionParticle         = [1.6e4 1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0 0.0];
 
 %   Geometry
     opt.columnLength        = 53.6e-2;        % m
     opt.columnDiameter      = 2.60e-2;        % m
-    opt.particleRadius      = 0.325e-2 /2;    % m
+    opt.particleRadius      = 0.325e-4 /2;    % m
     opt.porosityColumn      = 0.38;
     opt.porosityParticle    = 0.00001;        % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
-    crossArea = pi * (opt.columnDiameter/2)^2;        % m^2
+    crossArea = pi * (opt.columnDiameter/2)^2; % m^2
     flowRate.recycle    = 0.1395e-6;      % m^3/s
     flowRate.desorbent1 = 0.0414e-6;      % m^3/s
     flowRate.extract1   = 0.0348e-6;      % m^3/s
@@ -89,6 +88,8 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);      % m/s
     interstVelocity.feed2     = flowRate.feed2 / (crossArea*opt.porosityColumn);         % m/s
     interstVelocity.raffinate2= flowRate.raffinate2 / (crossArea*opt.porosityColumn);    % m/s
+
+    SMB.intervalAmountCheck(opt, interstVelocity);
 
     concentrationFeed 	= [0.5, 0.5, 0.5];   % g/cm^3 [concentration_compA, concentration_compB]
     opt.molMass         = [180.16, 180.16, 180.16];

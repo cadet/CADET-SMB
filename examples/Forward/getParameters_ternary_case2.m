@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 2, a 5-zone ten-column case for ternary separation
-
+%   Case 4, a 5-zone ten-column case for ternary separation
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -43,7 +42,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.BindingModel = 'LinearBinding';
     opt.nComponents = 3;
     opt.KA = [5.34, 6.80, 11.20]; % [comp_A, comp_B, comp_C], A,B for raffinate, C for extract
-    opt.KD = [1, 1, 1];       % K_A < K_B < K_C
+    opt.KD = [1, 1, 1];   % K_A < K_B < K_C
     opt.comp_raf_ID  = 1; % the target component withdrawn from the raffinate ports
     opt.comp_ext1_ID = 3; % the target component withdrawn from the extract_1 ports
     opt.comp_ext2_ID = 2; % the target component withdrawn from the extract_2 ports
@@ -55,11 +54,11 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.diffusionParticleSurface  = [0.0, 0.0, 0.0];
 
 %   Geometry
-    opt.columnLength        = 25e-2;      % m
-    opt.columnDiameter      = 1.0e-2;     % m
-    opt.particleRadius      = 15e-6/2;    % m % user-defined one in this case
+    opt.columnLength        = 25e-2;     % m
+    opt.columnDiameter      = 1.0e-2;    % m
+    opt.particleRadius      = 15e-6/2;   % m % user-defined one in this case
     opt.porosityColumn      = 0.47;
-    opt.porosityParticle    = 0.00000001; % e_p very small to ensure e_t = e_c
+    opt.porosityParticle    = 0.0000001; % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
@@ -79,8 +78,8 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     interstVelocity.feed      = flowRate.feed / (crossArea*opt.porosityColumn);         % m/s
     interstVelocity.raffinate = flowRate.raffinate / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
-    interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);     % m/s
-    interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);     % m/s
+    interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);      % m/s
+    interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);      % m/s
 
     SMB.intervalAmountCheck(opt, interstVelocity);
 
@@ -118,7 +117,7 @@ end
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
 %
-%      Copyright © 2008-2015: Eric von Lieres, Qiaole He
+%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
 %
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %

@@ -120,7 +120,7 @@ function objective = simulatedMovingBed(varargin)
         % currentData stores the outlets of each interval of columns
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
-        currentData{k}.lastState = [];
+        currentData{k}.lastState = cell(1,2);
 
         if opt.enable_DPFR
             currentData{k}.lastState_DPFR = cell(1,2);
@@ -171,11 +171,11 @@ function objective = simulatedMovingBed(varargin)
     end
 
     % The dimension of plotData (columnNumber x switches)
-    %          t_s   2*t_s  3*t_s  4*t_s
-    %          {1}    {1}    {1}    {1}
-    %          {2}    {2}    {2}    {2}
-    %          {3}    {3}    {3}    {3}
-    %          {4}    {4}    {4}    {4}
+    %       t_s   2*t_s  3*t_s  4*t_s
+    %       {1}    {1}    {1}    {1}
+    %       {2}    {2}    {2}    {2}
+    %       {3}    {3}    {3}    {3}
+    %       {4}    {4}    {4}    {4}
     plotData = cell(opt.nColumn,opt.nColumn);
 
     % The data for plotting dynamic trajectory.
@@ -203,6 +203,8 @@ function objective = simulatedMovingBed(varargin)
         % Switching the ports, in the countercurrent manner of fluid
         sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
+        simMex = cell(1, opt.nColumn);
+
         for j = 1:opt.nInterval
 
             % The simulation of columns within a SMB unit by the sequence
@@ -217,7 +219,13 @@ function objective = simulatedMovingBed(varargin)
                     % The CSTR before the current column
                     column.inlet = SMB.CSTR(column.inlet, column, opt);
 
-                    [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+                    if j == 1
+                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, column.initialState, sequence.(k), j, varargin{:});
+                    elseif j == opt.nInterval
+                        [outletProfile, simMex, lastState] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
+                    else
+                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
+                    end
 
                     % The CSTR after the current column
                     outletProfile = SMB.CSTR(outletProfile, column, opt);
@@ -227,7 +235,13 @@ function objective = simulatedMovingBed(varargin)
                     % The DPFR before the current column
                     [column.inlet, lastState_DPFR_pre] = SMB.DPFR(column.inlet, column.initialState_DPFR{1}, opt);
 
-                    [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+                    if j == 1
+                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, column.initialState, sequence.(k), j, varargin{:});
+                    elseif j == opt.nInterval
+                        [outletProfile, simMex, lastState] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
+                    else
+                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
+                    end
 
                     % The DPFR after the current column
                     [outletProfile, lastState_DPFR_pos] = SMB.DPFR(outletProfile, column.initialState_DPFR{2}, opt);
@@ -237,7 +251,14 @@ function objective = simulatedMovingBed(varargin)
                 else
 
                     % The simulation of a single column with the CADET solver
-                    [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+                    if j == 1
+                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, column.initialState, sequence.(k), j, varargin{:});
+                    elseif j == opt.nInterval
+                        [outletProfile, simMex, lastState] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
+                    else
+                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
+                    end
+
 
                 end
 
@@ -251,13 +272,15 @@ function objective = simulatedMovingBed(varargin)
                     end
                 end
 
-                % For the very first column, only the outletProfile, rather than the column state, is stored
-                if ~strcmp(k, string(1))
+                currentData{sequence.(k)}.outlet   = outletProfile.outlet;
+                % Store the last column states
+                %   when j equals nInterval, the column state is complete
+                %   with the exception of the very first column, which will be re-calculated
+                if j == opt.nInterval && ~strcmp(k, string(1))
                     currentData{sequence.(k)}.lastState  = lastState;
                     currentData{sequence.(k)}.colState = outletProfile.column;
                 end
-
-                currentData{sequence.(k)}.outlet   = outletProfile.outlet;
+                % Store the tempData to plot construct trajectories
                 tempData{sequence.(k)}.concentration{j} = outletProfile.outlet.concentration;
 
             end % for k = string'
@@ -283,13 +306,13 @@ function objective = simulatedMovingBed(varargin)
                 dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
             end
 
-            % Plot the dynamic trajectory
             if mod(j, opt.nInterval) == 1
                 fprintf(' %9d %11d \n', j, i);
             else
                 fprintf(' %9d\n', j);
             end
 
+            % Plot the dynamic trajectory
             SMB.plotDynamic(opt, dyncData(:,1:j+(i-1)*opt.nInterval), j+(i-1)*opt.nInterval);
 
         end % for j = 1:opt.nInterval
@@ -338,7 +361,9 @@ function objective = simulatedMovingBed(varargin)
             end
 
         end
-    end
+
+    end % main loop
+
 %----------------------------------------------------------------------------------------
 
 %   Post-process

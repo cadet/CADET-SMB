@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 1, a 5-zone five-column case for ternary separation
-
+%   Case 3, a 5-zone five-column case for ternary separation
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -59,7 +58,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.columnDiameter      = 1.0e-2;     % m
     opt.particleRadius      = 30e-6/2;    % m % user-defined one in this case
     opt.porosityColumn      = 0.8;
-    opt.porosityParticle    = 0.00000001;   % unknown
+    opt.porosityParticle    = 0.00000001;   % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate

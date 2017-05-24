@@ -18,7 +18,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   The parameter setting for simulator
     opt.tolIter         = 1e-4;  % tolerance of the SMB stopping criterion
     opt.nMaxIter        = 1000;  % the maximum iteration step in SMB
-    opt.nThreads        = 8;     % threads of CPU, up to your computer
+    opt.nThreads        = 4;     % threads of CPU, up to your computer
     opt.nCellsColumn    = 40;    % discretization number in one column
     opt.nCellsParticle  = 1;     % discretization number in one particle
     opt.ABSTOL          = 1e-10; % tolerance of CADET stopping criterion
@@ -26,7 +26,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.MAX_STEPS       = 5e6;   % the maximum iteration step in CADET
 
 %   The parameter setting for the SMB
-    opt.nInterval       = 5;
+    opt.nInterval       = 8;
     opt.switch          = 317.55/opt.nInterval;   % s  % switching time
     opt.timePoints      = 1000/opt.nInterval;  % the observed time-points
     opt.Purity_extract1_limit   = 0.95;  % used for constructing constraints
@@ -50,7 +50,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 
 %   Transport
     opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-10; % D_{ax}
-    opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5];  % K_f
+    opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5]; % K_f
     opt.diffusionParticle         = [1.6e4, 1.6e4, 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0, 0.0, 0.0];
 
