@@ -22,12 +22,9 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 %   The parameter setting for simulator
     opt.tolIter         = 1e-3;   % tolerance of the SMB stopping criterion
     opt.nMaxIter        = 1000;   % the maximum iteration step in SMB
-    opt.nThreads        = 8;      % threads of CPU, up to your computer
+    opt.nThreads        = 4;      % threads of CPU, up to your computer
     opt.nCellsColumn    = 30;     % discretization number in one column
     opt.nCellsParticle  = 1;      % discretization number in one particle
-    opt.ABSTOL          = 1e-9;   % tolerance of CADET stopping criterion
-    opt.INIT_STEP_SIZE  = 1e-14;  % refer your to CADET manual
-    opt.MAX_STEPS       = 5e6;    % the maximum iteration step in CADET
 
 %   The parameter setting for the SMB
     opt.switch          = valueAssign.switch;  % switching time
@@ -50,17 +47,17 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     opt.comp_ext_ID = 2; % the target component withdrawn from the extract ports
 
 %   Transport
-    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20; % D_{ax}
-    opt.filmDiffusion             = [100 100];  % K_{eff}
+    opt.dispersionColumn          = 3.8148e-20;     % D_{ax}
+    opt.filmDiffusion             = [100 100];      % K_{eff}
     opt.diffusionParticle         = [1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0];
 
 %   Geometry
-    opt.columnLength        = valueAssign.columnLength; % m
+    opt.columnLength        = valueAssign.columnLength;      % m
     opt.columnDiameter      = 0.02;      % m
     opt.particleRadius      = 0.0005;    % m % user-defined one in this case
     opt.porosityColumn      = 0.83;
-    opt.porosityParticle    = 0.000001;  % e_p very small to ensure e_t = e_c
+    opt.porosityParticle    = 0.000001;  % unknown
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
@@ -69,7 +66,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     flowRate.feed       = valueAssign.feed;         % m^3/s
     flowRate.desorbent  = valueAssign.desorbent;    % m^3/s
     flowRate.extract    = valueAssign.extract;      % m^3/s
-    flowRate.raffinate  = flowRate.desorbent - flowRate.extract + flowRate.feed; % m^3/s
+    flowRate.raffinate  = flowRate.desorbent - flowRate.extract + flowRate.feed;        % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -80,7 +77,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    concentrationFeed 	= [0.55, 0.55];   % g/cm^3 [concentration_compA, concentration_compB]
+    concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
     opt.molMass         = [180.16, 180.16]; % The molar mass of each components
     opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
 

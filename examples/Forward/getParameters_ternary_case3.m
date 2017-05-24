@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 3, a 8-zone eight-column case for ternary separation
-
+%   Case 5, a 8-zone eight-column case for ternary separation
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -26,7 +25,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.MAX_STEPS       = 5e6;
 
 %   The parameter settting for the SMB
-	opt.nInterval 		= 20;
+    opt.nInterval       = 20;
     opt.switch          = 1552/opt.nInterval;
     opt.timePoints      = 1000/opt.nInterval;
     opt.Purity_extract1_limit   = 0.50;
@@ -51,14 +50,14 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 
 %   Transport
     opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-16; % D_{ax}
-    opt.filmDiffusion             = [5.0e-5 5.0e-5 5.0e-5];  % K_f
+    opt.filmDiffusion             = [5.0e-5 5.0e-5 5.0e-5]; % K_f
     opt.diffusionParticle         = [1.6e4 1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0 0.0];
 
 %   Geometry
     opt.columnLength        = 53.6e-2;        % m
     opt.columnDiameter      = 2.60e-2;        % m
-    opt.particleRadius      = 0.325e-2 /2;    % m
+    opt.particleRadius      = 0.325e-4 /2;    % m
     opt.porosityColumn      = 0.38;
     opt.porosityParticle    = 0.00001;        % e_p very small to ensure e_t = e_c
 

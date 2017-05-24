@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 1, a 4-zone four-column case for binary separation
-
+%   Case 1, a 4-zone eight-column case for binary separation
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -25,9 +24,9 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
 
-%   The parameter setting for the SMB
+%   The parameter settting for the SMB
     opt.nInterval       = 20;
-    opt.switch          = 180/opt.nInterval;
+    opt.switch          = 1552/opt.nInterval;
     opt.timePoints      = 1000/opt.nInterval;
     opt.Purity_extract_limit    = 0.99;
     opt.Purity_raffinate_limit  = 0.99;
@@ -35,38 +34,38 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 
     opt.enableDebug = true;
     opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
-    opt.nColumn     = 4;
-    opt.structID    = [1 1 1 1]; % the column configuration which is used for structure optimization
+    opt.nColumn     = 8;
+    opt.structID    = [2 2 2 2];
 
 %   Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';
     opt.nComponents = 2;
-    opt.KA = [5.72 7.7]; % [comp_A, comp_B], A for raffinate, B for extract
+    opt.KA = [0.28 0.54]; % [comp_A, comp_B], A for raffinate, B for extract
     opt.KD = [1, 1];
-    opt.comp_raf_ID = 1; % the target component withdrawn from the raffinate ports
-    opt.comp_ext_ID = 2; % the target component withdrawn from the extract ports
+    opt.comp_raf_ID = 1;  % the target component withdrawn from the raffinate ports
+    opt.comp_ext_ID = 2;  % the target component withdrawn from the extract ports
 
 %   Transport
-    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20; % D_{ax}
-    opt.filmDiffusion             = [100 100];  % K_f
+    opt.dispersionColumn          = ones(1,opt.nZone) .* 3.8148e-6; % D_{ax}
+    opt.filmDiffusion             = [5.0e-5 5.0e-5];  % K_f
     opt.diffusionParticle         = [1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0];
 
 %   Geometry
-    opt.columnLength        = 0.25;      % m
-    opt.columnDiameter      = 0.02;      % m
-    opt.particleRadius      = 0.0005;    % m % user-defined one in this case
-    opt.porosityColumn      = 0.83;
-    opt.porosityParticle    = 0.000001;  % e_p evry small to ensure e_t = e_c
+    opt.columnLength        = 53.6e-2;        % m
+    opt.columnDiameter      = 2.60e-2;        % m
+    opt.particleRadius      = 0.325e-2 /2;    % m
+    opt.porosityColumn      = 0.38;
+    opt.porosityParticle    = 1e-5;           % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
-    crossArea = pi * (opt.columnDiameter/2)^2;   % m^2
-    flowRate.recycle    = 9.62e-7;      % m^3/s
-    flowRate.feed       = 0.98e-7;      % m^3/s
-    flowRate.raffinate  = 1.40e-7;      % m^3/s
-    flowRate.desorbent  = 1.96e-7;      % m^3/s
-    flowRate.extract    = 1.54e-7;      % m^3/s
+    crossArea = pi * (opt.columnDiameter/2)^2;        % m^2
+    flowRate.recycle    = 0.1395e-6;      % m^3/s
+    flowRate.feed       = 0.02e-6  ;      % m^3/s
+    flowRate.raffinate  = 0.0266e-6;      % m^3/s
+    flowRate.desorbent  = 0.0414e-6;      % m^3/s
+    flowRate.extract    = 0.0348e-6;      % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -77,7 +76,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    concentrationFeed 	= [0.55, 0.55];   % g/cm^3 [concentration_compA, concentration_compB]
+    concentrationFeed 	= [0.5, 0.5];   % g/cm^3 [concentration_compA, concentration_compB]
     opt.molMass         = [180.16, 180.16];
     opt.yLim            = max(concentrationFeed ./ opt.molMass);
 
@@ -99,11 +98,11 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   Dispersive Plug Flow Reactor
     opt.enable_DPFR = false;
 
-    opt.DPFR_length = 0.0016;
+    opt.DPFR_length = 0.0066;
     opt.DPFR_nCells = 50;
 
     opt.DPFR_velocity   = 0.00315;
-    opt.DPFR_dispersion = 2.5e-30;
+    opt.DPFR_dispersion = 2.5e-20;
 
 
 end

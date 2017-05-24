@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 2, a 4-zone eight-column case which has three components
-
+%   A 4-zone eight-column case which has three components
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -55,7 +54,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   Geometry
     opt.columnLength        = 53.6e-2;    % m
     opt.columnDiameter      = 2.6e-2;     % m
-    opt.particleRadius      = 0.325e-2/2; % m % macrometer to meter
+    opt.particleRadius      = 0.325e-4/2; % m % macrometer to meter
     opt.porosityColumn      = 0.38;
     opt.porosityParticle    = 0.000001;   % e_p very small to ensure e_t = e_c
 

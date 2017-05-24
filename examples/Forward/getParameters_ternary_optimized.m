@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 1, a 5-zone five-column case which is optimized
-
+%   Case #, a 5-zone five-column case which is optimized
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -18,7 +17,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   The parameter setting for simulator
     opt.tolIter         = 1e-4;  % tolerance of the SMB stopping criterion
     opt.nMaxIter        = 1000;  % the maximum iteration step in SMB
-    opt.nThreads        = 8;     % threads of CPU, up to your computer
+    opt.nThreads        = 4;     % threads of CPU, up to your computer
     opt.nCellsColumn    = 40;    % discretization number in one column
     opt.nCellsParticle  = 1;     % discretization number in one particle
     opt.ABSTOL          = 1e-10; % tolerance of CADET stopping criterion
