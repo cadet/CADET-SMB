@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 1, a 4-zone four-column case which adopts the ModiCon modification
-
+%   A 4-zone four-column case which adopts the ModiCon modification
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -47,16 +46,16 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 
 %   Transport
     opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20; % D_{ax}
-    opt.filmDiffusion             = [100 100];  % K_f
+    opt.filmDiffusion             = [1e-5 1e-5];    % K_f
     opt.diffusionParticle         = [1.6e4 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0 0.0];
 
 %   Geometry
     opt.columnLength        = 0.25;      % m
     opt.columnDiameter      = 0.02;      % m
-    opt.particleRadius      = 0.0005;    % m % user-defined one in this case
+    opt.particleRadius      = 1e-5;      % m % user-defined one in this case
     opt.porosityColumn      = 0.83;
-    opt.porosityParticle    = 0.000001;  % e_p very small to ensure e_t = e_c
+    opt.porosityParticle    = 1e-5;      % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate

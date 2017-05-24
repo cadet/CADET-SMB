@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 3, a 8-zone eight-column case for ternary separation
-
+%   Case 5, a 8-zone eight-column case for ternary separation
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
@@ -57,7 +56,7 @@ function [opt, interstVelocity, Feed] = getParameters(varargin)
 %   Geometry
     opt.columnLength        = 53.6e-2;        % m
     opt.columnDiameter      = 2.60e-2;        % m
-    opt.particleRadius      = 0.325e-2 /2;    % m
+    opt.particleRadius      = 0.325e-4 /2;    % m
     opt.porosityColumn      = 0.38;
     opt.porosityParticle    = 0.00001;        % e_p very small to ensure e_t = e_c
 

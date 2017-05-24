@@ -5,8 +5,8 @@ FILE = simulatedMovingBed
 all: run clean
 
 run:
-	matlab -nodesktop -nosplash -r "cd ..; installCADET; cd $(FILE); $(FILE) quit"
+	matlab -nodesktop -nosplash -r "cd ..; installCADET; cd $(FILE); $(FILE); quit"
 
 clean: 
-	rm *.m~
-	@echo "all cleaned up"
+	rm *.m~ *.txt~
+	@echo "all *.m~ *.txt~ have cleaned up"

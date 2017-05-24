@@ -105,7 +105,7 @@ function objective = simulatedMovingBed(varargin)
     string = stringSet(1:opt.nColumn);
 
     % Initialize the starting points, currentData
-    initialState = [];
+    initialState = cell(1,2);
     currentData  = cell(1, opt.nColumn);
     for k = 1:opt.nColumn
         % currentData stores the outlets of each interval of columns
@@ -220,7 +220,7 @@ function objective = simulatedMovingBed(varargin)
             end
         end
 
-        currentData{sequence.(k)}.outlet = outletProfile.outlet;
+        currentData{sequence.(k)}.outlet   = outletProfile.outlet;
         currentData{sequence.(k)}.colState = outletProfile.column;
         initialState  = lastState;
 
@@ -277,7 +277,9 @@ function objective = simulatedMovingBed(varargin)
             end
 
         end
-    end
+
+    end % main loop
+
 %----------------------------------------------------------------------------------------
 
 %   Post-process

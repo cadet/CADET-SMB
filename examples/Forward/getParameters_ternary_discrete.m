@@ -1,5 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
-%   Case #2, a 5-zone case for column configuration optimization
+%   Case #, a case for column configuration optimization
 
 % =============================================================================
 % This is the function to input all the necessary data for simulation
@@ -22,9 +22,12 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
 %   The parameter setting for simulator
     opt.tolIter         = 1e-3;   % tolerance of the SMB stopping criterion
     opt.nMaxIter        = 1000;   % the maximum iteration step in SMB
-    opt.nThreads        = 4;      % threads of CPU, up to your computer
+    opt.nThreads        = 8;      % threads of CPU, up to your computer
     opt.nCellsColumn    = 30;     % discretization number in one column
     opt.nCellsParticle  = 1;      % discretization number in one particle
+    opt.ABSTOL          = 1e-9;   % tolerance of CADET stopping criterion
+    opt.INIT_STEP_SIZE  = 1e-14;  % refer your to CADET manual
+    opt.MAX_STEPS       = 5e6;    % the maximum iteration step in CADET
 
 %   The parameter setting for the SMB
     opt.switch          = valueAssign.switch;  % s % switching time
@@ -49,8 +52,8 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     opt.comp_ext2_ID = 2; % the target component withdrawn from the extract ports
 
 %   Transport
-    opt.dispersionColumn          = 3.8148e-10;     % D_{ax}
-    opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5];      % K_f
+    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-10; % D_{ax}
+    opt.filmDiffusion             = [5.0e-5, 2.5e-5, 5.0e-5];  % K_f
     opt.diffusionParticle         = [1.6e4, 1.6e4, 1.6e4];  % D_p
     opt.diffusionParticleSurface  = [0.0, 0.0, 0.0];
 
@@ -59,7 +62,7 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     opt.columnDiameter      = 1.0e-2;     % m
     opt.particleRadius      = 30e-6/2;    % m % user-defined one in this case
     opt.porosityColumn      = 0.8;
-    opt.porosityParticle    = 0.00000001;  % unknown
+    opt.porosityParticle    = 0.00000001;  % e_p very small to ensure e_t = e_c
 
 %   Parameter units transformation
 %   The flow rate of Zone I was defined as the recycle flow rate
@@ -67,8 +70,8 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     flowRate.recycle    = valueAssign.recycle;      % m^3/s
     flowRate.feed       = valueAssign.feed;         % m^3/s
     flowRate.desorbent  = valueAssign.desorbent;    % m^3/s
-    flowRate.extract1   = valueAssign.extract1;      % m^3/s
-    flowRate.extract2   = valueAssign.extract2;                % m^3/s
+    flowRate.extract1   = valueAssign.extract1;     % m^3/s
+    flowRate.extract2   = valueAssign.extract2;     % m^3/s
     flowRate.raffinate  = flowRate.desorbent - flowRate.extract1 - flowRate.extract2 + flowRate.feed;  % m^3/s
     opt.flowRate_extract1  = flowRate.extract1;
     opt.flowRate_extract2  = flowRate.extract2;
@@ -79,10 +82,10 @@ function [opt, interstVelocity, Feed] = getParameters(ParSwarm)
     interstVelocity.feed      = flowRate.feed / (crossArea*opt.porosityColumn);         % m/s
     interstVelocity.raffinate = flowRate.raffinate / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
-    interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);      % m/s
-    interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);      % m/s
+    interstVelocity.extract1  = flowRate.extract1 / (crossArea*opt.porosityColumn);     % m/s
+    interstVelocity.extract2  = flowRate.extract2 / (crossArea*opt.porosityColumn);     % m/s
 
-    concentrationFeed 	= [1.0, 1.0, 1.0];   % g/m^3 [concentration_compA, concentration_compB]
+    concentrationFeed 	= [1.0, 1.0, 1.0];   % g/cm^3 [concentration_compA, concentration_compB]
     opt.molMass         = [227.217, 267.24, 251.24192]; % The molar mass of each components
     opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
 
