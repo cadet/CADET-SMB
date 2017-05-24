@@ -62,7 +62,7 @@ In this branch, we introduce the one-column analog fixed-point iteration (OCA-FP
 
 # Dependency and Platforms
 * Matlab (R2010b or higher);
-* CADET (version 2.3.2);
+* CADET (version 3.0.0);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 
