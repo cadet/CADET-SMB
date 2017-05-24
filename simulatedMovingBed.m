@@ -117,7 +117,7 @@ function objective = simulatedMovingBed(varargin)
         % currentData stores the outlets of each interval of columns
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
-        currentData{k}.lastState = [];
+        currentData{k}.lastState = cell(1,2);
 
         if opt.enable_DPFR
             currentData{k}.lastState_DPFR = cell(1,2);
@@ -158,11 +158,11 @@ function objective = simulatedMovingBed(varargin)
     dummyProfile 	= currentData{sequence.(string(end))}.outlet;
 
     % The dimension of plotData (columnNumber x switches)
-    %          t_s   2*t_s  3*t_s  4*t_s
-    %          {1}    {1}    {1}    {1}
-    %          {2}    {2}    {2}    {2}
-    %          {3}    {3}    {3}    {3}
-    %          {4}    {4}    {4}    {4}
+    %       t_s   2*t_s  3*t_s  4*t_s
+    %       {1}    {1}    {1}    {1}
+    %       {2}    {2}    {2}    {2}
+    %       {3}    {3}    {3}    {3}
+    %       {4}    {4}    {4}    {4}
     plotData = cell(opt.nColumn,opt.nColumn);
 
     % The data for plotting dynamic trajectory.
@@ -246,8 +246,10 @@ function objective = simulatedMovingBed(varargin)
             currentData{sequence.(k)}.colState   = outletProfile.column;
             currentData{sequence.(k)}.lastState  = lastState;
 
-        end
+        end % for k = string'
 
+        % Plot the outlet profile of each column in one round
+        SMB.plotFigures(opt, currentData);
 
         % The collection of the dyncData for the trajectory plotting
         if opt.nZone == 4
@@ -273,9 +275,6 @@ function objective = simulatedMovingBed(varargin)
         else
             plotData(:,index) = currentData';
         end
-
-        % Plot the outlet profile of each column in one round
-        SMB.plotFigures(opt, currentData);
 
         % Convergence criterion was adopted in each nColumn iteration
         %   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column

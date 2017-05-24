@@ -1,6 +1,5 @@
 function [opt, interstVelocity, Feed] = getParameters(varargin)
-%   Case 1, a 5-zone five-column case for which is optimized
-
+%   Case #, a 5-zone five-column case which is optimized
 % =============================================================================
 % This is the function to input all the necessary data for simulation
 %
