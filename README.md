@@ -68,7 +68,7 @@ In this branch, we introduce the lag-aware operator-splitting (LAW-OPS) method. 
 
 # Dependency and Platforms
 * Matlab (R2010b or higher);
-* CADET (version 2.3.2);
+* CADET (version 3.0.0);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 
