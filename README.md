@@ -77,7 +77,7 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 # Dependencies and Platforms
 
 * Matlab (R2010b or higher);
-* CADET (version 2.3.2);
+* CADET (version 3.0.0);
 * Linux, Windows, Mac OS.
 
 # Tutorial and Instructions
