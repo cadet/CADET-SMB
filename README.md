@@ -71,7 +71,7 @@ In comparison with LAW-OPS method, there is an external requirement on the numbe
 
 # Dependency and Platforms
 * Matlab (R2010b or higher);
-* CADET (version 2.3.2);
+* CADET (version 3.0.0);
 * platforms, please see the Dependencies section in the CADET wiki.
 
 
