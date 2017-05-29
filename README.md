@@ -50,7 +50,7 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 
 *Five zone scheme for ternary separations and the chromatogram of the five-zone scheme*
 
-* In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4-4;
+* In both binary and ternary separations, arbitrary column configurations are available, in addition to basic column configurations such as 1-1-1-1, 2-2-2-2-2, 3-3-3-3, and 4-4-4-4;
 
 * The dynamics of the concentration profiles (system trajectories) can be computed by operator splitting (OSP);
 
