@@ -205,7 +205,7 @@ function objective = simulatedMovingBed(varargin)
                 [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
 
                 % The CSTR after the current column
-                outletProfile = SMB.CSTR(outletProfile, column, opt);
+                outletProfile.outlet = SMB.CSTR(outletProfile.outlet, column, opt);
 
             elseif opt.enable_DPFR
 
@@ -215,7 +215,7 @@ function objective = simulatedMovingBed(varargin)
                 [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
 
                 % The DPFR after the current column
-                [outletProfile, lastState_DPFR_pos] = SMB.DPFR(outletProfile, column.initialState_DPFR{2}, opt);
+                [outletProfile.outlet, lastState_DPFR_pos] = SMB.DPFR(outletProfile.outlet, column.initialState_DPFR{2}, opt);
 
                 currentData{sequence.(k)}.lastState_DPFR = [{lastState_DPFR_pre}, {lastState_DPFR_pos}];
 

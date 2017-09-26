@@ -1329,6 +1329,8 @@ classdef SMB < handle
                 error('SMB.DPFR: There are no enough arguments \n');
             end
 
+            warning('off', 'MATLAB:interp1:ppGriddedInterpolant');
+
             lastState = zeros(opt.nComponents, opt.DPFR_nCells);
 
 			delta_h = opt.DPFR_length / opt.DPFR_nCells;
