@@ -1,6 +1,6 @@
 function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
 % =============================================================================
-%   Case 1a, a 4-zone eight-column case for binary separation
+%   Case 4, a 4-zone eight-column case for binary separation with SMA isotherm
 %
 % This is the function to input all the necessary data for simulation
 % Returns:
@@ -19,52 +19,54 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.nMaxIter        = 1000;
     opt.nThreads        = 4;
     opt.nCellsColumn    = 40;
-    opt.nCellsParticle  = 1;
+    opt.nCellsParticle  = 5;
     opt.ABSTOL          = 1e-10;
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
 
     % The parameter setting for the SMB
-    opt.nInterval       = 8;
-    opt.switch          = 180/opt.nInterval;
+    opt.nInterval       = 5;
+    opt.switch          = 257/opt.nInterval; % s
     opt.timePoints      = 1000/opt.nInterval;
     opt.Purity_limit    = [0.99, 0.99];
     opt.Penalty_factor  = 10;
 
     opt.enableDebug = true;
-    opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
+    opt.nZone       = 4;
     opt.nColumn     = 8;
     opt.structID    = [2 2 2 2]; % the column configuration which is used for structure optimization
 
     % Binding: Linear Binding isotherm
-    opt.BindingModel = 'MultiComponentLangmuirBinding';
+    opt.BindingModel = 'StericMassActionBinding';
     opt.nComponents = 2;
-    opt.KA = [5.72, 7.70]; % [comp_A, comp_B], A for raffinate, B for extract
-    opt.KD = [1, 1];
-    opt.QMAX = [1.0, 1.0];
-    opt.compTargID = [2, 1]; % target components at [Extract Raffinate] ports
+    opt.LAMBDA = 210; % Ionic capacity in mol/m^3
+    opt.KA = [0, 0.1792, 10.83]; % [MB, BSA], MB for raffinate, BSA for extract, component 1 is salt
+    opt.KD = [0, 1, 1]; % component 1 is salt
+    opt.NU = [1, 1.22, 6.03]; % component 1 is salt
+    opt.SIGMA = [1, 10, 75]; % component 1 is salt
+    opt.compTargID = [2, 1]; % target compoents at [Extract Raffinate] ports
 
     % Transport
-    opt.dispersionColumn          = ones(1,opt.nZone) .* 3.30e-26; %D_{ax}
-    opt.filmDiffusion             = [1e-5, 1e-5];    % K_f
-    opt.diffusionParticle         = [1.6e4, 1.6e4];  % D_p
-    opt.diffusionParticleSurface  = [0.0, 0.0];
+    opt.dispersionColumn          = [2.808, 1.755, 3.685, 1.755] .* 1e-7; % D_{ax}
+    opt.filmDiffusion             = [1e-6, 1e-6, 1e-6];      % K_f
+    opt.diffusionParticle         = [1.5, 3.6, 1.57] .* 1e-11;  % D_p
+    opt.diffusionParticleSurface  = [0.0, 0.0, 0.0];
 
     % Geometry
-    opt.columnLength        = 0.25;      % m
-    opt.columnDiameter      = 0.02;      % m
-    opt.particleRadius      = 0.0005;    % m % user-defined one in this case
-    opt.porosityColumn      = 0.83;
-    opt.porosityParticle    = 0.000001;  % e_p very small to ensure e_t = e_c
+    opt.columnLength        = 9.04e-2; % m
+    opt.columnDiameter      = 1.0e-2;  % m
+    opt.particleRadius      = 5.0e-5;  % m 
+    opt.porosityColumn      = 0.39;
+    opt.porosityParticle    = 0.57;
 
     % Parameter units transformation
     % The flow rate of Zone I was defined as the recycle flow rate
     crossArea = pi * (opt.columnDiameter/2)^2;   % m^2
-    flowRate.recycle    = 9.62e-7;      % m^3/s
-    flowRate.feed       = 0.98e-7;      % m^3/s
-    flowRate.raffinate  = 1.40e-7;      % m^3/s
-    flowRate.desorbent  = 1.96e-7;      % m^3/s
-    flowRate.extract    = 1.54e-7;      % m^3/s
+    flowRate.recycle    = 5.4812e-8;      % m^3/s
+    flowRate.feed       = 1.03e-6/60;      % m^3/s
+    flowRate.raffinate  = 1.06e-6/60;      % m^3/s
+    flowRate.desorbent  = 2.05e-6/60;      % m^3/s
+    flowRate.extract    = 2.02e-6/60;      % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -75,9 +77,9 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    concentrationFeed 	= [550, 550];   % g/m^3 [concentration_compA, concentration_compB]
-    opt.molMass         = [1000, 1000];
-    opt.yLim            = max(concentrationFeed ./ opt.molMass);
+    concentrationFeed 	= [0.1, 0.5];   % g/m^3 [MB BSA]
+    opt.molMass         = [66.463, 66.463]; % The molar mass of each components
+    opt.yLim            = max(concentrationFeed ./ opt.molMass) * 1.1; % the magnitude for plotting
 
     % Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
@@ -86,6 +88,13 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
 
     for i = 1:opt.nComponents
         Feed.concentration(1:end, i) = concentrationFeed(i) / opt.molMass(i);
+    end
+
+    % With steric mass action isotherm, salt concentration should be firstly appended
+    if strcmp('StericMassActionBinding', opt.BindingModel)
+        opt.concentrationSalt  = [130, 340]; % mol/m^3
+        Feed.concentration = [ones(length(Feed.time), 1).*opt.concentrationSalt(1),  Feed.concentration];
+        Desorbent.concentration = [ones(length(Feed.time), 1).*opt.concentrationSalt(2), Desorbent.concentration];
     end
 
 % -----------------------------------------------------------------------------

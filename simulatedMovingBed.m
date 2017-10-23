@@ -1,66 +1,10 @@
 function objective = simulatedMovingBed(varargin)
-
 % =============================================================================
-% This is the main function which is charge of switching to reach the
-% cyclic steady state. The layout of the columns and the configuration is
-% listed as follow:
+% Main function, which is in charge of switching to achieve CSS
 %
-%                                       FOUR-ZONE
-%              4-column SMB                                       8-column SMB
-% Extract                          Feed       |    Extract                           Feed
-%       \                          /          |         \                            /
-%        --------Zone II(b)--------           |          --------Zone II(c/d)--------
-%        |                        |           |          |                          |
-% Zone I(a)                  Zone III(c)      |     Zone I(a/b)               Zone III(e/f)
-%        |                        |           |          |                          |
-%        --------Zone IV(d)--------           |          --------Zone IV(h/g)--------
-%       /                          \          |         /                            \
-% Desorbent                       Raffinate   |   Desorbent                         Raffinate
-%
-%             12-column SMB                                       16-column SMB
-% Extract                            Feed       |    Extract                         Feed
-%       \                            /          |         \                          /
-%        -- ----Zone II(d/e/f)-------           |          -----Zone II(e/f/g/h)-----
-%        |                          |           |          |                        |
-% Zone I(c/b/a)                Zone III(g/h/i)  |  Zone I(a/b/c/d)           Zone III(i/j/k/l)
-%        |                          |           |          |                        |
-%        -------Zone IV(l/k/j)-------           |          -----Zone IV(p/o/n/m)-----
-%       /                            \          |         /                          \
-% Desorbent                         Raffinate   |   Desorbent                       Raffinate
-%
-%                                       FIVE-ZONE
-%              5-column SMB                                       10-column SMB
-%    Ext2                          Feed       |      Ext2                            Feed
-%       \                          /          |         \                            /
-%        --------Zone II(c)--------           |          --------Zone III(e/f)--------
-%        |                        |           |          |                           |
-% Zone II(b)                      |           |     Zone II(d/c)                     |
-%        |                        |           |          |                           |
-% Ext1 --                    Zone IV(d)       |   Ext1 --                        Zone IV(g/h)
-%        |                        |           |          |                           |
-% Zone I(a)                       |           |     Zone I(b/a)                      |
-%        |                        |           |          |                           |
-%        --------Zone V(e)---------           |          ---------Zone V(j/i)---------
-%       /                          \          |         /                            \
-% Desorbent                       Raffinate   |   Desorbent                         Raffinate
-%
-%             15-column SMB                                       20-column SMB
-%    Ext2                            Feed       |      Ext2                              Feed
-%       \                            /          |         \                              /
-%        -------Zone II(g/h/i)-------           |          -------Zone III(i/g/k/l)-------
-%        |                          |           |          |                             |
-% Zone II(f/e/d)                    |           | Zone II(h/g/f/e)                       |
-%        |                          |           |          |                             |
-% Ext1 --                    Zone IV(j/k/l)     |   Ext1 --                        Zone IV(m/n/o/p)
-%        |                          |           |          |                             |
-% Zone I(c/b/a)                     |           | Zone I(d/c/b/a)                        |
-%        |                          |           |          |                             |
-%        -------Zone V(o/n/m)--------           |          -------Zone V(t/s/r/q)---------
-%       /                            \          |         /                              \
-% Desorbent                         Raffinate   |   Desorbent                           Raffinate
-%
-% Fluid phase goes from Zone I to Zone II to Zone III, while the ports switch direction
-% is from Zone I to Zone IV to Zone III;
+% Binary separations (conventional four-zone scheme) and ternary separations
+% (cascade, five-zone or eight zone schemes) are available in this program.
+% As for the specific column configurations, I refer your to our paper.
 % =============================================================================
 
 
@@ -68,27 +12,18 @@ function objective = simulatedMovingBed(varargin)
 
     tTotal = tic;
 
-    % Construct the string in order to tell simulator the calculation sequence
-    stringSet = {'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm'...
-                 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'...
-                 'a1' 'b1' 'c1' 'd1' 'e1' 'f1' 'g1' 'h1' 'i1' 'j1' 'k1' 'l1' 'm1'...
-                 'n1' 'o1' 'p1' 'q1' 'r1' 's1' 't1' 'u1' 'v1' 'w1' 'x1' 'y1' 'z1'...
-                 'a2' 'b2' 'c2' 'd2' 'e2' 'f2' 'g2' 'h2' 'i2' 'j2' 'k2' 'l2' 'm2'...
-                 'n2' 'o2' 'p2' 'q2' 'r2' 's2' 't2' 'u2' 'v2' 'w2' 'x2' 'y2' 'z2'...
-                 'a3' 'b3' 'c3' 'd3' 'e3' 'f3' 'g3' 'h3' 'i3' 'j3' 'k3' 'l3' 'm3'...
-                 'n3' 'o3' 'p3' 'q3' 'r3' 's3' 't3' 'u3' 'v3' 'w3' 'x3' 'y3' 'z3'...
-                 'aa' 'bb' 'cc' 'dd' 'ee' 'ff' 'gg' 'hh' 'ii' 'jj' 'kk' 'll' 'mm'...
-                 'nn' 'oo' 'pp' 'qq' 'rr' 'ss' 'tt' 'uu' 'vv' 'ww' 'xx' 'yy' 'zz'};
+    % Generate alphabet strings to name columns
+    stringSet = SMB.stringGeneration();
 
-    [opt, interstVelocity, Feed] = getParameters(varargin{:});
+    % Read operating parameters of SMB unit
+    [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin{:});
+    % If SMA isotherm, salt is considered as a component
+    if strcmp('StericMassActionBinding', opt.BindingModel), opt.nComponents = opt.nComponents + 1; end
 
-    % Check the interstitial velocity, if anyone was negative, stop the simulation
-    %   and assign a very big objective function value to this column configuration.
+    % Check interstitial velocities in SMB optimization
     flag = SMB.interstVelocityCheck(interstVelocity, opt);
-    if flag == 1
-        objective = 1e5;
-        return;
-    end
+    % if flag is true (anyone is negative), assign a big objective value to get rid of
+    if flag == 1, objective = 1e5; return; end
 
     if opt.enable_CSTR && opt.enable_DPFR
         error('It is not allowed have both the CSTR and DPFR in the simulation \n');
@@ -101,23 +36,24 @@ function objective = simulatedMovingBed(varargin)
 
 %   Preallocation
 %----------------------------------------------------------------------------------------
-    % Construct the string for simulation sequence
+    % Generate an initial alphabet string set to identify positions of SMB unit.
+    % The position after desorbent node is, by default, marked as "a" (first one)
     string = char(stringSet(1:opt.nColumn));
 
-    % If num = 2 (4-column case), the starting point is Feed, sequence is c, d, a, b
-    %   num = 0, the starting point is Desorbent (default), sequence is a, b, c, d
-    % In the 8-zone scenario, it should be careful in choosing the starting node
-    %   as it is impossible to start from Feed2 node at the outset.
+    % Simulations follow the string sequence (starting from desorbent node)
+    % To change starting simulation position, shift num to corresponding value
     string = circshift(string, 0);
-    startingPointIndex = SMB.stringIndexing(opt, string(1));
+    % Be aware, in eight-zone case, simulations cannot begain after feed2 node
+    startingPointIndex = SMB.nodeIndexing(opt, string(1));
 
-    % Initialize the starting points, currentData
+    % currentData matrix is the profile matrix of columns within one time interval
     currentData    = cell(1, opt.nColumn);
-    transitionData = cell(1, opt.nColumn);
+    % temp memory for transitionData
     tempData       = cell(1, opt.nColumn);
+    % transtionData is the instant concentration profile of all columns in one iteration
+    transitionData = cell(1, opt.nColumn);
 
     for k = 1:opt.nColumn
-        % currentData stores the outlets of each interval of columns
         currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
         currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
         currentData{k}.lastState = cell(1,2);
@@ -128,28 +64,23 @@ function objective = simulatedMovingBed(varargin)
             currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
         end
 
+        % This is the temporary data for dynamic trajectory plotting
+        tempData{k}.concentration = cell(1, opt.nInterval);
+
         % transitionData stores the composition profile of nInterval pieces
         transitionData{k}.outlet.time = linspace(0, opt.switch*opt.nInterval, opt.timePoints*opt.nInterval);
         transitionData{k}.outlet.concentration = zeros(opt.timePoints*opt.nInterval, opt.nComponents);
-
-        % This is the temporary data for dynamic trajectory plotting
-        tempData{k}.concentration = cell(1, opt.nInterval);
     end
 
-    % Number the columns for the sake of plotting
+    % Generate arabic numbers to identify columns
     columnNumber = cell(1, opt.nColumn);
     for k = 1:opt.nColumn
-        if k == 1
-            columnNumber{1} = opt.nColumn;
-        else
-            columnNumber{k} = k-1;
-        end
+        if k == 1, columnNumber{1} = opt.nColumn; else columnNumber{k} = k-1; end
     end
-
+    % Combine alphabet string with arabic numbers for switching sake
     sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
 
-    % Specify the column for the convergence checking
-    % Usually, the column after the Feed node is adopted
+    % Specify the column for the convergence checking. The column after the Feed is usually adopted
     if opt.nZone == 4
         convergIndx = sum(opt.structID(1:2));
     elseif opt.nZone == 5
@@ -162,57 +93,46 @@ function objective = simulatedMovingBed(varargin)
 
     % convergPrevious is used for stopping criterion
     convergPrevious = transitionData{convergIndx}.outlet.concentration;
-
-    % After switching, dummyProfile is used to transfer concentration profile of last column
-    %   to the inlet port of the first column
-    dummyProfile = tempData{sequence.(string(end))};
+    % The profile of last column in terms of sequence is stored as dummyProfile
+    dummyProfile    = tempData{sequence.(string(end))};
     for kk = 1:opt.nInterval
         dummyProfile.concentration{kk} = zeros(length(Feed.time), opt.nComponents);
     end
 
-    % The dimension of plotData (columnNumber x switches)
-    %       t_s   2*t_s  3*t_s  4*t_s
-    %       {1}    {1}    {1}    {1}
-    %       {2}    {2}    {2}    {2}
-    %       {3}    {3}    {3}    {3}
-    %       {4}    {4}    {4}    {4}
+    % plotData (columnNumber x switches), monitoring instant profile of each column in one iteration
     plotData = cell(opt.nColumn,opt.nColumn);
 
-    % The data for plotting dynamic trajectory.
-    % The row represents the number of withdrawn ports
-    if opt.nZone == 4
-        dyncData = cell(2, opt.nMaxIter);
-    elseif opt.nZone == 5
-        dyncData = cell(3, opt.nMaxIter);
-    elseif opt.nZone == 8
-        dyncData = cell(3, opt.nMaxIter);
+    % dyncData is used for generating trajectories of withdrawn ports
+    if opt.enableDebug
+        if opt.nZone == 4
+            dyncData = cell(2, opt.nMaxIter);
+        elseif opt.nZone == 5
+            dyncData = cell(3, opt.nMaxIter);
+        elseif opt.nZone == 8
+            dyncData = cell(3, opt.nMaxIter);
+        end
     end
-%----------------------------------------------------------------------------------------
+
 
 %   Simulations
 %----------------------------------------------------------------------------------------
-    % Interactive plotting
-    if opt.enableDebug
-        fprintf(' ========================================================== \n');
-        fprintf(' ---- Section ---- Switch ---- Cycle ---- CSS_relError ---- \n');
-    end
+    % Interactive plotting when debug mode is enabled
+    SMB.UIplot('head', opt);
 
     % Main loop
     for i = 1:opt.nMaxIter
 
-        % Switching the ports, in the countercurrent manner of fluid
+        % Switch implementation by means of attaching different column to corresponding position
         sequence = cell2struct( circshift( struct2cell(sequence),-1 ), stringSet(1:opt.nColumn) );
 
         simMex = cell(1, opt.nColumn);
 
         for j = 1:opt.nInterval
 
-            % The simulation of columns within a SMB unit by the sequence
-            %   say, 'a', 'b', 'c', 'd' in four-column cases (desorbent node)
-            for k = string'
+            for k = string' % do nColumn simulations in terms of string sequence
 
                 % The node balance: transmission of concentration, column state, velocity and so on
-            	column = SMB.massConservation(currentData, interstVelocity, Feed, opt, sequence, k, j);
+                column = SMB.massConservation(currentData, interstVelocity, Feed, Desorbent, opt, sequence, k, j);
 
                 if opt.enable_CSTR
 
@@ -228,7 +148,7 @@ function objective = simulatedMovingBed(varargin)
                     end
 
                     % The CSTR after the current column
-                    outletProfile = SMB.CSTR(outletProfile, column, opt);
+                    outletProfile.outlet = SMB.CSTR(outletProfile.outlet, column, opt);
 
                 elseif opt.enable_DPFR
 
@@ -244,7 +164,7 @@ function objective = simulatedMovingBed(varargin)
                     end
 
                     % The DPFR after the current column
-                    [outletProfile, lastState_DPFR_pos] = SMB.DPFR(outletProfile, column.initialState_DPFR{2}, opt);
+                    [outletProfile.outlet, lastState_DPFR_pos] = SMB.DPFR(outletProfile.outlet, column.initialState_DPFR{2}, opt);
 
                     currentData{sequence.(k)}.lastState_DPFR = [{lastState_DPFR_pre}, {lastState_DPFR_pos}];
 
@@ -262,72 +182,84 @@ function objective = simulatedMovingBed(varargin)
 
                 end
 
-
-                % Store the concentration profile, in which it is used as the profile of Feed_2 inlet
-                if opt.nZone == 8
-                    if strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3))))
-                        Feed2 = outletProfile.outlet;
-                    elseif strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1)))
-                        Feed2 = outletProfile.outlet;
-                    end
-                end
-
-                currentData{sequence.(k)}.outlet   = outletProfile.outlet;
-                % Store the last column states
-                %   when j equals nInterval, the column state is complete
+                % when j equals nInterval, the column state is complete
                 %   with the exception of the very first column, which will be re-calculated
                 if j == opt.nInterval && ~strcmp(k, string(1))
-                    currentData{sequence.(k)}.lastState  = lastState;
-                    currentData{sequence.(k)}.colState = outletProfile.column;
+                    currentData{sequence.(k)}.lastState = lastState;
+                    currentData{sequence.(k)}.colState  = outletProfile.column;
                 end
-                % Store the tempData to plot construct trajectories
+                currentData{sequence.(k)}.outlet        = outletProfile.outlet;
+
+                % Store the interval-wise concentration profile of all columns
                 tempData{sequence.(k)}.concentration{j} = outletProfile.outlet.concentration;
+
+                % If eight-zone case, store the intermediate outlet as the Feed2 inlet
+                if opt.nZone == 8
+                    if ( strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3)))) ) ...
+                            || ( strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1))) )
+                        Feed2 = outletProfile.outlet;
+                    end
+                    % desalting step in SMA isotherm during connection
+                    if strcmp('StericMassActionBinding', opt.BindingModel)
+                        Feed2.concentration(:,1) = ones(length(Feed.time), 1) .* opt.concentrationSalt(2,1);
+                    end
+                end
 
             end % for k = string'
 
 
             % Simulate the very first column again to update the actual column state, correspondingly the outletProfile is omitted
             [currentData{sequence.(string(1))}.colState, currentData{sequence.(string(1))}.lastState] = ...
-                SMB.observerSimulation(sequence, interstVelocity, Feed, currentData{sequence.(string(end))}.outlet, ... 
+                SMB.observerSimulation(sequence, interstVelocity, Feed, Desorbent, currentData{sequence.(string(end))}.outlet, ...
                 currentData{sequence.(string(1))}.lastState, string(1), opt);
 
 
             % The collection of the dyncData for the trajectory plotting
-            if opt.nZone == 4
-                dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3))))) }.outlet.concentration;
-                dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
-            elseif opt.nZone == 5
-                dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:4))))) }.outlet.concentration;
-                dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:2))))) }.outlet.concentration;
-                dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
-            elseif opt.nZone == 8
-                dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:7))))) }.outlet.concentration;
-                dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:5))))) }.outlet.concentration;
-                dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
+            if opt.enableDebug
+                if opt.nZone == 4
+                    dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3))))) }.outlet.concentration;
+                    dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
+                elseif opt.nZone == 5
+                    dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:4))))) }.outlet.concentration;
+                    if strcmp('extract', opt.intermediate) % two extract ports
+                        dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:2))))) }.outlet.concentration;
+                    elseif strcmp('raffinate', opt.intermediate) % two raffinate ports
+                        dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3))))) }.outlet.concentration;
+                    end
+                    dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
+                elseif opt.nZone == 8
+                    dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:7))))) }.outlet.concentration;
+                    dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:5))))) }.outlet.concentration;
+                    if strcmp('extract', opt.intermediate_feed) % two extract ports
+                        dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3))))) }.outlet.concentration;
+                    elseif strcmp('raffinate', opt.intermediate_feed) % two raffinate ports
+                        dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
+                    end
+                end
             end
 
-            if mod(j, opt.nInterval) == 1
-                fprintf(' %9d %11d \n', j, i);
-            else
-                fprintf(' %9d\n', j);
-            end
+            % Interactive plottings when debug mode is active
+            SMB.UIplot('interval', opt, i, j);
 
             % Plot the dynamic trajectory
-            SMB.plotDynamic(opt, dyncData(:,1:j+(i-1)*opt.nInterval), j+(i-1)*opt.nInterval);
+            if opt.enableDebug, SMB.plotDynamic(opt, dyncData(:,1:j+(i-1)*opt.nInterval), j+(i-1)*opt.nInterval); end
 
         end % for j = 1:opt.nInterval
 
-        % Plot the outlet profile of each column in one round
-        SMB.plotFigures(opt, currentData);
 
-        % Transfer the dummyProfile
+        % Transfer the dummyProfile, which is the profile of last interval of last column
         dummyProfile = tempData{sequence.(string(end))};
 
-        % Store the data of one round (opt.nColumn switches), into plotData
+        % Plot the outlet profile of each column in nColumn switches
+        if opt.enableDebug, SMB.plotFigures(opt, currentData); end
+
+        % Cat nInterval pieces of tempData into transitionData,
+        % which is the internal column state after nColumn switches
         for ii = 1:opt.nColumn
             transitionData{ii}.outlet.concentration = cat( 1, tempData{ii}.concentration{:} );
         end
 
+        % Store the instant outlet profiles of all columns in one iteration
         index = mod(i, opt.nColumn);
         if index == 0
             plotData(:,opt.nColumn) = transitionData';
@@ -335,10 +267,9 @@ function objective = simulatedMovingBed(varargin)
             plotData(:,index) = transitionData';
         end
 
-
-        % Convergence criterion was adopted in each nColumn iteration
+        % Convergence criterion adopted in each nColumn switches
         %   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
-        if fix(i/opt.nColumn) == i/(opt.nColumn)
+        if mod(i, opt.nColumn) == 0
 
             diffNorm = 0; stateNorm = 0;
 
@@ -349,10 +280,8 @@ function objective = simulatedMovingBed(varargin)
 
             relativeDelta = diffNorm / stateNorm;
 
-            if opt.enableDebug
-                fprintf(' ---- Section ---- Switch ---- Cycle ---- CSS_relError ---- \n');
-                fprintf(' %33d %16g \n', i/opt.nColumn, relativeDelta);
-            end
+            % Interactive plotting when debug mode is active
+            SMB.UIplot('cycle', opt, i, j, relativeDelta);
 
             if relativeDelta <= opt.tolIter
                 break
@@ -364,18 +293,17 @@ function objective = simulatedMovingBed(varargin)
 
     end % main loop
 
-%----------------------------------------------------------------------------------------
 
 %   Post-process
 %----------------------------------------------------------------------------------------
     % Compute the performance index, such Purity and Productivity
-    Results = SMB.Purity_Productivity(plotData, opt);
+    Results = SMB.Purity_Productivity(plotData, varargin{:});
 
     % Construct your own Objective Function and calculate the value
     objective = SMB.objectiveFunction(Results, opt);
 
     tTotal = toc(tTotal);
-    % Store the final data into DATA.mat file in the mode of forward simulation
+    % Store the final data into DATA.mat file when debug is active
     if opt.enableDebug
         fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
         SMB.concDataConvertToASCII(currentData, opt);
@@ -389,7 +317,7 @@ end
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
 %
-%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
+%      Copyright © 2008-2017: Eric von Lieres, Qiaole He
 %
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %
