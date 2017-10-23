@@ -1,8 +1,7 @@
 function updateAvailable = isSMBupdateAvailable
-
-%==============================================================================
+% ==============================================================================
 % This is the function to check if there is a new version SMB available.
-%==============================================================================
+% ==============================================================================
 
 
     localPath = fileparts(mfilename('fullpath'));
@@ -52,7 +51,7 @@ end
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
 %
-%      Copyright © 2008-2016: Eric von Lieres, Qiaole He
+%      Copyright © 2008-2017: Eric von Lieres, Qiaole He
 %
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %
