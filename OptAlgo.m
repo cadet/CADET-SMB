@@ -2247,14 +2247,16 @@ classdef OptAlgo < handle
 
                 subplot(round(opt.Nparams/2),2,i,'Parent', figure(1));
 
-                histfit(OptAlgo.pTransfer('exp', Population(:,i)), 50, 'kernel');
+%                histfit(OptAlgo.pTransfer('exp', Population(:,i)), 50, 'kernel');
+                [counts, centers] = hist( Population(:,i), 25 );
+                bar(centers, counts, 'r');
 
-                xlabel(sprintf('$x_%d$', i), 'FontSize', 20, 'Interpreter', 'latex');
-                ylabel(sprintf('Frequency'), 'FontSize', 20, 'Interpreter', 'latex');
+                xlabel(sprintf('$\\ln(x_%d)$', i), 'FontSize', 16, 'Interpreter', 'latex');
+                ylabel(sprintf('Frequency'), 'FontSize', 14, 'Interpreter', 'latex');
                 set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);
 %                OptAlgo.tickLabelFormat(gca, 'x', '%0.2e');
 %                OptAlgo.tickLabelFormat(gca, 'x', []);
-                set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
+%                set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
 %                 OptAlgo.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
                 set(gca, 'ygrid', 'on');
 
@@ -2266,18 +2268,35 @@ classdef OptAlgo < handle
 
                     subplot(opt.Nparams-1, opt.Nparams-1, j+(i-1)*(opt.Nparams-1), 'Parent', figure(2));
 
-                    scatter(Population(:,j+1), Population(:,i));
+                    scatter(Population(:,j+1), Population(:,i), 8, 'o', 'MarkerEdgeColor', [0, 0.7, 0.7]);
 
-                    xlabel(sprintf('$x_%d$', j+1), 'FontName', 'Times New Roman', 'FontSize', 20, 'Interpreter', 'latex');
-                    ylabel(sprintf('$x_%d$', i), 'FontName', 'Times New Roman', 'FontSize', 20, 'Interpreter', 'latex');
+                    xlabel(sprintf('$\\ln(x_%d)$', j+1), 'FontName', 'Times New Roman', 'FontSize', 16, 'Interpreter', 'latex');
+                    ylabel(sprintf('$\\ln(x_%d)$', i), 'FontName', 'Times New Roman', 'FontSize', 16, 'Interpreter', 'latex');
                     set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);
 %                    OptAlgo.tickLabelFormat(gca, 'x', '%0.2e');
-                    set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
+%                    set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
 %                     OptAlgo.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
                     grid on;
 
                 end
-           end
+            end
+
+            figure(3);clf
+            for i = 1: opt.Nparams
+
+                subplot(round(opt.Nparams/2),2,i,'Parent', figure(3));
+
+%                [y, x] = ksdensity(OptAlgo.pTransfer('exp', Population(:,i))); area(x, y, 'FaceColor', 'g');
+                [y, x] = ksdensity( Population(:,i));
+                area(x, y, 'FaceColor', 'g');
+
+                xlabel(sprintf('$\\ln(x_%d)$', i), 'FontSize', 16, 'Interpreter', 'latex');
+                ylabel(sprintf('$p(\\theta)$'), 'FontSize', 16, 'Interpreter', 'latex');
+                set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);
+                set(gca, 'xgrid', 'on');
+                set(gca, 'ygrid', 'on');
+
+            end
 
         end % FigurePlot
 
