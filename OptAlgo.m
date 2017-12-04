@@ -62,6 +62,8 @@ classdef OptAlgo < handle
                 % Abstract best information so far from the population and display it
                 yValue = OptPopul(opt.Nchain+1, opt.Nparams+1);
                 xValue = OptAlgo.pTransfer('exp', OptPopul(1, 1:opt.Nparams));
+                Value = [xValue, yValue];
+                save('chainDE.dat', 'Value', '-ascii', '-tabs', '-append');
 
                 fprintf('Iter = %5d   ----------------   Minimum: %10.3g  ---------------- \n', i, yValue);
                 fprintf('%10.3g | ', xValue); fprintf('\n');
@@ -367,6 +369,8 @@ classdef OptAlgo < handle
                 % Abstract best information so far from the population and display it
                 yValue = OptSwarm(opt.Nchain+1, opt.Nparams+1);
                 xValue = OptAlgo.pTransfer('exp', OptSwarm(opt.Nchain+1, 1:opt.Nparams));
+                Value = [xValue, yValue];
+                save('chainPSO.dat', 'Value', '-ascii', '-tabs', '-append');
 
                 fprintf('Iter = %5d   ----------------  Minimum: %10.3g  ---------------- \n', i, yValue);
                 fprintf('%10.3g | ', xValue); fprintf('\n');
