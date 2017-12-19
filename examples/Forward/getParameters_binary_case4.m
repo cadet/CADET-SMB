@@ -23,6 +23,7 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.ABSTOL          = 1e-10;
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
+    opt.enableDebug     = true;
 
     % The parameter setting for the SMB
     opt.switch          = 257; % s
@@ -30,15 +31,15 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.Purity_limit    = [0.99, 0.99];
     opt.Penalty_factor  = 10;
 
-    opt.enableDebug = true;
+    % Network configuration
     opt.nZone       = 4;
     opt.nColumn     = 8;
-    opt.structID    = [2 2 2 2]; % the column configuration which is used for structure optimization
+    opt.structID    = [2 2 2 2]; % 8 column in four-zone, 2 in each zone
 
     % Binding: Linear Binding isotherm
     opt.BindingModel = 'StericMassActionBinding';
     opt.nComponents = 2;
-    opt.LAMBDA = 210; % Ionic capacity in mol/m^3
+    opt.LAMBDA = 210; % mol/m^3
     opt.KA = [0, 0.1792, 10.83]; % [MB, BSA], MB for raffinate, BSA for extract, component 1 is salt
     opt.KD = [0, 1, 1]; % component 1 is salt
     opt.NU = [1, 1.22, 6.03]; % component 1 is salt
@@ -46,9 +47,9 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.compTargID = [2, 1]; % target compoents at [Extract Raffinate] ports
 
     % Transport
-    opt.dispersionColumn          = [2.808, 1.755, 3.685, 1.755] .* 1e-7; % D_{ax}
-    opt.filmDiffusion             = [1e-6, 1e-6, 1e-6];      % K_f
-    opt.diffusionParticle         = [1.5, 3.6, 1.57] .* 1e-11;  % D_p
+    opt.dispersionColumn          = [2.808, 1.755, 3.685, 1.755] .* 1e-7;   % D_{ax} m^2/s
+    opt.filmDiffusion             = [1e-6, 1e-6, 1e-6];                     % K_f m/s
+    opt.diffusionParticle         = [1.5, 3.6, 1.57] .* 1e-11;              % D_p m^2/s
     opt.diffusionParticleSurface  = [0.0, 0.0, 0.0];
 
     % Geometry
@@ -60,12 +61,12 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
 
     % Parameter units transformation
     % The flow rate of Zone I was defined as the recycle flow rate
-    crossArea = pi * (opt.columnDiameter/2)^2;   % m^2
-    flowRate.recycle    = 5.4812e-8;      % m^3/s
-    flowRate.feed       = 1.03e-6/60;      % m^3/s
-    flowRate.raffinate  = 1.06e-6/60;      % m^3/s
-    flowRate.desorbent  = 2.05e-6/60;      % m^3/s
-    flowRate.extract    = 2.02e-6/60;      % m^3/s
+    crossArea = pi * (opt.columnDiameter/2)^2;  % m^2
+    flowRate.recycle    = 5.4812e-8;            % m^3/s
+    flowRate.feed       = 1.03e-6/60;           % m^3/s
+    flowRate.raffinate  = 1.06e-6/60;           % m^3/s
+    flowRate.desorbent  = 2.05e-6/60;           % m^3/s
+    flowRate.extract    = 2.02e-6/60;           % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -76,9 +77,9 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    concentrationFeed 	= [0.1, 0.5];   % g/m^3 [MB BSA]
-    opt.molMass         = [66.463, 66.463]; % The molar mass of each components
-    opt.yLim            = max(concentrationFeed ./ opt.molMass) * 1.1; % the magnitude for plotting
+    concentrationFeed   = [0.1, 0.5];       % g/m^3 [MB BSA]
+    opt.molMass         = [66.463, 66.463]; % g/mol
+    opt.yLim            = max(concentrationFeed ./ opt.molMass) * 1.1; % mol/m^3
 
     % Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
@@ -86,7 +87,7 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     Desorbent.concentration = zeros(length(Feed.time), opt.nComponents);
 
     for i = 1:opt.nComponents
-        Feed.concentration(1:end, i) = concentrationFeed(i) / opt.molMass(i);
+        Feed.concentration(1:end, i) = concentrationFeed(i) / opt.molMass(i); % mol/m^3
     end
 
     % With steric mass action isotherm, salt concentration should be firstly appended

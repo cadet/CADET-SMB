@@ -23,17 +23,18 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.ABSTOL          = 1e-10;
     opt.INIT_STEP_SIZE  = 1e-14;
     opt.MAX_STEPS       = 5e6;
+    opt.enableDebug     = true;
 
     % The parameter setting for the SMB
-    opt.switch          = 180;
+    opt.switch          = 180; % s
     opt.timePoints      = 1000;
     opt.Purity_limit    = [0.99, 0.99];
     opt.Penalty_factor  = 10;
 
-    opt.enableDebug = true;
-    opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
+    % Network configuration
+    opt.nZone       = 4;
     opt.nColumn     = 4;
-    opt.structID    = [1 1 1 1]; % the column configuration which is used for structure optimization
+    opt.structID    = [1 1 1 1]; % four columns in four-zone, one in each zone
 
     % Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';
@@ -43,26 +44,26 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.compTargID = [2, 1]; % target components at [Extract Raffinate] ports
 
     % Transport
-    opt.dispersionColumn          = ones(1,opt.nZone) .* 3.30e-26; % D_{ax}
-    opt.filmDiffusion             = [100, 100];      % K_f
-    opt.diffusionParticle         = [1.6e4, 1.6e4];  % D_p
+    opt.dispersionColumn          = ones(1,opt.nZone) .* 3.30e-26;      % D_{ax} m^2/s
+    opt.filmDiffusion             = [100, 100];                         % K_f m/s
+    opt.diffusionParticle         = [1.6e4, 1.6e4];                     % D_p m^2/s
     opt.diffusionParticleSurface  = [0.0, 0.0];
 
     % Geometry
     opt.columnLength        = 0.25;      % m
     opt.columnDiameter      = 0.02;      % m
-    opt.particleRadius      = 5e-4;      % m % user-defined one in this case
+    opt.particleRadius      = 0.0005;    % m
     opt.porosityColumn      = 0.83;
-    opt.porosityParticle    = 1e-6;      % e_p very small to ensure e_t = e_c
+    opt.porosityParticle    = 0.000001;  % e_p very small to ensure e_t = e_c
 
     % Parameter units transformation
     % The flow rate of Zone I was defined as the recycle flow rate
-    crossArea = pi * (opt.columnDiameter/2)^2;   % m^2
-    flowRate.recycle    = 9.62e-7;      % m^3/s
-    flowRate.feed       = 0.98e-7;      % m^3/s
-    flowRate.raffinate  = 1.40e-7;      % m^3/s
-    flowRate.desorbent  = 1.96e-7;      % m^3/s
-    flowRate.extract    = 1.54e-7;      % m^3/s
+    crossArea = pi * (opt.columnDiameter/2)^2;  % m^2
+    flowRate.recycle    = 9.62e-7;              % m^3/s
+    flowRate.feed       = 0.98e-7;              % m^3/s
+    flowRate.raffinate  = 1.40e-7;              % m^3/s
+    flowRate.desorbent  = 1.96e-7;              % m^3/s
+    flowRate.extract    = 1.54e-7;              % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -73,9 +74,9 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
-    opt.molMass         = [1000, 1000];
-    opt.yLim            = max(concentrationFeed ./ opt.molMass);
+    concentrationFeed   = [0.55, 0.55];     % g/m^3
+    opt.molMass         = [1000, 1000];     % g/mol mole mass
+    opt.yLim            = max(concentrationFeed ./ opt.molMass); % mol/m^3
 
     % Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
@@ -83,7 +84,7 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     Desorbent.concentration = zeros(length(Feed.time), opt.nComponents);
 
     for i = 1:opt.nComponents
-        Feed.concentration(1:end, i) = concentrationFeed(i) / opt.molMass(i);
+        Feed.concentration(1:end, i) = concentrationFeed(i) / opt.molMass(i); % mol/m^3
     end
 
 % -----------------------------------------------------------------------------

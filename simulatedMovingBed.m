@@ -22,12 +22,10 @@ function objective = simulatedMovingBed(varargin)
 
     % Check interstitial velocities in SMB optimization
     flag = SMB.interstVelocityCheck(interstVelocity, opt);
-    % if flag is true (anyone is negative), assign a big objective value to get rid of
+    % If flag is true (anyone is negative), assign a big objective value to get rid of
     if flag == 1, objective = 1e5; return; end
 
-    if ~isfield(opt, 'structID')
-        opt.structID = structID;
-    end
+    if ~isfield(opt, 'structID'), opt.structID = structID; end
 
     if opt.enable_CSTR && opt.enable_DPFR
         error('It is not allowed have both the CSTR and DPFR in the simulation \n');

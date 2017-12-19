@@ -27,17 +27,18 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(ParSwarm)
     opt.ABSTOL          = 1e-9;   % tolerance of CADET stopping criterion
     opt.INIT_STEP_SIZE  = 1e-14;  % refer your to CADET manual
     opt.MAX_STEPS       = 5e6;    % the maximum iteration step in CADET
+    opt.enableDebug     = false;  % set it false if you are using the optimizer
 
     % The parameter setting for the SMB
     opt.switch          = valueAssign.switch;  % switching time
-    opt.timePoints      = 1000;         % the observed time-points
+    opt.timePoints      = 1000;          % the observed time-points
     opt.Purity_limit    = [0.99, 0.99];  % used for constructing constraints
     opt.Penalty_factor  = 10;    % penalty factor in penalty function
 
-    opt.enableDebug = false; % set it false if you are using the optimizer
+    % Network configuration
     opt.nZone   = 4;
-    opt.nColumn = 6; % The amount of columns are known
-    opt.structNumber = 20;
+    opt.nColumn = 6;
+    opt.structNumber = 20; % 6 columns in four-zone
 
     % Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';
@@ -47,15 +48,15 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(ParSwarm)
     opt.compTargID = [2, 1]; % target components at [Extract Raffinate] ports
 
     % Transport
-    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20; % D_{ax}
-    opt.filmDiffusion             = [100, 100];      % K_f
-    opt.diffusionParticle         = [1.6e4, 1.6e4];  % D_p
+    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20;   % D_{ax} m^2/s
+    opt.filmDiffusion             = [100, 100];                         % K_f m/s
+    opt.diffusionParticle         = [1.6e4, 1.6e4];                     % D_p m^2/s
     opt.diffusionParticleSurface  = [0.0, 0.0];
 
     % Geometry
     opt.columnLength        = valueAssign.columnLength; % m
     opt.columnDiameter      = 0.02;      % m
-    opt.particleRadius      = 0.0005;    % m % user-defined one in this case
+    opt.particleRadius      = 0.0005;    % m
     opt.porosityColumn      = 0.83;
     opt.porosityParticle    = 0.000001;  % e_p very small to ensure e_t = e_c
 
@@ -77,9 +78,9 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(ParSwarm)
     interstVelocity.desorbent = flowRate.desorbent / (crossArea*opt.porosityColumn);    % m/s
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
-    concentrationFeed 	= [0.55, 0.55];   % g/m^3 [concentration_compA, concentration_compB]
-    opt.molMass         = [180.16, 180.16]; % The molar mass of each components
-    opt.yLim            = max(concentrationFeed ./ opt.molMass); % the magnitude for plotting
+    concentrationFeed   = [0.55, 0.55];   % g/m^3
+    opt.molMass         = [180.16, 180.16]; % g/mol
+    opt.yLim            = max(concentrationFeed ./ opt.molMass); % mol/m^3
 
     % Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
@@ -87,7 +88,7 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(ParSwarm)
     Desorbent.concentration = zeros(length(Feed.time), opt.nComponents);
 
     for i = 1:opt.nComponents
-        Feed.concentration(1:end, i) = concentrationFeed(i) / opt.molMass(i);
+        Feed.concentration(1:end, i) = concentrationFeed(i) / opt.molMass(i); % mol/m^3
     end
 
 % -----------------------------------------------------------------------------

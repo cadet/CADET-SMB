@@ -363,7 +363,7 @@ classdef OptAlgo < handle
             for i = 1:opt.nsamples
 
                 % The evolution of the particles in PSO
-                [ParSwarm, OptSwarm, ToplOptSwarm] = OptAlgo.evolutionPSO...
+                [ParSwarm, OptSwarm, ToplOptSwarm] = OptAlgo.evolutionPSO ...
                     (ParSwarm, OptSwarm, ToplOptSwarm, i, opt);
 
                 % Abstract best information so far from the population and display it
@@ -699,7 +699,7 @@ classdef OptAlgo < handle
             opt = OptAlgo.getOptionsMCMC(opt);
 
             % Preallocation
-            accepted =0; n0 = 1;
+            accepted = 0; n0 = 1;
             lasti = 0; chaincov = []; chainmean = []; wsum = [];
             chain = zeros(opt.nsamples, opt.Nparams+1);
 
@@ -744,7 +744,7 @@ classdef OptAlgo < handle
                 if j > opt.burn_in
                     fprintf('Iter: %4d -------- Accept_ratio: %3d%% ---------- Minimum: %g ---------- \n',...
                         j, fix(accepted / j * 100), SS);
-                    fprintf('%10.3g | ', OptAlgo.pTransfer('exp', oldpar)); fprintf('\n')
+                    fprintf('%10.3g | ', OptAlgo.pTransfer('exp', oldpar)); fprintf('\n');
                 end
 
                 accept = false;

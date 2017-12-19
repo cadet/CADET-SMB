@@ -850,7 +850,7 @@ classdef SMB < handle
                 Purity_1 = trapz(profile{1}.time, profile{1}.concentration(:, profile{1}.id)) / sum_1;
                 Purity_2 = trapz(profile{2}.time, profile{2}.concentration(:, profile{2}.id)) / sum_2;
 
-                % per switch time in the extract port, such (unit: g/m^3) amount of target component was collected
+                % per switch time in the extract port, such (unit: mol/m^3/s) amount of target component was collected
                 Productivity_1 = trapz(profile{1}.time, profile{1}.concentration(:, profile{1}.id)) ...
                     * opt.molMass(profile{1}.id) * profile{1}.flowrate / Nominator;
                 Productivity_2 = trapz(profile{2}.time, profile{2}.concentration(:, profile{2}.id)) ...
@@ -859,8 +859,8 @@ classdef SMB < handle
                 if opt.enableDebug
                     fprintf('Purity of extract: %g %% \n', Purity_1 * 100);
                     fprintf('Purity of raffinate: %g %% \n', Purity_2 * 100)
-                    fprintf('Productivity of extract in each switching time: %g g/m^3 \n', Productivity_1);
-                    fprintf('Productivity of raffinate in each switching time: %g g/m^3 \n', Productivity_2);
+                    fprintf('Productivity of extract in each switching time: %g mol/m^3/s \n', Productivity_1);
+                    fprintf('Productivity of raffinate in each switching time: %g mol/m^3/s \n', Productivity_2);
                 end
 
                 Results = struct('Purity_1', Purity_1, 'Purity_2', Purity_2, ...
@@ -881,7 +881,7 @@ classdef SMB < handle
                 Purity_2 = trapz(profile{2}.time, profile{2}.concentration(:, profile{2}.id)) / sum_2;
                 Purity_3 = trapz(profile{3}.time, profile{3}.concentration(:, profile{3}.id)) / sum_3;
 
-                % per switch time in the tank of extract port, such (unit: g/m^3) amount of target component was collected
+                % per switch time in the tank of extract port, such (unit: mol/m^3/s) amount of target component was collected
                 Productivity_1 = trapz(profile{1}.time, profile{1}.concentration(:, profile{1}.id))...
                     * opt.molMass(profile{1}.id) * profile{1}.flowrate / Nominator;
                 Productivity_2 = trapz(profile{2}.time, profile{2}.concentration(:, profile{2}.id))...
@@ -893,9 +893,9 @@ classdef SMB < handle
                     fprintf('Purity of outlet 1: %g %% \n', Purity_1 * 100);
                     fprintf('Purity of outlet 2: %g %% \n', Purity_2 * 100);
                     fprintf('Purity of outlet 3: %g %% \n', Purity_3 * 100)
-                    fprintf('Productivity of outlet 1 in each switching time: %g g/m^3 \n', Productivity_1);
-                    fprintf('Productivity of outlet 2 in each switching time: %g g/m^3 \n', Productivity_2);
-                    fprintf('Productivity of outlet 3 in each switching time: %g g/m^3 \n', Productivity_3);
+                    fprintf('Productivity of outlet 1 in each switching time: %g mol/m^3/s \n', Productivity_1);
+                    fprintf('Productivity of outlet 2 in each switching time: %g mol/m^3/s \n', Productivity_2);
+                    fprintf('Productivity of outlet 3 in each switching time: %g mol/m^3/s \n', Productivity_3);
                 end
 
                 Results = struct('Purity_1', Purity_1, 'Purity_2', Purity_2,...
@@ -1252,7 +1252,7 @@ classdef SMB < handle
                 end
 
                 FigSet = plot(y); axis([0, opt.nColumn*opt.nCellsColumn, 0,opt.yLim])
-                ylabel('Concentration [mM]', 'FontSize', 10);
+                ylabel('Concentration [mol/m^3]', 'FontSize', 10);
                 if opt.nComponents == 2
                     legend('comp 1', 'comp 2', 'Location', 'NorthWest');
                 elseif opt.nComponents == 3
@@ -1368,9 +1368,9 @@ classdef SMB < handle
                         FigSet = plot(y,'.'); axis([0, iter*opt.timePoints, 0,opt.yLim])
                         switch i
                             case 1
-                                ylabel({'Raffinate Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                ylabel({'Raffinate Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                             case 2
-                                ylabel({'Extract Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                ylabel({'Extract Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
                         xlabel(xString, 'FontSize', 10);
@@ -1416,20 +1416,20 @@ classdef SMB < handle
                         if strcmp('extract', opt.intermediate)
                             switch i
                                 case 1
-                                    ylabel({'Raffinate Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Raffinate Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 2
-                                    ylabel({'Extract_2 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Extract_2 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 3
-                                    ylabel({'Extract_1 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Extract_1 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                             end
                         elseif strcmp('raffinate', opt.intermediate)
                             switch i
                                 case 1
-                                    ylabel({'Extract Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Extract Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 2
-                                    ylabel({'Raffinate_1 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Raffinate_1 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 3
-                                    ylabel({'Raffinate_2 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Raffinate_2 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                             end
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
@@ -1476,20 +1476,20 @@ classdef SMB < handle
                         if strcmp('raffinate', opt.intermediate_feed)
                             switch i
                                 case 1
-                                    ylabel({'Raffinate_2 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Raffinate_2 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 2
-                                    ylabel({'Extract_2 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Extract_2 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 3
-                                    ylabel({'Extract_1 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Extract_1 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                             end
                         elseif strcmp('extract', opt.intermediate_feed)
                             switch i
                                 case 1
-                                    ylabel({'Raffinate_2 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Raffinate_2 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 2
-                                    ylabel({'Extract_2 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Extract_2 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                                 case 3
-                                    ylabel({'Raffinate_1 Port'; 'Concentration [mM]'}, 'FontSize', 10);
+                                    ylabel({'Raffinate_1 Port'; 'Concentration [mol/m^3]'}, 'FontSize', 10);
                             end
                         end
                         xString = sprintf('Switches in %3d-column case [n]', opt.nColumn);
