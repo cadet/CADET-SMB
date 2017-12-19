@@ -23,17 +23,18 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.ABSTOL          = 1e-10; % tolerance of CADET stopping criterion
     opt.INIT_STEP_SIZE  = 1e-14; % refer your to CADET manual
     opt.MAX_STEPS       = 5e6;   % the maximum iteration step in CADET
+    opt.enableDebug     = true;  % set it true when you want to see the figures
 
     % The parameter setting for the SMB
-    opt.switch          = 180;   % switching time
+    opt.switch          = 180;   % switching time (s)
     opt.timePoints      = 1000;  % the observed time-points
     opt.Purity_limit    = [0.99, 0.99];  % used for constructing constraints
     opt.Penalty_factor  = 10;    % penalty factor in penalty function
 
-    opt.enableDebug = true;  % set it true when you want to see the figures
-    opt.nZone       = 4;    % 4-zone for binary separation, 5-zone for ternary separation
+    % Network configuration
+    opt.nZone       = 4;
     opt.nColumn     = 4;
-    opt.structID    = [1 1 1 1];
+    opt.structID    = [1 1 1 1]; % 4 columns in four-zone, 1 in each zone
 
     % Binding: Linear Binding isotherm
     opt.BindingModel = 'LinearBinding';
@@ -43,26 +44,26 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     opt.compTargID = [2, 1]; % target components at [Extract Raffinate] ports
 
     % Transport
-    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20; % D_{ax}
-    opt.filmDiffusion             = [1e-5, 1e-5];    % K_f
-    opt.diffusionParticle         = [1.6e4, 1.6e4];  % D_p
+    opt.dispersionColumn          = ones(1, opt.nZone) .* 3.8148e-20;   % D_{ax} m^2/s
+    opt.filmDiffusion             = [1e-5, 1e-5];                       % K_f m/s
+    opt.diffusionParticle         = [1.6e4, 1.6e4];                     % D_p m^2/s
     opt.diffusionParticleSurface  = [0.0, 0.0];
 
     % Geometry
     opt.columnLength        = 0.25;      % m
     opt.columnDiameter      = 0.02;      % m
-    opt.particleRadius      = 1e-5;      % m % user-defined one in this case
+    opt.particleRadius      = 1e-5;      % m
     opt.porosityColumn      = 0.83;
     opt.porosityParticle    = 1e-5;      % e_p very small to ensure e_t = e_c
 
     % Parameter units transformation
     % The flow rate of Zone I was defined as the recycle flow rate
-    crossArea = pi * (opt.columnDiameter/2)^2;   % m^2
-    flowRate.recycle    = 9.62e-7;      % m^3/s
-    flowRate.feed       = 0.98e-7;      % m^3/s
-    flowRate.raffinate  = 1.40e-7;      % m^3/s
-    flowRate.desorbent  = 1.96e-7;      % m^3/s
-    flowRate.extract    = 1.54e-7;      % m^3/s
+    crossArea = pi * (opt.columnDiameter/2)^2;  % m^2
+    flowRate.recycle    = 9.62e-7;              % m^3/s
+    flowRate.feed       = 0.98e-7;              % m^3/s
+    flowRate.raffinate  = 1.40e-7;              % m^3/s
+    flowRate.desorbent  = 1.96e-7;              % m^3/s
+    flowRate.extract    = 1.54e-7;              % m^3/s
     opt.flowRate_extract   = flowRate.extract;
     opt.flowRate_raffinate = flowRate.raffinate;
 
@@ -74,7 +75,7 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     interstVelocity.extract   = flowRate.extract / (crossArea*opt.porosityColumn);      % m/s
 
     ModiCon_interval = 3;
-%   intervals X components % g/cm^3 [concentration_compA, concentration_compB]
+%   intervals X components % g/m^3 [concentration_compA, concentration_compB]
     concentrationFeed = [0.45, 0.45;
                          0.75, 0.75;
                          0.45, 0.45];
@@ -82,8 +83,8 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
         warning('The interval setup in the ModiCon situation is not right');
     end
 
-    opt.molMass        = [180.16, 180.16]; % The molar mass of each components
-    opt.yLim           = max( mean(concentrationFeed) ./ opt.molMass); % the magnitude for plotting
+    opt.molMass        = [180.16, 180.16]; % g/mol
+    opt.yLim           = max( mean(concentrationFeed) ./ opt.molMass); % mol/m^3
 
     % Feed concentration setup
     Feed.time = linspace(0, opt.switch, opt.timePoints);
@@ -93,7 +94,7 @@ function [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin)
     for i = 1:opt.nComponents
         for j = 1:ModiCon_interval
             Feed.concentration((j-1)*round(opt.timePoints/ModiCon_interval)+1:j*round(opt.timePoints/ModiCon_interval), i)...
-                = (concentrationFeed(j,i) / opt.molMass(i));
+                = (concentrationFeed(j,i) / opt.molMass(i)); % mol/m^3
         end
     end
 
