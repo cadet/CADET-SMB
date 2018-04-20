@@ -1437,7 +1437,7 @@ classdef OptAlgo < handle
 
             % Simulation of the sampled points
             initChain(:, opt.Nparams+1) = arrayfun( @(idx) feval( OptAlgo.FUNC, ...
-                OptAlgo.pTransfer('exp', initChain(idx, 1:opt.Nparams)) ), 1:opt.Nchain );
+                OptAlgo.pTransfer('exp', initChain(idx, 1:opt.Nparams)) ), 1:opt.Nchain);
 
         end % initChainMADE
 
@@ -2147,7 +2147,7 @@ classdef OptAlgo < handle
             y = zeros(m, n);
             for j = 1:n
                 for i=1: m
-                    y(i, j) = OptAlgo.Gammar(a, b);
+                    y(i, j) = Gammar(a, b);
                 end
             end
 
@@ -2155,7 +2155,7 @@ classdef OptAlgo < handle
 
                 if a < 1
 
-                    y = OptAlgo.Gammar(1+a, b) * rand(1) ^ (1/a);
+                    y = Gammar(1+a, b) * rand(1) ^ (1/a);
 
                 else
 
@@ -2290,7 +2290,7 @@ classdef OptAlgo < handle
 
                     [f, xi] = ksdensity(OptAlgo.pTransfer('exp', OptAlgo.prior(:,i)), 'npoints', 1000);
                     % spline may render negative density value
-                    %                    densityVal = ppval( spline(xi, f), OptAlgo.pTransfer('exp', points(i)) );
+%                    densityVal = ppval( spline(xi, f), OptAlgo.pTransfer('exp', points(i)) );
                     for j = 1:1000
                         if xi(j) >= OptAlgo.pTransfer('exp', points(i))
                             idx = j;
@@ -2302,7 +2302,7 @@ classdef OptAlgo < handle
                 else
 
                     [f, xi] = ksdensity(OptAlgo.prior(:,i), 'npoints', 1000);
-                    % densityVal = ppval(spline(xi, f), points(i));
+%                    densityVal = ppval(spline(xi, f), points(i));
                     for j = 1:1000
                         if xi(j) >= points(i)
                             idx = j;
@@ -2344,7 +2344,7 @@ classdef OptAlgo < handle
 %                OptAlgo.tickLabelFormat(gca, 'x', '%0.2e');
 %                OptAlgo.tickLabelFormat(gca, 'x', []);
 %                set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
-%                 OptAlgo.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
+%                OptAlgo.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
                 set(gca, 'ygrid', 'on');
 
             end
@@ -2362,7 +2362,7 @@ classdef OptAlgo < handle
                     set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);
 %                    OptAlgo.tickLabelFormat(gca, 'x', '%0.2e');
 %                    set(gca, 'XTickLabel', num2str(get(gca, 'xTick')', '%g'));
-%                     OptAlgo.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
+%                    OptAlgo.xtickLabelRotate([], 15, [], 'FontSize', 20, 'FontName', 'Times New Roman');
                     grid on;
 
                 end
@@ -2582,8 +2582,9 @@ classdef OptAlgo < handle
 % Author: Brian FG Katz, bfgkatz@hotmail.com
 %------------------------------------------------------------------------------
 
+
             % check to see if xticklabel_rotate has already been here (no other reason for this to happen)
-            if isempty(get(gca,'XTickLabel')),
+            if isempty(get(gca,'XTickLabel'))
                 error('OptAlgo.xtickLabelRotate: can not process, either xticklabel_rotate has already been run or XTickLabel field has been erased \n');
             end
 
@@ -2610,7 +2611,7 @@ classdef OptAlgo < handle
                 XTick = get(gca,'XTick');
             end
 
-		    % Make XTick a column vector
+            % Make XTick a column vector
             XTick = XTick(:);
 
             if ~exist('xTickLabels')
@@ -2751,11 +2752,19 @@ classdef OptAlgo < handle
             set(hText,'units','normalized');
             set(gca,'units','normalized');
 
-            if nargout < 1,
+            if nargout < 1
                 clear hText
             end
 
         end % xtickLabelRotate
+
+        function res = crashSaver(x, e)
+
+            save('crashParams.dat', 'x', '-ascii', '-append');
+            fprintf('%s The parameter set results in this crash has been stored in crashParams.dat\n', e.message);
+            res = 68106800;
+
+        end % crashSaver
 
     end % method
 
