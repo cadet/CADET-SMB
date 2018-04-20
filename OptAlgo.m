@@ -81,10 +81,10 @@ classdef OptAlgo < handle
 
             end % for i = 1:opt.nsamples
 
-%----------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
 
 % Post-process
-%----------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
             % Gather some useful information and store them in the debug mode
             result.optTime        = etime(clock, startTime)/3600; % in hours
             result.convergence    = delta;
@@ -130,7 +130,7 @@ classdef OptAlgo < handle
             opt.nsamples    = OptAlgo.sample;
             opt.criterion   = 0.01;
 
-            % Check out the dimension of the set of parameters, and the boundary limiatation
+            % Check out dimension of the parameter set, and the boundary limiatation
             [row, col] = size(opt.Nparams);
             if row > 1 || col > 1
                 error('OptAlgo.getOptionsDE: The initialized dimension of the set of parameters might be wrong \n');
@@ -356,10 +356,10 @@ classdef OptAlgo < handle
             % Initialization of the population
             [ParSwarm, OptSwarm, ToplOptSwarm] = OptAlgo.initChainPSO(opt);
 
-%----------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
 
 % The main loop
-%----------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
             for i = 1:opt.nsamples
 
                 % The evolution of the particles in PSO
@@ -387,10 +387,10 @@ classdef OptAlgo < handle
 
             end % for i = 1:opt.nsamples
 
-%----------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
 
 % Post-process
-%----------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
             % Gather some useful information and store them in the debug mode
             result.optTime        = etime(clock, startTime)/3600; % in hours
             result.convergence    = delta;
@@ -760,8 +760,13 @@ classdef OptAlgo < handle
                 newSS = feval( OptAlgo.FUNC, OptAlgo.pTransfer('exp', newpar) );
 
                 % The Metropolis probability
-                rho12 = exp( -0.5 *( (newSS - SS) / sigmaSqu + ...
-                    OptAlgo.priorPDF(newpar) - OptAlgo.priorPDF(oldpar) ) );
+                if OptAlgo.logScale
+                    rho12 = exp( -0.5 *((newSS - SS) / sigmaSqu) + sum(newpar) - sum(oldpar) ) * ...
+                        OptAlgo.priorPDF(newpar) / OptAlgo.priorPDF(oldpar);
+                else
+                    rho12 = exp( -0.5 * (newSS - SS) / sigmaSqu ) * ...
+                        OptAlgo.priorPDF(newpar) / OptAlgo.priorPDF(oldpar);
+                end
 
                 % The new proposal is accepted with Metropolis probability
                 if rand <= min(1, rho12)
@@ -785,25 +790,39 @@ classdef OptAlgo < handle
                     % Calculate the objective value of the new proposal
                     newSS2 = feval( OptAlgo.FUNC, OptAlgo.pTransfer('exp', newpar2) );
 
-                    % The conventional version of calculation
-                    rho32 = exp( -0.5 *( (newSS - newSS2) / sigmaSqu + ...
-                        OptAlgo.priorPDF(newpar) - OptAlgo.priorPDF(newpar2) ) );
+                    if OptAlgo.logScale
 
-%                    q2 = exp( -0.5 *( (newSS2 - SS) / sigmaSqu + ...
-%                        OptAlgo.priorPDF(newpar2) - OptAlgo.priorPDF(oldpar) ) );
-%                    q1 = exp( -0.5 * (norm((newpar2 - newpar) * inv(R))^2 - norm((oldpar - newpar) * inv(R))^2) );
+                        rho32 = exp( -0.5 *((newSS - newSS2) / sigmaSqu) + sum(newpar) - sum(newpar2) ) * ...
+                            OptAlgo.priorPDF(newpar) / OptAlgo.priorPDF(newpar2);
 
-%                    if rho32 == Inf
-%                        rho13 = 0;
-%                    else
-%                        rho13 = q1 * q2 * (1-rho32) / (1-rho12);
-%                    end
+                        % The conventional version of calculation
+%                        q2 = exp( -0.5 *((newSS2 - SS) / sigmaSqu) + sum(newpar2) - sum(oldpar) ) * ...
+%                            OptAlgo.priorPDF(newpar2) / OptAlgo.priorPDF(oldpar);
+%                        q1 = exp( -0.5 * (norm((newpar2 - newpar) * inv(R))^2 - norm((oldpar - newpar) * inv(R))^2) );
 
-                    % The speed-up version of above calculation
-                    q1q2 = exp( -0.5 *( (newSS2 - SS) / sigmaSqu + ...
-                        ( (newpar2 - newpar) * (R \ (R' \ (newpar2' - newpar'))) - ...
-                        (oldpar - newpar) * (R \ (R' \ (oldpar' - newpar'))) ) + ...
-                        OptAlgo.priorPDF(newpar2) - OptAlgo.priorPDF(oldpar) ) );
+                        % The speed-up version of above calculation
+                        q1q2 = exp( -0.5 *( (newSS2 - SS) / sigmaSqu + ...
+                            (newpar2 - newpar) * (R \ (R' \ (newpar2' - newpar'))) - ...
+                            (oldpar - newpar) * (R \ (R' \ (oldpar' - newpar'))) ) + ...
+                            sum(newpar2) - sum(oldpar) ) * OptAlgo.priorPDF(newpar2) / OptAlgo.priorPDF(oldpar);
+
+                    else
+
+                        rho32 = exp( -0.5 * (newSS - newSS2) / sigmaSqu ) * ...
+                            OptAlgo.priorPDF(newpar) / OptAlgo.priorPDF(newpar2);
+
+                        % The conventional version of calculation
+%                        q2 = exp( -0.5 * (newSS2 - SS) / sigmaSqu ) * ...
+%                            OptAlgo.priorPDF(newpar2) / OptAlgo.priorPDF(oldpar);
+%                        q1 = exp( -0.5 * (norm((newpar2 - newpar) * inv(R))^2 - norm((oldpar - newpar) * inv(R))^2) );
+
+                        % The speed-up version of above calculation
+                        q1q2 = exp( -0.5 *( (newSS2 - SS) / sigmaSqu + ...
+                            (newpar2 - newpar) * (R \ (R' \ (newpar2' - newpar'))) - ...
+                            (oldpar - newpar) * (R \ (R' \ (oldpar' - newpar'))) ) ) * ...
+                            OptAlgo.priorPDF(newpar2) / OptAlgo.priorPDF(oldpar);
+
+                    end
 
                     rho13 = q1q2 * (1 - rho32) / (1 - rho12);
 
@@ -859,6 +878,8 @@ classdef OptAlgo < handle
                 sigmaSqu  = 1 / OptAlgo.GammarDistribution( 1, 1, (n0 + opt.nDataPoint)/2,...
                     2 / (n0 * sigmaSqu_0 + sumSquare) );
 
+                save('sigmaSqu.dat', 'sigmaSqu', '-ascii', '-append');
+
             end % for j = 1:opt.nsamples
 
 %------------------------------------------------------------------------------
@@ -883,6 +904,7 @@ classdef OptAlgo < handle
             result.accepted        = fix(accepted/maxIter * 100);
             result.xValue          = xValue;
             result.yValue          = yValue;
+            result.sigma           = sqrt(sigmaSqu);
 
             fprintf('\n****************************************************** \n');
             save(sprintf('result_%2d.mat', fix(rand*100)), 'result');
@@ -973,8 +995,7 @@ classdef OptAlgo < handle
 
         function [R, oldpar, SS] = burnInSamples(opt)
 %------------------------------------------------------------------------------
-% The routine that is used for generating samples in cases that Jocabian matrix
-% is not available
+% It is used for generating samples when Jocabian matrix is not available
 %------------------------------------------------------------------------------
 
 
@@ -1450,8 +1471,14 @@ classdef OptAlgo < handle
                     newSS = feval( OptAlgo.FUNC, OptAlgo.pTransfer('exp', proposal) );
                 end
 
-                rho = exp( -0.5 *( (newSS - SS) / sigmaSqu(j) + ...
-                    OptAlgo.priorPDF(proposal) - OptAlgo.priorPDF(states(j, 1:opt.Nparams)) ) );
+                % The Metropolis probability
+                if OptAlgo.logScale
+                    rho = exp( -0.5 *((newSS - SS) / sigmaSqu(j)) + sum(newpar) - sum(oldpar) ) * ...
+                        OptAlgo.priorPDF(proposal) / OptAlgo.priorPDF(states(j, 1:opt.Nparams));
+                else
+                    rho = exp( -0.5 * (newSS - SS) / sigmaSqu(j) ) * ...
+                        OptAlgo.priorPDF(proposal) / OptAlgo.priorPDF(states(j, 1:opt.Nparams));
+                end
 
                 if rand <= min(1, rho)
                     states(j, 1:opt.Nparams) = proposal;
@@ -1565,122 +1592,6 @@ classdef OptAlgo < handle
             tempPop(tempPop > upBound) = upBound(tempPop > upBound);
 
         end % evolutionMADE
-
-        function y = GammarDistribution(m, n, a, b)
-%-----------------------------------------------------------------------------------------
-% GammarDistrib random deviates from gamma distribution
-%
-%  GAMMAR_MT(M,N,A,B) returns a M*N matrix of random deviates from the Gamma
-%  distribution with shape parameter A and scale parameter B:
-%
-%  p(x|A,B) = B^-A/gamma(A)*x^(A-1)*exp(-x/B)
-%
-%  Uses method of Marsaglia and Tsang (2000)
-%
-% G. Marsaglia and W. W. Tsang:
-% A Simple Method for Generating Gamma Variables,
-% ACM Transactions on Mathematical Software, Vol. 26, No. 3, September 2000, 363-372.
-%-----------------------------------------------------------------------------------------
-
-
-            if nargin < 4, b = 1; end
-
-            y = zeros(m, n);
-            for j = 1:n
-                for i=1: m
-                    y(i, j) = OptAlgo.Gammar(a, b);
-                end
-            end
-
-        end % GammerDistribution
-
-        function y = Gammar(a, b)
-%-----------------------------------------------------------------------------------------
-%
-%-----------------------------------------------------------------------------------------
-
-
-            if a < 1
-
-                y = OptAlgo.Gammar(1+a, b) * rand(1) ^ (1/a);
-
-            else
-
-                d = a - 1/3;
-                c = 1 / sqrt(9*d);
-
-                while(1)
-
-                    while(1)
-                        x = randn(1);
-                        v = 1 + c*x;
-
-                        if v > 0, break, end
-
-                    end
-
-                    v = v^3; u = rand(1);
-
-                    if u < 1 - 0.0331*x^4, break, end
-
-                    if log(u) < 0.5 * x^2 + d * (1-v+log(v)), break, end
-
-                end
-
-                y = b * d * v;
-
-            end
-
-        end % Gammar
-
-        function criterion = GelmanR(idx, chain, opt)
-%-----------------------------------------------------------------------------------------
-% Stopping criterion
-%-----------------------------------------------------------------------------------------
-
-
-            if nargin < 3
-                error('OptAlgo.GelmanR: There are no enough input arguments \n');
-            end
-
-            % Split each chain into half and check all the resulting half-sequences
-            index           = floor(0.5 * idx);
-            eachChain       = zeros(index, opt.Nparams);
-            betweenMean     = zeros(opt.Nchain, opt.Nparams);
-            withinVariance  = zeros(opt.Nchain, opt.Nparams);
-
-            % Mean and variance of each half-sequence chain
-            for i = 1:opt.Nchain
-
-                for j = 1:opt.Nparams
-                    for k = 1:index
-                        eachChain(k,j) = chain(i,j,k+index);
-                    end
-                end
-
-                betweenMean(i,:)    = mean(eachChain);
-                withinVariance(i,:) = var(eachChain);
-
-            end
-
-            % Between-sequence variance
-            Sum = 0;
-            for i = 1:opt.Nchain
-               Sum = Sum + (betweenMean(i,:) - mean(betweenMean)) .^ 2;
-            end
-            B = Sum ./ (opt.Nchain-1);
-
-            % Within-sequence variance
-            Sum = 0;
-            for i = 1:opt.Nchain
-                Sum = Sum + withinVariance(i,:);
-            end
-            W = Sum ./ opt.Nchain;
-
-            % Convergence diagnostics
-            criterion = sqrt(1 + B ./ W);
-
-        end % GelmanR
 
         function Population = conversionDataMADE(maxIter, opt)
 %------------------------------------------------------------------------------
@@ -2035,9 +1946,13 @@ classdef OptAlgo < handle
                 SS    = states(j,opt.Nparams+1);
 
                 % The Metropolis probability
-                rho = ( exp( -0.5 *( (newSS - SS) / sigmaSqu(j) + ...
-                    OptAlgo.priorPDF(proposal) - ...
-                    OptAlgo.priorPDF(states(j, 1:opt.Nparams)) ) ) )^Beta(j);
+                if OptAlgo.logScale
+                    rho = ( exp( -0.5 *((newSS - SS) / sigmaSqu(j)) + sum(newpar) - sum(oldpar) ) * ...
+                        OptAlgo.priorPDF(proposal) / OptAlgo.priorPDF(states(j, 1:opt.Nparams)) )^Beta(j);
+                else
+                    rho = ( exp( -0.5 * (newSS - SS) / sigmaSqu(j) ) * ...
+                        OptAlgo.priorPDF(proposal) / OptAlgo.priorPDF(states(j, 1:opt.Nparams)) )^Beta(j);
+                end
 
                 % If the proposal is accepted
                 if rand <= min(1, rho)
@@ -2210,6 +2125,118 @@ classdef OptAlgo < handle
 %   Miscellaneous
     methods (Static = true, Access = 'public')
 
+        function y = GammarDistribution(m, n, a, b)
+%-----------------------------------------------------------------------------------------
+% GammarDistrib random deviates from gamma distribution
+%
+%  GAMMAR_MT(M,N,A,B) returns a M*N matrix of random deviates from the Gamma
+%  distribution with shape parameter A and scale parameter B:
+%
+%  p(x|A,B) = B^-A/gamma(A)*x^(A-1)*exp(-x/B)
+%
+%  Uses method of Marsaglia and Tsang (2000)
+%
+% G. Marsaglia and W. W. Tsang:
+% A Simple Method for Generating Gamma Variables,
+% ACM Transactions on Mathematical Software, Vol. 26, No. 3, September 2000, 363-372.
+%-----------------------------------------------------------------------------------------
+
+
+            if nargin < 4, b = 1; end
+
+            y = zeros(m, n);
+            for j = 1:n
+                for i=1: m
+                    y(i, j) = OptAlgo.Gammar(a, b);
+                end
+            end
+
+            function y = Gammar(a, b)
+
+                if a < 1
+
+                    y = OptAlgo.Gammar(1+a, b) * rand(1) ^ (1/a);
+
+                else
+
+                    d = a - 1/3;
+                    c = 1 / sqrt(9*d);
+
+                    while(1)
+
+                        while(1)
+                            x = randn(1);
+                            v = 1 + c*x;
+
+                            if v > 0, break, end
+
+                        end
+
+                        v = v^3; u = rand(1);
+
+                        if u < 1 - 0.0331*x^4, break, end
+
+                        if log(u) < 0.5 * x^2 + d * (1-v+log(v)), break, end
+
+                    end
+
+                    y = b * d * v;
+
+                end
+
+            end % Gammar
+
+        end % GammerDistribution
+
+        function criterion = GelmanR(idx, chain, opt)
+%-----------------------------------------------------------------------------------------
+% Stopping criterion
+%-----------------------------------------------------------------------------------------
+
+
+            if nargin < 3
+                error('OptAlgo.GelmanR: There are no enough input arguments \n');
+            end
+
+            % Split each chain into half and check all the resulting half-sequences
+            index           = floor(0.5 * idx);
+            eachChain       = zeros(index, opt.Nparams);
+            betweenMean     = zeros(opt.Nchain, opt.Nparams);
+            withinVariance  = zeros(opt.Nchain, opt.Nparams);
+
+            % Mean and variance of each half-sequence chain
+            for i = 1:opt.Nchain
+
+                for j = 1:opt.Nparams
+                    for k = 1:index
+                        eachChain(k,j) = chain(i,j,k+index);
+                    end
+                end
+
+                betweenMean(i,:)    = mean(eachChain);
+                withinVariance(i,:) = var(eachChain);
+
+            end
+
+            % Between-sequence variance
+            Sum = 0;
+            for i = 1:opt.Nchain
+               Sum = Sum + (betweenMean(i,:) - mean(betweenMean)) .^ 2;
+            end
+            B = Sum ./ (opt.Nchain-1);
+
+            % Within-sequence variance
+            Sum = 0;
+            for i = 1:opt.Nchain
+                Sum = Sum + withinVariance(i,:);
+            end
+            W = Sum ./ opt.Nchain;
+
+            % Convergence diagnostics
+            criterion = sqrt(1 + B ./ W);
+
+        end % GelmanR
+
         function xLog = pTransfer(str, x)
 %------------------------------------------------------------------------------
 % If log-scale is enabled
@@ -2235,6 +2262,62 @@ classdef OptAlgo < handle
             end
 
         end % logTransfer
+
+        function prior = priorPDF(points)
+%------------------------------------------------------------------------------
+% This is a routine used for constructe the prior distribution for MCMC
+%
+% Parameters:
+%       points. The estimated parameters
+%
+% Return:
+%       prior. The prior possibility, prior = f(point).
+%------------------------------------------------------------------------------
+
+
+            prior = 1;
+
+            % if no prior information, return
+            if isempty(OptAlgo.prior)
+                return;
+            end
+
+            [~, C] = size(OptAlgo.prior);
+
+            for i = 1:C-1
+
+                if OptAlgo.logScale
+
+                    [f, xi] = ksdensity(OptAlgo.pTransfer('exp', OptAlgo.prior(:,i)), 'npoints', 1000);
+                    % spline may render negative density value
+                    %                    densityVal = ppval( spline(xi, f), OptAlgo.pTransfer('exp', points(i)) );
+                    for j = 1:1000
+                        if xi(j) >= OptAlgo.pTransfer('exp', points(i))
+                            idx = j;
+                            densityVal = f(idx);
+                            break
+                        end
+                    end
+
+                else
+
+                    [f, xi] = ksdensity(OptAlgo.prior(:,i), 'npoints', 1000);
+                    % densityVal = ppval(spline(xi, f), points(i));
+                    for j = 1:1000
+                        if xi(j) >= points(i)
+                            idx = j;
+                            densityVal = f(idx);
+                            break
+                        end
+                    end
+
+                end
+
+                prior = prior * densityVal;
+
+            end % for i = 1:C-1
+
+        end % priorPDF
 
         function FigurePlot(Population, opt)
 %------------------------------------------------------------------------------
@@ -2303,63 +2386,6 @@ classdef OptAlgo < handle
             end
 
         end % FigurePlot
-
-        function prior = priorPDF(points)
-%------------------------------------------------------------------------------
-% This is a routine used for constructe the prior distribution for MCMC
-%
-% Parameters:
-%       points. The estimated parameters
-%       binNum. The amount of the histogram bar
-%
-% Return:
-%       prior. The prior possibility
-%           It should be the plain data in my script, which will be used by
-%           hist routine to generate discrete points. If you have a continuous
-%           function, it is better. Please change this routine to customize.
-%           Such as, prior = f(point).
-%------------------------------------------------------------------------------
-
-
-            prior = 1;
-
-            % if no prior information, return
-            if isempty(OptAlgo.prior)
-                return;
-            end
-
-            binNum = 15;
-            x = zeros(binNum, 3);
-            [R, C] = size(OptAlgo.prior);
-
-            for i = 1:C-1
-
-                point = points(i);
-
-                binWidth = ( max(OptAlgo.prior(:,i)) - min(OptAlgo.prior(:,i)) ) / binNum;
-
-                [y, x(:,1)] = hist(OptAlgo.prior(:,i), binNum);
-
-                x(:,2) = x(:,1) - binWidth/2;
-                x(:,3) = x(:,1) + binWidth/2;
-
-                if point <= x(1,2)
-                    idx = 1;
-                elseif point >= x(binNum, 3)
-                    idx = binNum;
-                else
-                    idx = find(point >= x(:,2) & point <= x(:,3));
-                end
-
-                if isempty(idx)
-                    error('OptAlgo.priorPDF: Please re-check your searching domain setup \n');
-                else
-                    prior = prior * y(idx) / R;
-                end
-
-            end % for i = 1:C-1
-
-        end % priorPDF
 
         function tickLabelFormat(hAxes, axName, format)
 %------------------------------------------------------------------------------
