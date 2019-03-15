@@ -211,7 +211,12 @@ function objective = simulatedMovingBed(varargin)
     Results = SMB.Purity_Productivity(currentData, opt);
 
     % Construct your own Objective Function and calculate the value
-    objective = SMB.objectiveFunction(Results, opt);
+    try
+        objective = SMB.objectiveFunction(Results, opt);
+    catch e
+        fprintf('%s\n', e.message);
+        objective = 68106800;
+    end
 
     tTotal = toc(tTotal);
     % Store the final data into DATA.mat file when debug is active
@@ -219,7 +224,8 @@ function objective = simulatedMovingBed(varargin)
         fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
         SMB.concDataConvertToASCII(currentData, opt);
         SMB.trajDataConvertToASCII(dyncData, opt);
-        save(sprintf('Performance_%03d.mat',fix(rand*100)),'Results');
+        c = clock;
+        save(sprintf('Performance_%d%d.mat', c(3), c(4)), 'Results');
         fprintf('The results about concentration profiles and the trajectories have been stored \n');
     end
 
