@@ -8,7 +8,7 @@ function objective = simulatedMovingBed(varargin)
 % =============================================================================
 
 
-    global string stringSet dummyProfile startingPointIndex Feed2;
+    global string stringSet dummyProfile;
 
     tTotal = tic;
 
@@ -17,13 +17,14 @@ function objective = simulatedMovingBed(varargin)
 
     % Read operating parameters of SMB unit
     [opt, interstVelocity, Feed, Desorbent] = getParameters(varargin{:});
+
     % If SMA isotherm, salt is considered as a component
     if strcmp('StericMassActionBinding', opt.BindingModel), opt.nComponents = opt.nComponents + 1; end
 
     % Check interstitial velocities in SMB optimization
+    % flag is true when anyone is negative, then assign a big value to objective function
     flag = SMB.interstVelocityCheck(interstVelocity, opt);
-    % if flag is true (anyone is negative), assign a big objective value to get rid of
-    if flag == 1, objective = 1e5; return; end
+    if flag == 1, objective = 68106800; return; end
 
     if opt.enable_CSTR && opt.enable_DPFR
         error('It is not allowed have both the CSTR and DPFR in the simulation \n');
@@ -33,86 +34,9 @@ function objective = simulatedMovingBed(varargin)
         error('The simulation of %3g-column case in %3g-zone is not finished so far \n', opt.nColumn, opt.nZone);
     end
 
-
 %   Preallocation
-%----------------------------------------------------------------------------------------
-    % Generate an initial alphabet string set to identify positions of SMB unit.
-    % The position after desorbent node is, by default, marked as "a" (first one)
-    string = char(stringSet(1:opt.nColumn));
-
-    % Simulations follow the string sequence (starting from desorbent node)
-    % To change starting simulation position, shift num to corresponding value
-    string = circshift(string, 0);
-    % Be aware, in eight-zone case, simulations cannot begain after feed2 node
-    startingPointIndex = SMB.nodeIndexing(opt, string(1));
-
-    % currentData matrix is the profile matrix of columns within one time interval
-    currentData    = cell(1, opt.nColumn);
-    % temp memory for transitionData
-    tempData       = cell(1, opt.nColumn);
-    % transtionData is the instant concentration profile of all columns in one iteration
-    transitionData = cell(1, opt.nColumn);
-
-    for k = 1:opt.nColumn
-        currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
-        currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
-        currentData{k}.lastState = cell(1,2);
-
-        if opt.enable_DPFR
-            currentData{k}.lastState_DPFR = cell(1,2);
-            currentData{k}.lastState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
-            currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
-        end
-
-        % This is the temporary data for dynamic trajectory plotting
-        tempData{k}.concentration = cell(1, opt.nInterval);
-
-        % transitionData stores the composition profile of nInterval pieces
-        transitionData{k}.outlet.time = linspace(0, opt.switch*opt.nInterval, opt.timePoints*opt.nInterval);
-        transitionData{k}.outlet.concentration = zeros(opt.timePoints*opt.nInterval, opt.nComponents);
-    end
-
-    % Generate arabic numbers to identify columns
-    columnNumber = cell(1, opt.nColumn);
-    for k = 1:opt.nColumn
-        if k == 1, columnNumber{1} = opt.nColumn; else columnNumber{k} = k-1; end
-    end
-    % Combine alphabet string with arabic numbers for switching sake
-    sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
-
-    % Specify the column for the convergence checking. The column after the Feed is usually adopted
-    if opt.nZone == 4
-        convergIndx = sum(opt.structID(1:2));
-    elseif opt.nZone == 5
-        convergIndx = sum(opt.structID(1:3));
-    elseif opt.nZone == 8
-        convergIndx = sum(opt.structID(1:3));
-    else
-        error('Please choose the correct zone configuration \n');
-    end
-
-    % convergPrevious is used for stopping criterion
-    convergPrevious = transitionData{convergIndx}.outlet.concentration;
-    % The profile of last column in terms of sequence is stored as dummyProfile
-    dummyProfile    = tempData{sequence.(string(end))};
-    for kk = 1:opt.nInterval
-        dummyProfile.concentration{kk} = zeros(length(Feed.time), opt.nComponents);
-    end
-
-    % plotData (columnNumber x switches), monitoring instant profile of each column in one iteration
-    plotData = cell(opt.nColumn,opt.nColumn);
-
-    % dyncData is used for generating trajectories of withdrawn ports
-    if opt.enableDebug
-        if opt.nZone == 4
-            dyncData = cell(2, opt.nMaxIter);
-        elseif opt.nZone == 5
-            dyncData = cell(3, opt.nMaxIter);
-        elseif opt.nZone == 8
-            dyncData = cell(3, opt.nMaxIter);
-        end
-    end
-
+    [currentData, tempData, transitionData, sequence, convergIndx, convergPrevious, ...
+        dummyProfile, dyncData, plotData] = SMB.preallocation(Feed, opt);
 
 %   Simulations
 %----------------------------------------------------------------------------------------
@@ -129,113 +53,41 @@ function objective = simulatedMovingBed(varargin)
 
         for j = 1:opt.nInterval
 
-            for k = string' % do nColumn simulations in terms of string sequence
+            % Do nColumn simulations in terms of string sequence
+            for k = string'
 
-                % The node balance: transmission of concentration, column state, velocity and so on
-                column = SMB.massConservation(currentData, interstVelocity, Feed, Desorbent, opt, sequence, k, j);
-
-                if opt.enable_CSTR
-
-                    % The CSTR before the current column
-                    column.inlet = SMB.CSTR(column.inlet, column, opt);
-
-                    if j == 1
-                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, column.initialState, sequence.(k), j, varargin{:});
-                    elseif j == opt.nInterval
-                        [outletProfile, simMex, lastState] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
-                    else
-                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
-                    end
-
-                    % The CSTR after the current column
-                    outletProfile.outlet = SMB.CSTR(outletProfile.outlet, column, opt);
-
-                elseif opt.enable_DPFR
-
-                    % The DPFR before the current column
-                    [column.inlet, lastState_DPFR_pre] = SMB.DPFR(column.inlet, column.initialState_DPFR{1}, opt);
-
-                    if j == 1
-                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, column.initialState, sequence.(k), j, varargin{:});
-                    elseif j == opt.nInterval
-                        [outletProfile, simMex, lastState] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
-                    else
-                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
-                    end
-
-                    % The DPFR after the current column
-                    [outletProfile.outlet, lastState_DPFR_pos] = SMB.DPFR(outletProfile.outlet, column.initialState_DPFR{2}, opt);
-
-                    currentData{sequence.(k)}.lastState_DPFR = [{lastState_DPFR_pre}, {lastState_DPFR_pos}];
-
-                else
-
-                    % The simulation of a single column with the CADET solver
-                    if j == 1
-                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, column.initialState, sequence.(k), j, varargin{:});
-                    elseif j == opt.nInterval
-                        [outletProfile, simMex, lastState] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
-                    else
-                        [outletProfile, simMex] = SMB.secColumn(column.inlet, column.params, simMex, [], sequence.(k), j, varargin{:});
-                    end
-
-
+                try
+                    % Single column simulation
+                    [outletProfile, lastState, currentData] = SMB.colSolver(currentData, ...
+                        interstVelocity, Feed, Desorbent, opt, sequence, k, j, simMex, varargin{:});
+                catch e
+                    % If the simulation of single column crashes
+                    fprintf('%s\n', e.message); objective = 68106800; return
                 end
 
-                % when j equals nInterval, the column state is complete
-                %   with the exception of the very first column, which will be re-calculated
-                if j == opt.nInterval && ~strcmp(k, string(1))
+                % For the very first column, only the outletProfile, rather than the column state, is stored
+                if ~strcmp(k, string(1))
                     currentData{sequence.(k)}.lastState = lastState;
-                    currentData{sequence.(k)}.colState  = outletProfile.column;
+                    if j == opt.nInterval
+                        currentData{sequence.(k)}.colState = outletProfile.column;
+                    end
                 end
-                currentData{sequence.(k)}.outlet        = outletProfile.outlet;
-
+                currentData{sequence.(k)}.outlet = outletProfile.outlet;
                 % Store the interval-wise concentration profile of all columns
                 tempData{sequence.(k)}.concentration{j} = outletProfile.outlet.concentration;
-
                 % If eight-zone case, store the intermediate outlet as the Feed2 inlet
-                if opt.nZone == 8
-                    if ( strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3)))) ) ...
-                            || ( strcmp('extract',opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1))) )
-                        Feed2 = outletProfile.outlet;
-                    end
-                    % desalting step in SMA isotherm during connection
-                    if strcmp('StericMassActionBinding', opt.BindingModel)
-                        Feed2.concentration = Feed2.concentration .* interstVelocity.raffinate1 ./ interstVelocity.feed2;
-                    end
-                end
+                SMB.Feed2Connect(outletProfile, Feed, stringSet, opt, k);
 
             end % for k = string'
-
 
             % Simulate the very first column again to update the actual column state, correspondingly the outletProfile is omitted
             [currentData{sequence.(string(1))}.colState, currentData{sequence.(string(1))}.lastState] = ...
                 SMB.observerSimulation(sequence, interstVelocity, Feed, Desorbent, currentData{sequence.(string(end))}.outlet, ...
                 currentData{sequence.(string(1))}.lastState, string(1), opt);
 
-
-            % The collection of the dyncData for the trajectory plotting
             if opt.enableDebug
-                if opt.nZone == 4
-                    dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3))))) }.outlet.concentration;
-                    dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
-                elseif opt.nZone == 5
-                    dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:4))))) }.outlet.concentration;
-                    if strcmp('extract', opt.intermediate) % two extract ports
-                        dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:2))))) }.outlet.concentration;
-                    elseif strcmp('raffinate', opt.intermediate) % two raffinate ports
-                        dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3))))) }.outlet.concentration;
-                    end
-                    dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
-                elseif opt.nZone == 8
-                    dyncData{1, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:7))))) }.outlet.concentration;
-                    dyncData{2, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:5))))) }.outlet.concentration;
-                    if strcmp('extract', opt.intermediate_feed) % two extract ports
-                        dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3))))) }.outlet.concentration;
-                    elseif strcmp('raffinate', opt.intermediate_feed) % two raffinate ports
-                        dyncData{3, j+(i-1)*opt.nInterval} = currentData{sequence.(char(stringSet(opt.structID(1)))) }.outlet.concentration;
-                    end
-                end
+                % The collection of the dyncData for the trajectory plotting
+                dyncData = SMB.dyncDataUpdate(dyncData, currentData, sequence, stringSet, opt, i, j);
             end
 
             % Interactive plottings when debug mode is active
@@ -245,7 +97,6 @@ function objective = simulatedMovingBed(varargin)
             if opt.enableDebug, SMB.plotDynamic(opt, dyncData(:,1:j+(i-1)*opt.nInterval), j+(i-1)*opt.nInterval); end
 
         end % for j = 1:opt.nInterval
-
 
         % Transfer the dummyProfile, which is the profile of last interval of last column
         dummyProfile = tempData{sequence.(string(end))};
@@ -267,32 +118,12 @@ function objective = simulatedMovingBed(varargin)
             plotData(:,index) = transitionData';
         end
 
-        % Convergence criterion adopted in each nColumn switches
-        %   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
-        if mod(i, opt.nColumn) == 0
-
-            diffNorm = 0; stateNorm = 0;
-
-            for k = 1:opt.nComponents
-                diffNorm = diffNorm + norm( convergPrevious(:,k) - transitionData{convergIndx}.outlet.concentration(:,k) );
-                stateNorm = stateNorm + norm( transitionData{convergIndx}.outlet.concentration(:,k) );
-            end
-
-            relativeDelta = diffNorm / stateNorm;
-
-            % Interactive plotting when debug mode is active
-            SMB.UIplot('cycle', opt, i, j, relativeDelta);
-
-            if relativeDelta <= opt.tolIter
-                break
-            else
-                convergPrevious = transitionData{convergIndx}.outlet.concentration;
-            end
-
-        end
+        % stopping criterion
+        % flag is true when a stopping criterion is satisfied
+        [convergPrevious, flag] = SMB.stoppingCriterion(convergPrevious, transitionData, convergIndx, opt, i, j);
+        if flag == 1, break; end
 
     end % main loop
-
 
 %   Post-process
 %----------------------------------------------------------------------------------------
@@ -318,7 +149,7 @@ end
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
 %
-%      Copyright © 2008-2017: Eric von Lieres, Qiaole He
+%      Copyright © 2008-2019: Eric von Lieres, Qiaole He
 %
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %
