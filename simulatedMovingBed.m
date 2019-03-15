@@ -298,7 +298,8 @@ function objective = simulatedMovingBed(varargin)
         fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
         SMB.concDataConvertToASCII(currentData, opt);
         SMB.trajDataConvertToASCII(dyncData, opt);
-        save(sprintf('Performance_%03d.mat',fix(rand*100)),'Results');
+        c = clock;
+        save(sprintf('Performance_%d%d.mat',c(3), c(4)), 'Results');
         fprintf('The results about concentration profiles and the trajectories have been stored \n');
     end
 
