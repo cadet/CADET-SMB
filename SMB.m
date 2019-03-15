@@ -329,6 +329,250 @@ classdef SMB < handle
 
         end % massConservation
 
+        function [outletProfile, lastState, currentData] = colSolver(currentData, interstVelocity, Feed, Desorbent, opt, sequence, k, varargin)
+% ----------------------------------------------------------------------------------------
+% Preparation of simulation of each column, which might combined with CSTR and DPFR
+%
+% Parameters:
+%       - currentData. Structure data of outlet chromatography and last column state
+%       - interstVelocity. Interstitial velocity
+%       - Feed. Components composition at Feed node
+%       - Desorbent. The component composition at Desorbent node
+%       - opt. Options
+%       - sequence. During switching, the structure used for storing the sequence of columns
+%
+% Returns:
+%       - outletProfile. Chromatogram over time
+%       - lastState. Last column STATE that is used as initial condition
+% ----------------------------------------------------------------------------------------
+
+
+            % The node balance: transmission of concentration, column state, velocity and so on
+            column = SMB.massConservation(currentData, interstVelocity, Feed, Desorbent, opt, sequence, k);
+
+            if opt.enable_CSTR
+
+                % The CSTR before the current column
+                column.inlet = SMB.CSTR(column.inlet, column, opt);
+
+                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+
+                % The CSTR after the current column
+                outletProfile.outlet = SMB.CSTR(outletProfile.outlet, column, opt);
+
+            elseif opt.enable_DPFR
+
+                % The DPFR before the current column
+                [column.inlet, lastState_DPFR_pre] = SMB.DPFR(column.inlet, column.initialState_DPFR{1}, opt);
+
+                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+
+                % The DPFR after the current column
+                [outletProfile.outlet, lastState_DPFR_pos] = SMB.DPFR(outletProfile.outlet, column.initialState_DPFR{2}, opt);
+
+                currentData{sequence.(k)}.lastState_DPFR = [{lastState_DPFR_pre}, {lastState_DPFR_pos}];
+
+            else
+
+                % The simulation of a single column with the CADET solver
+                [outletProfile, lastState] = SMB.secColumn(column.inlet, column.params, column.initialState, varargin{:});
+
+            end
+
+        end % colSolver
+
+        function [currentData, sequence, convergIndx, convergPrevious, dummyProfile, dyncData, plotData] = preallocation(Feed, opt)
+% ----------------------------------------------------------------------------------------
+% Preallocation of necessary data
+%
+% Parameters:
+%       - Feed. Components composition at Feed node
+%       - opt. Options
+%
+% Returns:
+%       - currentData. Structure data of outlet chromatography and last column state
+%       - sequence. During switching, the structure used for storing the sequence of columns
+%       - convergIndx. Index of the column that used for check of stopping criterion
+%       - convergPrevious. Previous state of the column that used for check of stopping criterion
+%       - dummyProfile. Profile of the last column in terms of string
+%       - dyncData. Structure data used for generating trajectories of withdrawn ports
+%       - plotData. (columnNumber x switches), instant profile of each column in one iteration
+% ----------------------------------------------------------------------------------------
+
+
+            global string stringSet startingPointIndex
+
+            % Generate an initial alphabet string set to identify positions of SMB unit.
+            % The position after desorbent node is, by default, marked as "a" (first one)
+            string = char(stringSet(1:opt.nColumn));
+
+            % Simulations follow the string sequence (starting from desorbent node)
+            % To change starting simulation position, shift num to corresponding value
+            string = circshift(string, 0);
+            % Be aware, in eight-zone case, simulations cannot begain after feed2 node
+            startingPointIndex = SMB.nodeIndexing(opt, string(1));
+
+            % pre-allocate memory to currentData matrix, which is the profile matrix of columns
+            currentData = cell(1, opt.nColumn);
+            for k = 1:opt.nColumn
+                currentData{k}.outlet.time = linspace(0, opt.switch, opt.timePoints);
+                currentData{k}.outlet.concentration = zeros(length(Feed.time), opt.nComponents);
+                currentData{k}.lastState = cell(1,2);
+
+                if opt.enable_DPFR
+                    currentData{k}.lastState_DPFR = cell(1,2);
+                    currentData{k}.lastState_DPFR{1} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR before
+                    currentData{k}.lastState_DPFR{2} = zeros(opt.nComponents, opt.DPFR_nCells); % DPFR after
+                end
+            end
+
+            % Generate arabic numbers to identify columns
+            columnNumber = cell(1, opt.nColumn);
+            for k = 1:opt.nColumn
+                if k == 1, columnNumber{1} = opt.nColumn; else columnNumber{k} = k-1; end
+            end
+            % Combine alphabet string with arabic numbers for switching sake
+            sequence = cell2struct( columnNumber, stringSet(1:opt.nColumn), 2 );
+
+            % Specify the column for the convergence checking. The column after the Feed is usually adopted
+            if opt.nZone == 4
+                convergIndx = sum(opt.structID(1:2));
+            elseif opt.nZone == 5
+                convergIndx = sum(opt.structID(1:3));
+            elseif opt.nZone == 8
+                convergIndx = sum(opt.structID(1:3));
+            else
+                error('Please choose the correct zone configuration \n');
+            end
+
+            % convergPrevious is used for stopping criterion
+            convergPrevious = currentData{convergIndx}.outlet.concentration;
+            % The profile of last column in terms of sequence is stored as dummyProfile
+            dummyProfile    = currentData{sequence.(string(end))}.outlet;
+
+            % plotData (columnNumber x switches), monitoring instant profile of each column in one iteration
+            plotData = cell(opt.nColumn,opt.nColumn);
+
+            % dyncData is used for generating trajectories of withdrawn ports
+            if opt.enableDebug
+                if opt.nZone == 4
+                    dyncData = cell(2, opt.nMaxIter);
+                elseif opt.nZone == 5
+                    dyncData = cell(3, opt.nMaxIter);
+                elseif opt.nZone == 8
+                    dyncData = cell(3, opt.nMaxIter);
+                end
+            else
+                dyncData = [];
+            end
+
+        end % preallocation
+
+        function dyncData = dyncDataUpdate(dyncData, currentData, sequence, stringSet, opt, i)
+% ----------------------------------------------------------------------------------------
+% A script to update dyncData
+%
+% Parameters:
+%       - currentData. Structure data of outlet chromatography and last column state
+%       - sequence. During switching, the structure used for storing the sequence of columns
+%       - stringSet.
+%
+% Returns:
+%       - dyncData. Structure data used for generating trajectories of withdrawn ports
+% ----------------------------------------------------------------------------------------
+
+
+            if opt.nZone == 4
+                dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3)))))}.outlet.concentration;
+                dyncData{2, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+            elseif opt.nZone == 5
+                dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:4)))))}.outlet.concentration;
+                if strcmp('extract', opt.intermediate) % two extract ports
+                    dyncData{2, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:2)))))}.outlet.concentration;
+                elseif strcmp('raffinate', opt.intermediate) % two raffinate ports
+                    dyncData{2, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3)))))}.outlet.concentration;
+                end
+                dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+            elseif opt.nZone == 8
+                dyncData{1, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:7)))))}.outlet.concentration;
+                dyncData{2, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:5)))))}.outlet.concentration;
+                if strcmp('extract', opt.intermediate_feed) % two extract ports
+                    dyncData{3, i} = currentData{sequence.(char(stringSet(sum(opt.structID(1:3)))))}.outlet.concentration;
+                elseif strcmp('raffinate', opt.intermediate_feed) % two raffinate ports
+                    dyncData{3, i} = currentData{sequence.(char(stringSet(opt.structID(1))))}.outlet.concentration;
+                end
+            end
+
+        end % dyncDataUpdate
+
+        function Feed2Connect(outletProfile, Feed, stringSet, opt, k)
+% ----------------------------------------------------------------------------------------
+% Get composition of Feed2 inlet from the first sub-unit
+%
+% Parameters:
+%       - outletProfile. Chromatogram over time
+%       - Feed. Components composition at Feed node
+%       - opt. Options
+% ----------------------------------------------------------------------------------------
+
+
+            global Feed2
+
+            if opt.nZone == 8
+                if ( strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3)))) ) ...
+                        || ( strcmp('extract', opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1))) )
+                    Feed2 = outletProfile.outlet;
+                    if strcmp('StericMassActionBinding', opt.BindingModel)
+                        Feed2.concentration = Feed2.concentration .* interstVelocity.raffinate1 ./ interstVelocity.feed2;
+                    end
+                end
+            end
+
+        end % Feed2Connect
+
+        function [convergPrevious, flag] = stoppingCriterion(convergPrevious, currentData, convergIndx, opt, i)
+% ----------------------------------------------------------------------------------------
+% Check the stopping criterion once a while
+%
+% Parameters:
+%       - convergPrevious. Previous state of the column that used for check of stopping criterion
+%       - currentData. Structure data of outlet chromatography and last column state
+%       - convergIndx. Index of the column that used for check of stopping criterion
+% 		- opt. option of parameters
+%
+% Returns:
+%       - flag. If stopping criterion is satisfied, flag is true.
+% ----------------------------------------------------------------------------------------
+
+
+            flag = 0;
+
+            % Convergence criterion adopted in each nColumn switches
+            %   ||( C(z, t) - C(z, t + nColumn * t_s) ) / C(z, t)|| < tol, for a specific column
+            if mod(i, opt.nColumn) == 0
+
+                diffNorm = 0; stateNorm = 0;
+
+                for k = 1:opt.nComponents
+                    diffNorm = diffNorm + norm( convergPrevious(:,k) - currentData{convergIndx}.outlet.concentration(:,k) );
+                    stateNorm = stateNorm + norm( currentData{convergIndx}.outlet.concentration(:,k) );
+                end
+
+                relativeDelta = diffNorm / stateNorm;
+
+                % Interactive plotting when debug mode is active
+                SMB.UIplot('cycle', opt, i, relativeDelta);
+
+                if relativeDelta <= opt.tolIter
+                    flag = 1;
+                else
+                    convergPrevious = currentData{convergIndx}.outlet.concentration;
+                end
+
+            end
+
+        end % stoppingCriterion
+
         function params = getParams(sequence, interstVelocity, opt, index, alphabet, pre_alphabet)
 % ----------------------------------------------------------------------------------------
 % After each swtiching, the value of velocities and initial conditions are changed
@@ -1537,7 +1781,7 @@ end % classdef
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
 %
-%      Copyright © 2008-2017: Eric von Lieres, Qiaole He
+%      Copyright © 2008-2019: Eric von Lieres, Qiaole He
 %
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %

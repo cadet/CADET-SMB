@@ -3113,7 +3113,7 @@ end % classdef
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
 %
-%      Copyright © 2008-2017: Eric von Lieres, Qiaole He
+%      Copyright © 2008-2019: Eric von Lieres, Qiaole He
 %
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
 %

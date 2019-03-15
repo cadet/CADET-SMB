@@ -14,7 +14,7 @@ function result = smbStructOpt
     global structID;
 
     % Assign the optimized decision variables under a certain column configuration
-%    params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]); % binary scenario 
+%    params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract',[]); % binary scenario
     params = struct('columnLength',[], 'switch',[], 'recycle',[], 'feed',[], 'desorbent',[], 'extract1',[], 'extract2',[]); % ternary scenario
 
     % There are four optimization algorithms availabe in the lower level programme
@@ -68,7 +68,7 @@ function result = smbStructOpt
         [minValue, idStruct] = min(structure(:,opt.nZone+1));
 
         fprintf('================  Iter(Upper): %5d     Minimum: %10.3g  ================ \n', k, minValue);
-        fprintf('Structure:'); fprintf('%d |',structure(idStruct, 1:opt.nZone)); 
+        fprintf('Structure:'); fprintf('%d |',structure(idStruct, 1:opt.nZone));
         fprintf('\n---------------------------------------------------------------------- \n');
         fprintf('%10.3g | ', decision_variables(idStruct, :)); fprintf('\n');
 
@@ -98,11 +98,11 @@ end
 % =============================================================================
 %  SMB - The Simulated Moving Bed Chromatography for separation of
 %  target compounds, either binary or ternary.
-% 
-%      Copyright © 2008-2017: Eric von Lieres, Qiaole He
-% 
+%
+%      Copyright © 2008-2019: Eric von Lieres, Qiaole He
+%
 %      Forschungszentrum Juelich GmbH, IBG-1, Juelich, Germany.
-% 
+%
 %  All rights reserved. This program and the accompanying materials
 %  are made available under the terms of the GNU Public License v3.0 (or, at
 %  your option, any later version) which accompanies this distribution, and
