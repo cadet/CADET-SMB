@@ -145,7 +145,7 @@ classdef SMB < handle
             end
 
             mGrm.inlet = inlet;
-            mGrm.returnSolutionColumn = true;
+            mGrm.returnSolutionBulk = true;
 
             % Create and configure simulator
             sim = Simulator.create();
@@ -173,7 +173,7 @@ classdef SMB < handle
             % Extract the outletProfile
             outletProfile.outlet.time = result.solution.time;
             outletProfile.outlet.concentration = result.solution.outlet{1};
-            outletProfile.column = SMB.extractColumnMatrix(result.solution.column{1}, opt);
+            outletProfile.column = SMB.extractColumnMatrix(result.solution.bulk{1}, opt);
             lastState{1} = result.solution.lastState;
             lastState{2} = result.solution.lastStateDot;
 
@@ -1011,7 +1011,7 @@ classdef SMB < handle
 % ----------------------------------------------------------------------------------------
 
 
-            array = squeeze(colState(end,:,:))';
+            array = squeeze(colState(end,:,:));
 
         end % extractColumnMatrix
 

@@ -155,11 +155,12 @@ function objective = simulatedMovingBed(varargin)
                 if ( strcmp('raffinate', opt.intermediate_feed) && strcmp(k, stringSet(sum(opt.structID(1:3)))) ) ...
                         || ( strcmp('extract', opt.intermediate_feed) && strcmp(k, stringSet(opt.structID(1))) )
                     Feed2 = outletProfile.outlet;
+                    if strcmp('StericMassActionBinding', opt.BindingModel)
+                        Feed2.concentration = Feed2.concentration .* interstVelocity.raffinate1 ./ interstVelocity.feed2;
+                        %Feed2.concentration(:,1) = ones(length(Feed.time), 1) .* opt.concentrationSalt(2,1);
+                    end
                 end
                 % desalting step in SMA isotherm during connection
-                if strcmp('StericMassActionBinding', opt.BindingModel)
-                    Feed2.concentration(:,1) = ones(length(Feed.time), 1) .* opt.concentrationSalt(2,1);
-                end
             end
 
         end % for k = string'
@@ -238,7 +239,12 @@ function objective = simulatedMovingBed(varargin)
     Results = SMB.Purity_Productivity(plotData, varargin{:});
 
     % Construct your own Objective Function and calculate the value
-    objective = SMB.objectiveFunction(Results, opt);
+    try
+        objective = SMB.objectiveFunction(Results, opt);
+    catch e
+        fprintf('%s\n', e.message);
+        objective = 68106800;
+    end
 
     tTotal = toc(tTotal);
     % Store the final data into DATA.mat file when debug is active
@@ -246,7 +252,8 @@ function objective = simulatedMovingBed(varargin)
         fprintf('The time elapsed for reaching the Cyclic Steady State: %g sec \n', tTotal);
         SMB.concDataConvertToASCII(currentData, opt);
         SMB.trajDataConvertToASCII(dyncData, opt);
-        save(sprintf('Performance_%03d.mat',fix(rand*100)),'Results');
+        c = clock;
+        save(sprintf('Performance_%d%d.mat', c(3), c(4)), 'Results');
         fprintf('The results about concentration profiles and the trajectories have been stored \n');
     end
 
