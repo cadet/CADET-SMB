@@ -201,7 +201,7 @@ function objective = simulatedMovingBed(varargin)
                     end
                     % desalting step in SMA isotherm during connection
                     if strcmp('StericMassActionBinding', opt.BindingModel)
-                        Feed2.concentration(:,1) = ones(length(Feed.time), 1) .* opt.concentrationSalt(2,1);
+                        Feed2.concentration = Feed2.concentration .* interstVelocity.raffinate1 ./ interstVelocity.feed2;
                     end
                 end
 
