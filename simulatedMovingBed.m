@@ -76,7 +76,7 @@ function objective = simulatedMovingBed(varargin)
                 % Store the interval-wise concentration profile of all columns
                 tempData{sequence.(k)}.concentration{j} = outletProfile.outlet.concentration;
                 % If eight-zone case, store the intermediate outlet as the Feed2 inlet
-                SMB.Feed2Connect(outletProfile, Feed, stringSet, opt, k);
+                SMB.Feed2Connect(outletProfile, Feed, interstVelocity, stringSet, opt, k);
 
             end % for k = string'
 
