@@ -505,7 +505,7 @@ classdef SMB < handle
 
         end % dyncDataUpdate
 
-        function Feed2Connect(outletProfile, Feed, stringSet, opt, k)
+        function Feed2Connect(outletProfile, Feed, interstVelocity, stringSet, opt, k)
 % ----------------------------------------------------------------------------------------
 % Get composition of Feed2 inlet from the first sub-unit
 %

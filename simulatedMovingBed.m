@@ -68,7 +68,7 @@ function objective = simulatedMovingBed(varargin)
             currentData{sequence.(k)}.colState   = outletProfile.column;
             currentData{sequence.(k)}.lastState  = lastState;
             % If eight-zone case, store the intermediate outlet as the Feed2 inlet
-            SMB.Feed2Connect(outletProfile, Feed, stringSet, opt, k);
+            SMB.Feed2Connect(outletProfile, Feed, interstVelocity, stringSet, opt, k);
 
         end % for k = string'
 
