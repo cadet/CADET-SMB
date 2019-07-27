@@ -1,6 +1,5 @@
 Eric von Lieres
 	Email: e.von.lieres@fz-juelich.de
 
-Qiaole He
-	Email: q.he@fz-juelich.de
-
+Qiao-Le (Kim) He (maintainer)
+	Email: qiaole.he@rwth-aachen.de

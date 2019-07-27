@@ -4,6 +4,8 @@ function updateAvailable = isSMBupdateAvailable
 % ==============================================================================
 
 
+    updateAvailable = false;
+
     localPath = fileparts(mfilename('fullpath'));
     fprintf('Adding %s to MATLAB PATH\n', localPath);
     path(localPath, path);
@@ -39,12 +41,14 @@ function updateAvailable = isSMBupdateAvailable
     for i = 1:min(length(stableVersion), length(currentVersion))
         if str2double(stableVersion(i)) > str2double(currentVersion(i))
             updateAvailable = true;
-            fprintf('There is new version available in the GitHub: https://github.com/modsim/CADET-SMB/releases. \n');
+            fprintf('Newer version is available in the GitHub: https://github.com/modsim/CADET-SMB/releases. \n');
             break;
         end
     end
 
-    fprintf('The newest version is now installed, Version %s', stableVersionString);
+    if ~updateAvailable
+        fprintf('The newest version is now installed, Version %s', stableVersionString);
+    end
 
 end
 % =============================================================================
