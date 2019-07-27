@@ -754,7 +754,7 @@ classdef OptAlgo < handle
 
                 % Check the boundary limiation
                 newpar( newpar < opt.bounds(1, :) ) = opt.bounds(1, newpar < opt.bounds(1, :));
-                newpar( newpar > opt.bounds(2, :) ) = opt.bounds(1, newpar > opt.bounds(2, :));
+                newpar( newpar > opt.bounds(2, :) ) = opt.bounds(2, newpar > opt.bounds(2, :));
 
                 % Calculate the objective value of the new proposal
                 newSS = feval( OptAlgo.FUNC, OptAlgo.pTransfer('exp', newpar) );
@@ -785,7 +785,7 @@ classdef OptAlgo < handle
 
                     % Check the boundary limitation of the new generated point
                     newpar2(newpar2 < opt.bounds(1, :)) = opt.bounds(1, newpar2 < opt.bounds(1, :));
-                    newpar2(newpar2 > opt.bounds(2, :)) = opt.bounds(1, newpar2 > opt.bounds(2, :));
+                    newpar2(newpar2 > opt.bounds(2, :)) = opt.bounds(2, newpar2 > opt.bounds(2, :));
 
                     % Calculate the objective value of the new proposal
                     newSS2 = feval( OptAlgo.FUNC, OptAlgo.pTransfer('exp', newpar2) );
@@ -982,7 +982,7 @@ classdef OptAlgo < handle
 
             % Check the boundary limiation
 %            oldpar(oldpar < opt.bounds(1, :)) = opt.bounds(1, oldpar < opt.bounds(1, :));
-%            oldpar(oldpar > opt.bounds(2, :)) = opt.bounds(1, oldpar > opt.bounds(2, :));
+%            oldpar(oldpar > opt.bounds(2, :)) = opt.bounds(2, oldpar > opt.bounds(2, :));
 
             % Get the resudual value and Jacobian matrix of the guessing point
             Jac = [];
