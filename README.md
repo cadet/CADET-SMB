@@ -9,7 +9,7 @@ CADET-SMB is a comprehensive simulator for analysis and design of simulated movi
 
 # Important Note
 
-At the time when CADET-SMB was developed, the CADET engine was limited to a single chromatography column. The CADET engine now supports strongly coupled networks of unit operations, while CADET-SMB is based on weak coupling. Moreover, the model family of the CADET engine has been enlarged, including CSTR and DPFR units (and many other). Hence, **we stongly recommend using the CADET engine for most applications** (https://github.com/modsim/CADET). CADET-SMB can still be beneficial (faster) when only the cyclic steady state (CSC) is of interest and the one-column analog can be applied. CADET-SMB has also been used for verifying the network capabilities of the CADET engine.
+At the time when CADET-SMB was developed, the CADET engine was limited to a single chromatography column. The CADET engine now supports strongly coupled networks of unit operations, while CADET-SMB is based on weak coupling. In addition, the model family of the CADET engine has been enlarged, including CSTR and DPFR units (and many other). Hence, **we stongly recommend using the CADET engine for most applications** (https://github.com/modsim/CADET). CADET-SMB can still be beneficial (faster) when only the cyclic steady state (CSC) is of interest and the one-column analog can be applied. CADET-SMB has been used for verifying the network capabilities of the CADET engine. CADET-SMB also demonstrates the feasibility of the lag-aware operator splitting approach, which we are proud to have found.
 
 # Introduction
 
