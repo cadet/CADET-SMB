@@ -2,10 +2,14 @@
 
 # CADET-SMB
 
-CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It is developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. Further details can be found in the following publications:
+CADET-SMB is a comprehensive simulator for analysis and design of simulated moving bed (SMB) chromatographic processes. It has been developed at the Institute of Bio- and Geosciences 1 (IBG-1) of Forschungszentrum Jülich (FZJ) under supervision of Dr. Eric von Lieres. CADET-SMB uses the simulation engine of the CADET framework, which provides a fast and accurate solver for the general rate model (GRM) of packed bed liquid chromatography. Further details can be found in the following publications:
 
 * He, Q.-L.; Leweke, S.; von Lieres, E.: [Efficient numerical simulation of simulated moving bed chromatography with a single-column solver](http://doi.org/10.1016/j.compchemeng.2017.12.022), Computers and Chemical Engineering 111 (2018), 183–198.
 * Leweke, S.; von Lieres, E.: [Chromatography Analysis and Design Toolkit (CADET)](http://doi.org/10.1016/j.compchemeng.2018.02.025), Computers and Chemical Engineering 113 (2018), 274–294.
+
+# Important Note
+
+At the time when CADET-SMB was developed, the CADET engine was limited to a single chromatography column. The CADET engine now supports strongly coupled networks of unit operations, while CADET-SMB is based on weak coupling. Moreover, the model family of the CADET engine has been enlarged, including CSTR and DPFR units (and many other). *Hence, we stongly recommend using the CADET engine for most applications.* CADET-SMB can still be beneficial (faster) when only the cyclic steady state (CSC) is of interest and the one-column analog can be applied. CADET-SMB has also been used for verifying the network capabilities of the CADET engine.
 
 # Introduction
 
