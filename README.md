@@ -129,4 +129,4 @@ For more details of the CADET-SMB software, see the file doc.pdf in the reposito
 
 # Further Development 
 
-CADET-SMB is actively developed. Hence, breaking changes and extensive restructuring may occur in any commit and release. For non-developers it is recommended to upgrade from release to release instead of always working with the most recent commit.
+CADET-SMB is currently not actively developed.
