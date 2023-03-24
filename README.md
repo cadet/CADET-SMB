@@ -89,7 +89,7 @@ In SMB chromatography, both the operating conditions (column dimensions, flow ra
 
 # Tutorial and Instructions
 
-* First, download CADET from https://github.com/modsim/CADET-SMB/releases, as CADET-SMB is based on the CADET simulator.
+* First, download CADET from https://github.com/modsim/CADET/releases, as CADET-SMB is based on the CADET simulator.
 * Then, download CADET-SMB from https://github.com/modsim/CADET-SMB/releases.
 
 ## Installation of CADET
